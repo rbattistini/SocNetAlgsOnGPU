@@ -1,0 +1,7 @@
+snap-core/
+glib-core/
+tutorials/
+cmake-build-*/
+utils/
+.idea/
+appunti/
