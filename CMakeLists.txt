@@ -1,50 +1,30 @@
-cmake_minimum_required(VERSION 3.9)
-project(SocNetAlgsOnGPU  C CXX CUDA)
+cmake_minimum_required(VERSION 3.9 FATAL_ERROR)
+project(SocNetAlgsOnGPU CXX CUDA)
 
-find_package(OpenMP REQUIRED)
+set(CMAKE_CUDA_FLAGS "-O3 -arch=sm_61")
+# equal to -gencode arch=compute_60,code=sm_61
 
-set(CMAKE_CUDA_FLAGS "--gpu-architecture compute_60")
-set(CMAKE_CUDA_STANDARD 11 REQUIRED)
-
-file(GLOB cudafiles "*/cuda-*.cu")
-file(GLOB cppfiles "*/*.cpp")
-file(GLOB snap_examples "tutorials/*.cpp")
-file(GLOB snap_core "snap-core/*.cpp" "snap-core/*.h")
-file(GLOB glib_core "glib_core/*.cpp" "glib_core/*.h")
-
-# Compile and link graph_gen
-add_executable(graph_gen dataset/graph_gen.cpp)
-target_include_directories(graph_gen PUBLIC snap-core)
-target_include_directories(graph_gen PUBLIC glib-core)
-
-if(OpenMP_CXX_FOUND)
-    target_link_libraries(graph_gen PUBLIC OpenMP::OpenMP_CXX libsnap.a)
+if(NOT DEFINED CMAKE_CUDA_STANDARD)
+    set(CMAKE_CUDA_STANDARD 11)
+    set(CMAKE_CUDA_STANDARD_REQUIRED True)
 endif()
 
-# Compile and link betweenness
-add_executable(betweenness betweenness.cpp)
-target_include_directories(betweenness PUBLIC snap-core)
-target_include_directories(betweenness PUBLIC glib-core)
-
-if(OpenMP_CXX_FOUND)
-    target_link_libraries(betweenness PUBLIC OpenMP::OpenMP_CXX libsnap.a)
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 11)
+    set(CMAKE_CXX_STANDARD_REQUIRED True)
 endif()
 
-add_executable(graph_gen_boost dataset/graph_gen_boost.cpp)
+# from https://developer.nvidia.com/blog/building-cuda-applications-cmake/
 
-foreach(cudafile ${cudafiles})
-    GET_FILENAME_COMPONENT(cudafilename ${cudafile} NAME_WLE)
-    add_executable(${cudafilename} ${cudafile})
-endforeach()
+add_library(libmmio STATIC mmio/mmio.cpp mmio/mmio.h)
+target_compile_features(libmmio PUBLIC cxx_std_11)
+set_target_properties(libmmio PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
-#foreach(cppfile ${cppfiles})
-#   GET_FILENAME_COMPONENT(cppfilename ${cppfile} NAME_WLE)
-#    add_executable(${cppfilename} ${cppfile})
-#endforeach()
+include_directories(mmio)
 
-foreach(snap_example ${snap_examples})
-    GET_FILENAME_COMPONENT(snap_example_filename ${snap_example} NAME_WLE)
-    add_executable(${snap_example_filename} ${snap_example})
-    target_include_directories(${snap_example_filename} PRIVATE snap-core)
-    target_include_directories(${snap_example_filename} PRIVATE glib-core)
-endforeach()
+add_executable(betweenness betweenness.cu)
+set_property(TARGET betweenness PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+target_link_libraries(betweenness PRIVATE libmmio)
+
+add_executable(bandwidthtest samples/bandwidthtest.cu)
+add_executable(profile samples/profile.cu)
