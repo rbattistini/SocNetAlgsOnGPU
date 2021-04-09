@@ -35,7 +35,10 @@
 #ifndef MATIO_H
 #define MATIO_H
 
-#include "mmio.h"
+extern "C" {
+    #include "mmio.h"
+};
+
 #include "matstorage.h"
 
 int readMatrixMarketFile(const char *fname, matrix_coo_t *m_coo,

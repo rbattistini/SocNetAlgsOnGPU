@@ -2,3 +2,6 @@ snap-core/
 glib-core/
 cmake-build-*/
 .idea/
+docs/.asciidoctor
+docs/images
+samples/*

@@ -43,10 +43,14 @@
  *
  ****************************************************************************/
 
+#define CUDA_DEBUG
 #include <cstdlib>
 #include <cstdio>
-#include "utils.h"
-#include "cuda_utils.cuh"
+#include "matio.h"
+#include "matstorage.h"
+#include "timing.cuh"
+#include "errcheck.cuh"
+#include "device_props.cuh"
 
 /*
  * Cuda Event API and Profiler API and nvperf tool for performance evaluation
@@ -93,13 +97,13 @@ int main( int argc, char *argv[] ) {
      * Load Matrix Market matrix stored in .mm format as a COO matrix.
      */
     nedges = (int) strtol(argv[2], nullptr, 10);
-    loadMatrixMarketFile(argv[1], &m_coo, nedges);
+    readMatrixMarketFile(argv[1], &m_coo, nedges);
 
     /*
      * Convert the internal storage representation of the matrix from COO to
      * the more efficient CSR.
      */
-    coo2csr(&m_coo, &m_csr);
+    coo_to_csr(&m_coo, &m_csr);
 
 //    printf("\n%d %d %d\n", m_csr.nrows, m_csr.nrows, m_csr.nnz);
 //    printArray(m_csr.cols, m_csr.nnz);

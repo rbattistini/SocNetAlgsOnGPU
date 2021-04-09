@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.9 FATAL_ERROR)
-project(SocNetAlgsOnGPU CXX CUDA)
+project(SocNetAlgsOnGPU C CXX CUDA)
 
 # optimizations are disabled by default
 set(CMAKE_CUDA_FLAGS "-arch=sm_61")
@@ -18,7 +18,7 @@ endif()
 
 # from https://developer.nvidia.com/blog/building-cuda-applications-cmake/
 
-add_library(libmmio STATIC libs/mmio/mmio.cpp libs/mmio/mmio.h)
+add_library(libmmio STATIC libs/mmio/mmio.c libs/mmio/mmio.h)
 target_compile_features(libmmio PUBLIC cxx_std_11)
 set_target_properties(libmmio PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
