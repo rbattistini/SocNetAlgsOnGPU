@@ -1,14 +1,12 @@
 ## I principali target definiti da questo makefile sono:
-##
-# tag::maketargets[]
-# make			compila tutti i sorgenti disponibili
+#
+# make		compila tutti i sorgenti disponibili
 # make clean   	cancella i file temporanei e gli eseguibili
 # make graphs	compila i grafici dai .csv con gnuplot
 # make clgraphs	rimuove i file .png generati
 # make context	compila un pdf con context
-# make docs		compila un pdf con asciidoc
+# make docs	compila un pdf con asciidoc
 # make cldocs	rimuove il pdf generato
-# end::maketargets[]
 
 SCRIPT_DIR := ./scripts
 DATA_DIR   := ./datasets
