@@ -1,3 +1,7 @@
+ifdef::env-github[]
+:note-caption: :information_source:
+endif::[]
+
 = Social Network Analysis Algorithms on GPU
 :repo-name: SocNetAlgsOnGPU
 
@@ -26,11 +30,7 @@ make
 
 [NOTE]
 ====
-There are different targets available, they are all listed in the makefile:
-[source,makefile]
-----
-include::Makefile[tags=maketargets]
-----
+There are different targets available, they are all listed in the link:Makefile[Makefile]
 ====
 
 [source,shell]
