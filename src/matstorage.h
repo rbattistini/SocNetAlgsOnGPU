@@ -1,7 +1,7 @@
 /****************************************************************************
  *
- * mformats.h - Utility functions for converting between different internal
- * storage matrix representations
+ * matstorage.h - Functions for converting between different internal storage
+ * matrix representations
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
@@ -34,18 +34,24 @@
  * --------------------------------------------------------------------------
  *
  * This header file provides functions to convert from the COOrdinate format
- * to the Compressed Sparse Rows. In addition it provides
- * a way of representing these matrices with Structures of Arrays.
+ * to the Compressed Sparse Rows. In addition it provides a way of representing
+ * adjacency matrices with structures of arrays.
  *
- * The conversion functions are taken from the scipy source code, in particular
- * from https://github.com/scipy/scipy/blob/f2ef65dc7f00672496d7de6154744fee55ef95e9/scipy/sparse/sparsetools/coo.h#L33
- *
- * They have been adapted to accept structures representing the matrix formats.
+ * The conversion function is based on the one found in the scipy source
+ * code, specifically from
+ * https://github.com/scipy/scipy/blob/f2ef65dc7f00672496d7de6154744fee55ef95e9/scipy/sparse/sparsetools/coo.h#L33
  *
  ****************************************************************************/
 
-#ifndef MATRIXFORMATS_H
-#define MATRIXFORMATS_H
+#ifndef UTILS_H
+#define UTILS_H
+
+/*
+ * from http://www.graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2
+ */
+//int is_power_of2(int n) {
+//    return (n & (n - 1)) == 0;
+//}
 
 typedef struct matrix_coo_t {
     int nrows;  // = ncols since adj matrix is a square matrix
@@ -102,12 +108,12 @@ void fillPrefixSum(const int *arr, int n, int *prefixSum) {
  * @param m_csr structure representing the matrix in the new format.
  * Row_offsets and cols fields *must not* be preallocated.
  */
-void coo2csr(matrix_coo_t *m_coo, matrix_csr_t *m_csr)
+void coo_to_csr(matrix_coo_t *m_coo, matrix_csr_t *m_csr)
 {
     int *row_offsets, *scan;
-    int *rows = m_coo->rows; // row indices of A
-    int nnz = m_coo->nnz;    // number of nnz in A
-    int nrows = m_coo->nrows;    // number of rows in A
+    int *rows = m_coo->rows;    // row indices of A
+    int nnz = m_coo->nnz;       // number of nnz in A
+    int nrows = m_coo->nrows;   // number of rows in A
     int *cols;
 
     /*
@@ -149,4 +155,34 @@ void coo2csr(matrix_coo_t *m_coo, matrix_csr_t *m_csr)
     m_csr->row_offsets = row_offsets;
 }
 
-#endif //MATRIXFORMATS_H
+/**
+ * Deallocate resources and reset values of a structure of matrix in COO format.
+ *
+ * @param matrix the structure to be deallocated
+ */
+void free_matrix_coo(matrix_coo_t* matrix )
+{
+    free(matrix->rows);
+    free(matrix->cols);
+    matrix->rows = nullptr;
+    matrix->cols = nullptr;
+    matrix->nnz = -1;
+    matrix->nrows = -1;
+}
+
+/**
+ * Deallocate resources and reset values of a structure of matrix in CSR format.
+ *
+ * @param matrix the structure to be deallocated
+ */
+void free_matrix_csr(matrix_csr_t* matrix )
+{
+    free(matrix->row_offsets);
+    free(matrix->cols);
+    matrix->row_offsets = nullptr;
+    matrix->cols = nullptr;
+    matrix->nnz = -1;
+    matrix->nrows = -1;
+}
+
+#endif

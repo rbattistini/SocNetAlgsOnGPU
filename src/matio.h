@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * utils.h - Utility functions for NVIDIA GPUs error checking
+ * matio.h - Functions for reading and writing Matrix Market files (.mm, .mtx)
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
@@ -32,15 +32,14 @@
  *
  ****************************************************************************/
 
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef MATIO_H
+#define MATIO_H
 
 #include "mmio.h"
-#include "mformats.h"
+#include "matstorage.h"
 
-int loadMatrixMarketFile(const char *fname, matrix_coo_t *m_coo,
-                         const int nedges)
-{
+int readMatrixMarketFile(const char *fname, matrix_coo_t *m_coo,
+                         const int nedges) {
     FILE *f;
     MM_typecode matcode;
     int nz, m, n;
@@ -64,7 +63,7 @@ int loadMatrixMarketFile(const char *fname, matrix_coo_t *m_coo,
     if (!mm_is_real(matcode) || !mm_is_matrix(matcode)) {
         fprintf(stderr, "This application does not support\n"
                         "Market Matrix type: %s\n",
-                        mm_typecode_to_str(matcode));
+                mm_typecode_to_str(matcode));
         return EXIT_FAILURE;
     }
 
@@ -137,42 +136,17 @@ int loadMatrixMarketFile(const char *fname, matrix_coo_t *m_coo,
     m_coo->rows = rows;
     m_coo->cols = columns;
 
-//    mm_write_banner(stdout, matcode);
-//    mm_write_mtx_crd_size(stdout, m, n, nz);
-//    for (int i=0; i<nz; i++)
-//        fprintf(stdout, "%d %d\n", rows[i] + 1, columns[i] + 1);
+#ifdef DEBUG
+    mm_write_banner(stdout, matcode);
+    mm_write_mtx_crd_size(stdout, m, n, nz);
+    for (int i=0; i<nz; i++)
+        fprintf(stdout, "%d %d\n", rows[i] + 1, columns[i] + 1);
+#endif
 
     return 0;
 }
 
-/**
- * Deallocate resources and reset values of a structure of matrix in COO format.
- *
- * @param matrix the structure to be deallocated
- */
-void free_matrix_coo(matrix_coo_t* matrix )
-{
-    free(matrix->rows);
-    free(matrix->cols);
-    matrix->rows = nullptr;
-    matrix->cols = nullptr;
-    matrix->nnz = -1;
-    matrix->nrows = -1;
-}
+// TODO
+// int writeMatrixMarketFile()
 
-/**
- * Deallocate resources and reset values of a structure of matrix in CSR format.
- *
- * @param matrix the structure to be deallocated
- */
-void free_matrix_csr(matrix_csr_t* matrix )
-{
-    free(matrix->row_offsets);
-    free(matrix->cols);
-    matrix->row_offsets = nullptr;
-    matrix->cols = nullptr;
-    matrix->nnz = -1;
-    matrix->nrows = -1;
-}
-
-#endif
+#endif //MATIO_H

@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.9 FATAL_ERROR)
 project(SocNetAlgsOnGPU CXX CUDA)
 
-set(CMAKE_CUDA_FLAGS "-O3 -arch=sm_61")
+# optimizations are disabled by default
+set(CMAKE_CUDA_FLAGS "-arch=sm_61")
+#set(CMAKE_CUDA_FLAGS "-O3 -arch=sm_61")
 # equal to -gencode arch=compute_60,code=sm_61
 
 if(NOT DEFINED CMAKE_CUDA_STANDARD)
@@ -16,15 +18,22 @@ endif()
 
 # from https://developer.nvidia.com/blog/building-cuda-applications-cmake/
 
-add_library(libmmio STATIC mmio/mmio.cpp mmio/mmio.h)
+add_library(libmmio STATIC libs/mmio/mmio.cpp libs/mmio/mmio.h)
 target_compile_features(libmmio PUBLIC cxx_std_11)
 set_target_properties(libmmio PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
-include_directories(mmio)
+include_directories(libs/mmio)
 
-add_executable(betweenness betweenness.cu)
-set_property(TARGET betweenness PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+# debugging is enabled by default
+add_executable(betweenness src/betweenness.cu)
+set_target_properties(
+        betweenness PROPERTIES CUDA_SEPARABLE_COMPILATION ON
+        COMPILE_FLAGS -DCUDA_DEBUG COMPILE_FLAGS -DDEBUG)
 target_link_libraries(betweenness PRIVATE libmmio)
 
-add_executable(bandwidthtest samples/bandwidthtest.cu)
-add_executable(profile samples/profile.cu)
+file(GLOB samples samples/*.cu)
+
+foreach(sample ${samples})
+    GET_FILENAME_COMPONENT(samplename ${sample} NAME_WLE)
+    add_executable(${samplename} ${sample})
+endforeach()
