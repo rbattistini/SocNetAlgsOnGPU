@@ -34,7 +34,12 @@ toc::[]
 == Introduzione
 
 In questa sezione il tirocinante introduce il contesto aziendale o
-di laboratorio in cui ha lavorato e spiega l’obiettivo del tirocinio in cite:[baglioni_fast_nodate].
+di laboratorio in cui ha lavorato e spiega l’obiettivo del tirocinio.
+
+'''
+
+Reperimento, selezione e sintesi di articoli scientifici e loro valutazione critica.
+Applicazione di tecniche di parallelizzazione nel contesto della programmazione su GPU.
 
 == Tecnologie
 
@@ -43,11 +48,26 @@ tecnologie utilizzate (linguaggi, piattaforme, sistemi operativi, ecc.).
 
 '''
 
-Per lo svolgimento del tirocinio si è sviluppata un'applicazione a linea di
-comando accelerata dalla GPU per il calcolo della _betweenness centrality_
-sfruttando i linguaggi CUDA C++ e C/C++.
+Durante il tirocinio si è sviluppata un'applicazione a linea di
+comando accelerata dalla GPU per il calcolo della _betweenness centrality_,
+una metrica comunemente impiegata nel campo dell'Analisi delle Reti Sociali.
 
-In particolare il software realizzato impiega il CUDA Toolkit cite:[cuda]
+Per realizzare l'applicativo sono stati impiegati i linguaggi C, {cpp} e CUDA {cpp}.
+In particolare il software realizzato impiega il CUDA Toolkit cite:[cuda] e
+gli standard C99 e {cpp}11. Come sistema per l'automazione dello sviluppo è stato impiegato il software multipiattaforma CMake 3.9. Git 2.3 è stato utilizzato per il controllo di versione.
+
+Per la realizzazione della documentazione del progetto sono stati impiegati
+il linguaggio di markup Asciidoc, Gnuplot 5.2 per la creazione dei grafici e
+il linguaggio Bibtex per la gestione della bibliografia.
+
+Come formati per la memorizzazione dei dati sono stati impiegati Matrix Market,
+standard per la rappresentazione di matrici sparse cite:[matrix-market],
+e CSV per memorizzare i risultati della valutazione delle prestazioni e della scalabilità.
+
+Infine per verificare il funzionamento dell'applicazione sono stati impiegati degli script in Bash 4.4.2, per la raccolta dei risultati, e Python 3.8, per processare i dati ottenuti.
+
+L'applicazione è stata sviluppata e testata solo sul sistema operativo
+Ubuntu 18.04. In ogni caso il funzionamento dovrebbe essere garantito senza problemi anche su altre distribuzioni GNU/Linux, MacOS e Windows, a patto che siano soddisfatte le dipendenze.
 
 == Attività
 
@@ -72,7 +92,8 @@ usino piuttosto pseudo-codice e/o diagrammi di vario tipo. Per lavori di tipo pr
 
 === Studio di scalabilità e throughput
 
-.In questa sezione il tirocinante introduce il contesto aziendale o
+[[omp-speedup]]
+.Confronto delle prestazioni, definite in termini di speedup, della versione OpenMP con alcuni degli insiemi di dati forniti.
 gnuplot::{srcdir}/figure1.plot[svg, align="center"]
 
 == Conclusioni
@@ -81,7 +102,7 @@ In questa parte lo studente trae le conclusioni del lavoro svolto, valutando
 pregi e difetti dell’esperienza e, più specificamente, riassumendo quanto
 appreso.
 
-'''
+Il software sviluppato è liberamente disponibile in un link:https://github.com/Da3dalu2/SocNetAlgsOnGPU[repository su GitHub].
 
 [bibliography]
 == Riferimenti bibliografici
