@@ -1,0 +1,89 @@
+= Implementazione di algoritmi paralleli su GPU per il calcolo d'indici di centralità nell'ambito dell'Analisi delle Reti Sociali
+Alma Mater Studiorum · Università di Bologna
+8 Aprile 2021, Corso di Laurea Triennale in Ingegneria e Scienze Informatiche
+:icons: font
+:toc-title: Tavola dei contenuti
+:figure-caption: Figura
+:version-label:
+:sectnums:
+:xrefstyle: short
+:toc: macro
+:bibtex-file: ./docs/bibliography.bib
+:srcdir: ../scripts
+:imagesdir: ./images
+:compiler_nvidia: nvcc 11.2.142
+:compiler_local: GCC 10.2.1
+:hardware_local: Intel(R) Core(TM) i7-10700 CPU @ 2.90GHz
+:hardware_nvidia: Quadro P620 (cc 6.1 - Pascal)
+
+'''
+
+|=======
+|Tirocinante |Riccardo Battistini · 0000873514
+|Tutor didattico |Moreno Marzolla
+|Laboratorio |High-Performance Computing
+|Periodo di svolgimento del tirocinio |01/04/21 - 31/05/21
+|=======
+
+<<<
+
+toc::[]
+
+'''
+
+== Introduzione
+
+In questa sezione il tirocinante introduce il contesto aziendale o
+di laboratorio in cui ha lavorato e spiega l’obiettivo del tirocinio in cite:[baglioni_fast_nodate].
+
+== Tecnologie
+
+In questa sezione il tirocinante elenca e commenta brevemente le
+tecnologie utilizzate (linguaggi, piattaforme, sistemi operativi, ecc.).
+
+'''
+
+Per lo svolgimento del tirocinio si è sviluppata un'applicazione a linea di
+comando accelerata dalla GPU per il calcolo della _betweenness centrality_
+sfruttando i linguaggi CUDA C++ e C/C++.
+
+In particolare il software realizzato impiega il CUDA Toolkit cite:[cuda]
+
+== Attività
+
+Questa sezione, eventualmente frazionata in sottosezioni, è quella centrale e
+più corposa dell’elaborato e deve illustrare (dal punto di vista tecnico, non
+necessariamente cronologico) le attività svolte durante il tirocinio. A eccezione di
+eventuali esempi, non deve includere il codice sviluppato; per descrivere algoritmi si
+usino piuttosto pseudo-codice e/o diagrammi di vario tipo. Per lavori di tipo progettuale
+è utile includere una sintetica documentazione formale di progetto.
+
+'''
+
+=== Misure di centralità e betweenness
+
+=== Algoritmo seriale di Brandes
+
+=== Shortest Path Vertex Betweenness
+
+=== Grafo dinamico
+
+=== Implementazione di un algoritmo parallelo su GPU
+
+=== Studio di scalabilità e throughput
+
+.In questa sezione il tirocinante introduce il contesto aziendale o
+gnuplot::{srcdir}/figure1.plot[svg, align="center"]
+
+== Conclusioni
+
+In questa parte lo studente trae le conclusioni del lavoro svolto, valutando
+pregi e difetti dell’esperienza e, più specificamente, riassumendo quanto
+appreso.
+
+'''
+
+[bibliography]
+== Riferimenti bibliografici
+
+bibliography::[]

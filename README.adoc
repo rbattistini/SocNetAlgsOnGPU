@@ -1,4 +1,4 @@
-# How to run this project
+= How to run this project
 
 Only for GNU/Linux and MacOS.
 
@@ -7,18 +7,19 @@ Only for GNU/Linux and MacOS.
 3. `make libinstall` to obtain the static library `libsnap.a`.
 4. build the project with CMake issuing the following commands:
 
-```shell
+[source,shell]
+----
 mkdir build
 # use the following command to build if you are in project root
 cmake -Bbuild -DCMAKE_BUILD_TYPE=Default
 
 # or use the following command if you are in build directory
 # cmake ../ -DCMAKE_BUILD_TYPE=Default
-```
+----
 
 5. compile with `make`.
 
-## CUDA best practices and optimizations
+== CUDA best practices and optimizations
 
 - BSR instead of CSR with cuSPARSE
 - CUDA Streams
@@ -28,40 +29,60 @@ cmake -Bbuild -DCMAKE_BUILD_TYPE=Default
 Two samples and blog posts on NVIDIA developers.
 
 - cuSPARSE for handling sparse matrices (CSR or COO).
-    - https://docs.nvidia.com/cuda/cusparse/index.html#csc-format
-    - https://github.com/NVIDIA/CUDALibrarySamples/tree/master/cuSPARSE
+- https://docs.nvidia.com/cuda/cusparse/index.html#csc-format
+- https://github.com/NVIDIA/CUDALibrarySamples/tree/master/cuSPARSE
 
 - cub
-    - https://github.com/NVIDIA/cub
+- https://github.com/NVIDIA/cub
+
+- moderngpu
+- https://github.com/moderngpu/moderngpu
 
 - Thrust
-    - https://docs.nvidia.com/cuda/thrust/index.html
+- https://docs.nvidia.com/cuda/thrust/index.html
 
 - cuGRAPH Rapids
-    - https://docs.rapids.ai/api
+- https://docs.rapids.ai/api
 
-## Work in progress
+- gunrock
+- https://gunrock.github.io/docs/#/gunrock/overview
 
-device_management -> 
+== Work in progress
+
+device_management ->
 error_handling -> cudaSafeCall(), cudaCheckError()
 stream_management -> ...
 
-# Why work with warps?
+== Equazioni di ricorrenza e somma prefissa
 
-Using a “per warp” approach has two practical benefits. First, thread in a warp
- can communicate efficiently using warp vote and __shfl (shuffle) operations.
- Second, there is no need for synchronization because threads in a warp work
- synchronously.
+- https://www.cs.utexas.edu/~plaxton/c/337/05f/slides/ParallelRecursion-4.pdf
+- https://people.maths.ox.ac.uk/gilesm/cuda/lecs/lec4.pdf
+- https://on-demand.gputechconf.com/gtc/2018/presentation/s8189-automatic-generation-of-1d-recursive-filter-code-for-gpus.pdf
+
+== Why work with warps?
+
+Using a “per warp” approach has two practical benefits.First, thread in a warp
+can communicate efficiently using warp vote and __shfl (shuffle) operations.
+Second, there is no need for synchronization because threads in a warp work
+synchronously.
 
 Applying the concepts shown later at the thread block level is significantly
 slower because of the slower communication through shared memory and the
 necessary synchronization.
 
-## Async mem 101
+== Makefiles
+
+- https://stackoverflow.com/questions/27183709/how-to-use-makefile-with-gnuplot
+- https://zenika.github.io/adoc-presentation-model/reveal/reveal-my-asciidoc.html
+- https://stackoverflow.com/questions/12328603/how-to-pass-command-line-argument-to-gnuplot
+- https://stackoverflow.com/questions/2145590/what-is-the-purpose-of-phony-in-a-makefile
+- https://vinta.ws/code/use-makefile-as-the-task-runner-for-arbitrary-projects.html
+
+== Async mem 101
 
 https://stackoverflow.com/questions/13743039/about-cudamemcpyasync-function/13746353#13746353
 
-## Other useful articles and Q&A
+== Other useful articles and Q&A
 
 - https://developer.nvidia.com/blog/cuda-pro-tip-increase-performance-with-vectorized-memory-access/
 - https://developer.nvidia.com/blog/gpu-pro-tip-cuda-7-streams-simplify-concurrency/
