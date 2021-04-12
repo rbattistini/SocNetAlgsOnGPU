@@ -6,7 +6,7 @@
 # by Riccardo Battistini <riccardo.battistini(at)studio.unibo.it
 
 #set terminal svg size 900,400 rounded font "Open Sans, 13"
-set boxwidth 0.9 relative
+set boxwidth 0.8 relative
 set style data histograms
 set style histogram cluster
 set style fill solid 1.0
@@ -16,14 +16,6 @@ unset key        # toggle legend
 
 set xlabel "Processi"
 set ylabel "Wall clock time (s)"
-
-#  Major tics
-set ytics
-set xtics
-
-# Minor tics
-#set mxtics
-#set mytics 2
 
 # Change tics
 set tics nomirror out scale 0.75

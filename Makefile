@@ -39,7 +39,9 @@ context: $(DOCS_DIR)/*.tex
 	context $(DOCS_DIR)/*.tex
 
 docs: $(DOCS_DIR)/*.adoc clgraphs
-	asciidoctor-pdf -r asciidoctor-diagram -r asciidoctor-bibtex $(DOCS_DIR)/*.adoc
+	asciidoctor-pdf -r asciidoctor-diagram -r asciidoctor-bibtex \
+-r asciidoctor-mathematical $(DOCS_DIR)/*.adoc \
+-a mathematical-format=svg -a pdf-themesdir=docs -a pdf-theme=custom -a pdf-fontsdir="docs/fonts;GEM_FONTS_DIR"
 
 graphs: $(SCRIPT_DIR)/*.plot $(DATA_DIR)/*.dat
 	gnuplot $(SCRIPT_DIR)/*.plot

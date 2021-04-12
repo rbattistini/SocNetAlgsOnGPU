@@ -1,25 +1,39 @@
+// suppress inspection "NonAsciiCharacters"
 = Implementazione di algoritmi paralleli su GPU per il calcolo d'indici di centralità nell'ambito dell'Analisi delle Reti Sociali
-Alma Mater Studiorum · Università di Bologna
-8 Aprile 2021, Corso di Laurea Triennale in Ingegneria e Scienze Informatiche
+8 Aprile 2021
 :icons: font
 :toc-title: Tavola dei contenuti
-:figure-caption: Figura
+:figure-caption: Fig.
+:listing-caption: Algoritmo
 :version-label:
 :sectnums:
+:stem: latexmath
+:mathematical-format: svg
 :xrefstyle: short
+:section-refsig: Sezione
+:source-highlighter: rouge
+:rouge-style: bw
+:source-linenums-option:
 :toc: macro
 :bibtex-file: ./docs/bibliography.bib
+:bibtex-order: alphabetical
+:bibtex-style: ieee
 :srcdir: ../scripts
 :imagesdir: ./images
 :compiler_nvidia: nvcc 11.2.142
 :compiler_local: GCC 10.2.1
-:hardware_local: Intel(R) Core(TM) i7-10700 CPU @ 2.90GHz
-:hardware_nvidia: Quadro P620 (cc 6.1 - Pascal)
+:hardware_local: Intel Core i7-10700
+:hardware_nvidia: Quadro P620
+:BC: betweenness centrality
+
+Alma Mater Studiorum · Università di Bologna
+
+Corso di Laurea Triennale in Ingegneria e Scienze Informatiche
 
 '''
 
 |=======
-|Tirocinante |Riccardo Battistini · 0000873514
+|Tirocinante |Riccardo Battistini, 0000873514
 |Tutor didattico |Moreno Marzolla
 |Laboratorio |High-Performance Computing
 |Periodo di svolgimento del tirocinio |01/04/21 - 31/05/21
@@ -33,6 +47,7 @@ toc::[]
 
 == Introduzione
 
+#F7F7F7
 In questa sezione il tirocinante introduce il contesto aziendale o
 di laboratorio in cui ha lavorato e spiega l’obiettivo del tirocinio.
 
@@ -44,16 +59,14 @@ Applicazione di tecniche di parallelizzazione nel contesto della programmazione 
 == Tecnologie
 
 In questa sezione il tirocinante elenca e commenta brevemente le
-tecnologie utilizzate (linguaggi, piattaforme, sistemi operativi, ecc.).
-
-'''
+tecnologie utilizzate (linguaggi, piattaforme, sistemi operativi, ecc).
 
 Durante il tirocinio si è sviluppata un'applicazione a linea di
 comando accelerata dalla GPU per il calcolo della _betweenness centrality_,
 una metrica comunemente impiegata nel campo dell'Analisi delle Reti Sociali.
 
-Per realizzare l'applicativo sono stati impiegati i linguaggi C, {cpp} e CUDA {cpp}.
-In particolare il software realizzato impiega il CUDA Toolkit cite:[cuda] e
+Per realizzare l'applicativo sono stati impiegati i linguaggi C, {cpp} e CUDA C.
+In particolare il software realizzato impiega il Compute Unified Device Architecture (CUDA) Toolkit 11.2 cite:[cuda] e
 gli standard C99 e {cpp}11. Come sistema per l'automazione dello sviluppo è stato impiegato il software multipiattaforma CMake 3.9. Git 2.3 è stato utilizzato per il controllo di versione.
 
 Per la realizzazione della documentazione del progetto sono stati impiegati
@@ -73,24 +86,136 @@ Ubuntu 18.04. In ogni caso il funzionamento dovrebbe essere garantito senza prob
 
 Questa sezione, eventualmente frazionata in sottosezioni, è quella centrale e
 più corposa dell’elaborato e deve illustrare (dal punto di vista tecnico, non
-necessariamente cronologico) le attività svolte durante il tirocinio. A eccezione di
+necessariamente cronologico) le attività svolte durante il tirocinio.A eccezione di
 eventuali esempi, non deve includere il codice sviluppato; per descrivere algoritmi si
-usino piuttosto pseudo-codice e/o diagrammi di vario tipo. Per lavori di tipo progettuale
+usino piuttosto pseudo-codice e/o diagrammi di vario tipo.Per lavori di tipo progettuale
 è utile includere una sintetica documentazione formale di progetto.
 
 '''
 
+I risultati sono testati su set di dati sintetici e reali e discussi in <<_studio_di_scalabilità_e_throughput>>.
+
+Di seguito si assume che un grafo sia descritto come _G = (V, E)_, dove _V_ è l'insieme dei vertici ed _E_ l'insieme degli archi. Si impiegano _n_ ed _m_ rispettivamente per indicare il numero di vertici e di archi. Infine si considerano solo grafi connessi non diretti e non pesati.
+
+Per maggiori informazioni si consultino cite:[Magnani2017, gkoulalas-divanis_large-scale_2014, cormen2009introduction].
+
 === Misure di centralità e betweenness
+
+Le misure di centralità permettono di misurare l'importanza di un nodo in base a diversi criteri, come la sua posizione nella rete, e costituiscono uno strumento fondamentale per l'analisi delle reti sociali.
+
+Una delle più note e diffuse misure di centralità è la _betweenness centrality_ cite:[freeman_set_1977, jm_anthonisse_rush_1971]. Si tratta di una misura della proporzione dei cammini minimi di una rete che attraversano uno specifico nodo.
+
+In base alla classificazione proposta da Freeman cite:[freeman_set_1977, freeman_centrality_1978] si distinguono tre tipi di misure di {BC} a seconda che si stia considerando la {BC} di un singolo vertice normalizzata, non normalizzata o dell'intero grafo.
+
+La definizione di betweeness centrality si basa sul concetto di _pair dependency δₛₜ_ di _s_ su _t_. Quest'ultima è definita come:
+
+[latexmath, id="pair-dep", width=100%, reftext={counter:refnum}]
+++++
+\delta_{s t}(v) \stackrel{\text { def }}{=} \frac{\sigma_{st}(v)}{\sigma_{st}}
+++++
+
+Dove _σₛₜ(v)_ indica il numero di cammini minimi che passano da _s_ a _t_ e attraversano _v_ e _σₛₜ_ indica il numero di cammini minimi che passano per ogni coppia _s, t ∈ V_.
+
+[latexmath, id="sum-pair-dep", reftext={counter:refnum}]
+++++
+\begin{equation}
+BC(v) \stackrel{\text { def }}{=} \sum_{s \neq v \neq t \in V} \delta_{s t}(v)
+\end{equation}
+++++
+
+[latexmath, id="eq-bc", reftext={counter:refnum}]
+++++
+\begin{equation}
+BC(v) \stackrel{\text { def }}{=} \sum_{s \neq v \neq t \in V} \frac{\delta_{st}(v)}{\delta_{st}}
+\end{equation}
+++++
+
+
+
+La {BC} si presta a diverse interpretazioni. Può esprimere la capacità di un nodo di controllare, distorcere, inibire o bloccare lo scambio d'informazioni in una rete oppure può indicare quanto un nodo possa unire due o più gruppi di nodi e favorire lo scambio d'informazioni.
+
+La {BC} è di particolare interesse anche perché è alla base di algoritmi più complessi come la _Community Detection_ e il suo calcolo efficiente in parallelo non è facile da realizzare.
 
 === Algoritmo seriale di Brandes
 
+I primi algoritmi introdotti per il calcolo della {BC} sono piuttosto onerosi, cite:[freeman_set_1977, jm_anthonisse_rush_1971] eseguono in tempo _θ(n³)_ e richiedono _θ(n²)_ in termini di spazio.
+
+La determinazione della betweenness centrality avviene in due passi:
+
+1. Calcolo della lunghezza e del numero dei cammini minimi tra tutte le coppie di vertici;
+2. Somma delle dipendenze di tutte le coppie.
+
+L'algoritmo sequenziale introdotto da Brandes cite:[brandes_faster_2001], rappresenta un notevole miglioramento rispetto ai precedenti in quanto esegue in tempo _θ(nm)_ in grafi non pesati e richiede una minore occupazione di memoria. Come evidenziato nell'<<alg-brandes>>, la {BC} (<<eq-bc>>) è calcolata come somma delle _dipendenze_:
+
+
+
+Dove _δₛₜ(v)_ indica la dipendenza di _s_ su _v_.
+
+
+
+[source, pseudocode, id="alg-brandes"]
+.Calcolo della betweenness centrality di Brandes
+----
+procedure BC(G)
+    for v in G.V
+        label v.bc as 0
+    for v in G.V
+        let Q be a queue
+
+----
+
+L'algoritmo di Brandes impiega una tecnica di accumulazione che si integra con la risoluzione del problema dei cammini minimi tramite algoritmi di attraversamento dei grafi. Applicando il risultato di Brandes, si ha che tutte le misure di centralità che richiedono il calcolo dei cammini minimi possono essere computate simultaneamente. Esempi di misure di questo tipo sono la _closeness centrality_ cite:[sabidussi_centrality_1966] e la varianti della {BC} cite:[brandes_variants_2008], come la _load centrality_ e la _stress centrality_ (APP ?).
+
+Nell'algoritmo di Brandes per il calcolo dei cammini minimi in un grafo non pesato si impiega una visita in ampiezza (BFS), ovvero l'<<Bfs>>. Per l'implementazione si è consultato cite:[cormen2009introduction(497)]. Il tempo richiesto dalla BFS è pari a _θ(m)_. Di conseguenza il tempo richiesto per il calcolo di _δₛₜ, s, t ∈ V_ è pari a _θ(nm)_.
+
+[source, pseudocode, id="Bfs"]
+.Visita in ampiezza
+----
+procedure BFS(G, s)
+    for v in G.V - {s} # <1>
+        label v.c as White
+        label v.d as nil
+    label s.c as Grey
+    label s.d as 0
+    let Q be a queue
+    Q.enqueue(s) # <2>
+    while Q is not empty
+        u := Q.dequeue() # <3>
+        for v in G.adjacentVertices(u) # <4>
+            if v.c is not Grey # <5>
+                label v.c as Grey
+                label v.d as u.d + 1
+                Q.enqueue(v)
+        label u.c as Black # <6>
+----
+
+<1> Inizializza ciascun vertice del grafo eccetto l'origine;
+<2> Scopre il vertice d'origine;
+<3> Esamina il vertice `u`;
+<4> Esamina l'arco `(u,v)`;
+<5> Scopre il vertice `v`;
+<6> Rimuove il vertice `u`.
+
 === Shortest Path Vertex Betweenness
 
-=== Grafo dinamico
+=== Edge and Node parallelism
+
+cite:[jia_chapter_2012]
 
 === Implementazione di un algoritmo parallelo su GPU
 
+[#_studio_di_scalabilità_e_throughput]
 === Studio di scalabilità e throughput
+
+Come visto nell'introduzione agli algoritmi di Cormen, Leiserson e Rivest cite:[cormen2009introduction]...]
+
+Per i test sono stati impiegati una CPU {hardware_local} con frequenza di funzionamento pari a 2.9 Ghz, una cache di 16 Mb e 16 Gb di DRAM.
+
+La GPU è una {hardware_nvidia} con quattro Streaming Multiprocessors e clock di base di 2505 Mhz.
+Ci sono due Gb di memoria GDDR5 a disposizione e la _compute capability_ è pari a 6.1
+(architettura Pascal).
+
+I dataset per effettuare i test sono stati presi dalla Sparse Matrix Collection dell'Università della Florida cite:[davis_university_2011] e dalla Standford Network Analysis Platform (SNAP).
 
 [[omp-speedup]]
 .Confronto delle prestazioni, definite in termini di speedup, della versione OpenMP con alcuni degli insiemi di dati forniti.
@@ -104,7 +229,9 @@ appreso.
 
 Il software sviluppato è liberamente disponibile in un link:https://github.com/Da3dalu2/SocNetAlgsOnGPU[repository su GitHub].
 
-[bibliography]
+<<<
+
+[bibliography, small]
 == Riferimenti bibliografici
 
 bibliography::[]

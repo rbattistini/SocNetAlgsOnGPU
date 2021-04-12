@@ -5,3 +5,5 @@ cmake-build-*/
 docs/.asciidoctor
 docs/images
 samples/*
+*.mtx
+*.lock

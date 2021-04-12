@@ -1,0 +1,92 @@
+extends: default
+
+page:
+  margin: 1.35in
+  numbering:
+    start-at: 2
+
+code:
+  border-radius: 4
+  border-width: 0
+  font-family: Fira Code
+  font-size: 9
+  background-color: #FFFFFF
+
+conum:
+  font-color: #1F2430
+  font-family: M+ 1mn
+  glyphs: circled
+
+literal:
+  font-family: Fira Code
+  border-width: 0.1
+  border-offset: 3
+  background-color: #FFFFFF
+  border-color: #FFFFFF
+  font-color: #1F2430
+
+title-page:
+  title:
+    top: 25%
+  authors:
+    content:
+      name_only: "{author}"
+      with_email: "{author} <{email}>"
+      with_url: "{url}[{author}]"
+  font-family: Frank Ruhl Libre
+
+heading:
+  font-family: Frank Ruhl Libre
+  h1-font-color: #949494
+  h1-font-size: 21
+  h1-align: right
+  h1-margin-bottom: 250
+  h1-margin-page-top: 20
+
+thematic-break:
+  border-style: dashed
+
+base:
+  font-family: Merriweather
+  font-size: 10.5
+  align: justify
+
+role:
+  small:
+    font-size: 9
+  shrink:
+    align: left
+
+font:
+  catalog:
+    merge: true
+    Fira Code:
+      normal: firacode-regular.ttf
+      bold: firacode-bold.ttf
+      italic: firacode-italic.ttf
+      bold_italic: firacode-bold_italic.ttf
+    Frank Ruhl Libre:
+      normal: frankruhllibre-regular.ttf
+      bold: frankruhllibre-bold.ttf
+      italic: frankruhllibre-italic.ttf
+      bold_italic: frankruhllibre-bold_italic.ttf
+    Merriweather:
+      normal: merriweather-regular.ttf
+      bold: merriweather-bold.ttf
+      italic: merriweather-italic.ttf
+      bold_italic: merriweather-bold_italic.ttf
+    Arimo:
+      normal: arimo-regular.ttf
+      bold: arimo-bold.ttf
+      italic: arimo-italic.ttf
+      bold_italic: arimo-bold_italic.ttf
+    Noto Sans:
+      normal: notosans-regular.ttf
+      bold: notosans-bold.ttf
+      italic: notosans-italic.ttf
+      bold_italic: notosans-bold_italic.ttf
+    Inconsolata: inconsolata.ttf
+  fallbacks:
+    - Noto Serif
+    - Arimo
+    - Inconsolata

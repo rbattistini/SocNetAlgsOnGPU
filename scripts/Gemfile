@@ -3,4 +3,6 @@ source 'https://rubygems.org' do
     gem 'asciidoctor-diagram'
     gem 'asciidoctor-pdf'
     gem 'asciidoctor-bibtex'
+    gem 'asciidoctor-mathematical'
+    gem 'rouge'
 end
