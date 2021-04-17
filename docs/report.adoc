@@ -1,32 +1,33 @@
-// suppress inspection "NonAsciiCharacters"
 = Implementazione di algoritmi paralleli su GPU per il calcolo d'indici di centralità nell'ambito dell'Analisi delle Reti Sociali
 8 Aprile 2021
-:icons: font
 :toc-title: Tavola dei contenuti
 :figure-caption: Fig.
 :listing-caption: Algoritmo
-:version-label:
-:sectnums:
+:section-refsig: Sezione
+:version-label: ""
 :stem: latexmath
 :mathematical-format: svg
 :xrefstyle: short
-:section-refsig: Sezione
 :source-highlighter: rouge
 :rouge-style: bw
 :source-linenums-option:
+:source-indent: 2
 :toc: macro
+:sectnums:
 :bibtex-file: ./docs/bibliography.bib
 :bibtex-order: alphabetical
 :bibtex-style: ieee
+:bibtex-locale: it-IT
 :srcdir: ../scripts
 :imagesdir: ./images
+
 :compiler_nvidia: nvcc 11.2.142
 :compiler_local: GCC 10.2.1
 :hardware_local: Intel Core i7-10700
 :hardware_nvidia: Quadro P620
 :BC: betweenness centrality
 
-Alma Mater Studiorum · Università di Bologna
+Università di Bologna · Campus di Cesena
 
 Corso di Laurea Triennale in Ingegneria e Scienze Informatiche
 
@@ -47,19 +48,9 @@ toc::[]
 
 == Introduzione
 
-#F7F7F7
-In questa sezione il tirocinante introduce il contesto aziendale o
-di laboratorio in cui ha lavorato e spiega l’obiettivo del tirocinio.
-
-'''
-
-Reperimento, selezione e sintesi di articoli scientifici e loro valutazione critica.
-Applicazione di tecniche di parallelizzazione nel contesto della programmazione su GPU.
+Il tirocinio è stato realizzato nell'ambito del laboratorio di High-Performance Computing per approfondire la programmazione di GPU e acquisire confidenza con il reperimento, la selezione e comprensione di testi di carattere scientifico, oltre che con alcuni concetti e algoritmi fondamentali nel campo dell'Analisi delle Reti Sociali e della Teoria dei Grafi.
 
 == Tecnologie
-
-In questa sezione il tirocinante elenca e commenta brevemente le
-tecnologie utilizzate (linguaggi, piattaforme, sistemi operativi, ecc).
 
 Durante il tirocinio si è sviluppata un'applicazione a linea di
 comando accelerata dalla GPU per il calcolo della _betweenness centrality_,
@@ -69,9 +60,9 @@ Per realizzare l'applicativo sono stati impiegati i linguaggi C, {cpp} e CUDA C.
 In particolare il software realizzato impiega il Compute Unified Device Architecture (CUDA) Toolkit 11.2 cite:[cuda] e
 gli standard C99 e {cpp}11. Come sistema per l'automazione dello sviluppo è stato impiegato il software multipiattaforma CMake 3.9. Git 2.3 è stato utilizzato per il controllo di versione.
 
-Per la realizzazione della documentazione del progetto sono stati impiegati
+Per la scrittura della documentazione del progetto sono stati impiegati
 il linguaggio di markup Asciidoc, Gnuplot 5.2 per la creazione dei grafici e
-il linguaggio Bibtex per la gestione della bibliografia.
+Bibtex per la gestione della bibliografia.
 
 Come formati per la memorizzazione dei dati sono stati impiegati Matrix Market,
 standard per la rappresentazione di matrici sparse cite:[matrix-market],
@@ -80,146 +71,250 @@ e CSV per memorizzare i risultati della valutazione delle prestazioni e della sc
 Infine per verificare il funzionamento dell'applicazione sono stati impiegati degli script in Bash 4.4.2, per la raccolta dei risultati, e Python 3.8, per processare i dati ottenuti.
 
 L'applicazione è stata sviluppata e testata solo sul sistema operativo
-Ubuntu 18.04. In ogni caso il funzionamento dovrebbe essere garantito senza problemi anche su altre distribuzioni GNU/Linux, MacOS e Windows, a patto che siano soddisfatte le dipendenze.
+Ubuntu 18.04. In ogni caso il funzionamento dovrebbe essere garantito senza problemi anche su altre distribuzioni GNU/Linux, MacOS e Windows, a patto che siano soddisfatte le link:https://github.com/Da3dalu2/SocNetAlgsOnGPU#references[dipendenze].
 
 == Attività
 
-Questa sezione, eventualmente frazionata in sottosezioni, è quella centrale e
-più corposa dell’elaborato e deve illustrare (dal punto di vista tecnico, non
-necessariamente cronologico) le attività svolte durante il tirocinio.A eccezione di
-eventuali esempi, non deve includere il codice sviluppato; per descrivere algoritmi si
-usino piuttosto pseudo-codice e/o diagrammi di vario tipo.Per lavori di tipo progettuale
-è utile includere una sintetica documentazione formale di progetto.
+=== Introduzione
 
-'''
+Nel corso del tirocinio sono state approfondite alcune misure di centralità impiegate nel campo dell'analisi delle reti sociali.
 
-I risultati sono testati su set di dati sintetici e reali e discussi in <<_studio_di_scalabilità_e_throughput>>.
+In particolare sono stati consultati i primi studi relativi all'introduzione di questa metrica e quelli relativi a uno degli algoritmi sequenziali che per maggior tempo ha costituito lo stato dell'arte nel calcolo di questa metrica. La conoscenza acquisita e impiegata durante lo svolgimento del tirocinio è stata raccolta in <<Misure di centralità e betweenness>> e <<Algoritmo seriale di Brandes>>.
 
-Di seguito si assume che un grafo sia descritto come _G = (V, E)_, dove _V_ è l'insieme dei vertici ed _E_ l'insieme degli archi. Si impiegano _n_ ed _m_ rispettivamente per indicare il numero di vertici e di archi. Infine si considerano solo grafi connessi non diretti e non pesati.
+Successivamente si è proceduto con l'implementazione di un programma che fosse in grado di calcolare la {BC} prima in modo seriale e in seguito accelerando la computazione con una GPU. Il processo di sviluppo è dettagliato in <<Algoritmo parallelo su GPU>>.
 
-Per maggiori informazioni si consultino cite:[Magnani2017, gkoulalas-divanis_large-scale_2014, cormen2009introduction].
+Prima di procedere con l'implementazione è stato necessario riflettere sulla struttura dati principale da impiegare per la rappresentazione della rete e sulla scelta del formato di memorizzazione su disco. In <<Rappresentazione di un grafo>> si spiegano le decisioni prese.
+
+Infine è stato effettuato uno studio delle prestazioni e della scalabilità dell'algoritmo implementato su insiemi di dati sintetici e reali. In particolare l'algoritmo su GPU è stato confrontato con l'algoritmo ottimizzato per architetture di tipo multi-core della libreria _Boost Graph Library_ (BGL) cite:[siek_boost_2002]. I risultati sono analizzati in <<Studio di scalabilità e throughput>>.
+
+Come introduzione preliminare e a supporto degli argomenti trattati nel tirocinio sono state consultate diverse fonti cite:[cormen2009introduction, gkoulalas-divanis_large-scale_2014, Magnani2017].
+
+Di seguito si assume che un grafo sia descritto come stem:[G = (V, E)], dove stem:[V] è l'insieme dei vertici ed stem:[E] l'insieme degli archi. Si impiegano stem:[n] ed stem:[m] rispettivamente per indicare il numero di vertici e di archi. Infine si considerano solo grafi connessi non diretti e non pesati.
 
 === Misure di centralità e betweenness
 
-Le misure di centralità permettono di misurare l'importanza di un nodo in base a diversi criteri, come la sua posizione nella rete, e costituiscono uno strumento fondamentale per l'analisi delle reti sociali.
+Le misure di centralità permettono di quantificare l'importanza di un nodo in base a diversi criteri, come la sua posizione nella rete, e costituiscono uno strumento fondamentale per l'analisi delle reti sociali.
 
 Una delle più note e diffuse misure di centralità è la _betweenness centrality_ cite:[freeman_set_1977, jm_anthonisse_rush_1971]. Si tratta di una misura della proporzione dei cammini minimi di una rete che attraversano uno specifico nodo.
 
-In base alla classificazione proposta da Freeman cite:[freeman_set_1977, freeman_centrality_1978] si distinguono tre tipi di misure di {BC} a seconda che si stia considerando la {BC} di un singolo vertice normalizzata, non normalizzata o dell'intero grafo.
+In base alla classificazione proposta da Freeman cite:[freeman_set_1977, freeman_centrality_1978, freeman_gatekeeper_1980] si distinguono diversi tipi di misure di {BC} a seconda che la si stia considerando rispetto a un singolo vertice o all'intero grafo e che la misura sia normalizzata o meno.
 
-La definizione di betweeness centrality si basa sul concetto di _pair dependency δₛₜ_ di _s_ su _t_. Quest'ultima è definita come:
-
-[latexmath, id="pair-dep", width=100%, reftext={counter:refnum}]
-++++
-\delta_{s t}(v) \stackrel{\text { def }}{=} \frac{\sigma_{st}(v)}{\sigma_{st}}
-++++
-
-Dove _σₛₜ(v)_ indica il numero di cammini minimi che passano da _s_ a _t_ e attraversano _v_ e _σₛₜ_ indica il numero di cammini minimi che passano per ogni coppia _s, t ∈ V_.
-
-[latexmath, id="sum-pair-dep", reftext={counter:refnum}]
-++++
-\begin{equation}
-BC(v) \stackrel{\text { def }}{=} \sum_{s \neq v \neq t \in V} \delta_{s t}(v)
-\end{equation}
-++++
+Vertex {BC}:: La {BC} di un singolo vertice non normalizzata è definita come:
 
 [latexmath, id="eq-bc", reftext={counter:refnum}]
 ++++
 \begin{equation}
-BC(v) \stackrel{\text { def }}{=} \sum_{s \neq v \neq t \in V} \frac{\delta_{st}(v)}{\delta_{st}}
+BC(v) \stackrel{\text { def }}{=} \sum_{s \neq v \neq t \in V} \frac{\sigma_{st}(v)}{\sigma_{st}}
 \end{equation}
 ++++
 
+Dove stem:[\sigma_{st}(v)] indica il numero di cammini minimi che passano da stem:[s] a stem:[t] e attraversano stem:[v] e stem:[\sigma_{st}] indica il numero di cammini minimi che passano per ogni coppia stem:[s, t \in V].
 
+Normalized Vertex {BC}:: La {BC} di un singolo vertice normalizzata può essere riscritta a partire da (<<eq-bc>>) in questo modo:
 
-La {BC} si presta a diverse interpretazioni. Può esprimere la capacità di un nodo di controllare, distorcere, inibire o bloccare lo scambio d'informazioni in una rete oppure può indicare quanto un nodo possa unire due o più gruppi di nodi e favorire lo scambio d'informazioni.
+[latexmath, id="eq-bc-norm"]
+++++
+BC \! ' \! (G) \stackrel{\text { def }}{=} \frac{BC(v)}{\max{ \ BC(v)}} = \frac{2 BC(v)}{(n - 1)(n - 2)} \quad 0 \le BC \! ' \! (v) \le 1
+++++
+
+Whole-network {BC}:: La {BC} come misura di tipo _whole-network_, ovvero riferita all'intera rete, è definita come la somma delle {BC} dei singoli vertici:
+
+[latexmath, id="eq-bc-whole", reftext={counter:refnum}]
+++++
+\begin{equation}
+BC(G) \stackrel{\text { def }}{=} \frac{\sum_{i = 1}^n \left[BC(v^*) - BC(v_i) \right]}{\max{\sum_{i = 1}^n \left[ BC(v^*) - BC(v_i) \right]}} = \frac{2 \sum_{i = 1}^n \left[BC(v^*) - BC(v_i) \right]}{(n - 1)^2(n - 2)}
+\end{equation}
+++++
+
+Normalized Whole-network {BC}:: La {BC} di un grafo normalizzata può essere riscritta a partire da (<<eq-bc-whole>>) nel seguente modo:
+
+[latexmath, id="eq-bc-whole-norm"]
+++++
+BC(G) \stackrel{\text { def }}{=} \frac{\sum_{i = 1}^n \left[BC\! ' \!(v^*) - BC\! ' \!(v_i) \right]}{(n - 1)}
+++++
+
+La {BC} si presta a diverse interpretazioni. Può esprimere la capacità di un nodo di controllare, distorcere, inibire o bloccare il flusso d'informazioni in una rete oppure può indicare quanto un nodo possa unire due o più gruppi di nodi e favorire lo scambio d'informazioni.
 
 La {BC} è di particolare interesse anche perché è alla base di algoritmi più complessi come la _Community Detection_ e il suo calcolo efficiente in parallelo non è facile da realizzare.
 
 === Algoritmo seriale di Brandes
 
-I primi algoritmi introdotti per il calcolo della {BC} sono piuttosto onerosi, cite:[freeman_set_1977, jm_anthonisse_rush_1971] eseguono in tempo _θ(n³)_ e richiedono _θ(n²)_ in termini di spazio.
+I primi algoritmi introdotti per il calcolo della {BC} sono piuttosto onerosi, cite:[freeman_set_1977, jm_anthonisse_rush_1971] eseguono in tempo stem:[\theta(n^3)] e richiedono stem:[\theta(n^2)] in termini di spazio.
 
-La determinazione della betweenness centrality avviene in due passi:
+L'algoritmo sequenziale introdotto da Brandes cite:[brandes_faster_2001], rappresenta un notevole miglioramento rispetto ai precedenti in quanto esegue in tempo stem:[\theta(nm)] in grafi non pesati e richiede una minore occupazione di memoria. Come evidenziato nell'<<alg-brandes>>, la {BC} (<<eq-bc>>) è calcolata come somma delle _pair dependency_ stem:[\delta_{s t}(v) = \sigma_{st}(v) / \sigma_{st}] di _s_ su _t_:
 
-1. Calcolo della lunghezza e del numero dei cammini minimi tra tutte le coppie di vertici;
-2. Somma delle dipendenze di tutte le coppie.
+[latexmath, id="sum-pair-dep"]
+++++
+BC(v) \stackrel{\text { def }}{=} \sum_{s \neq v \neq t \in V} \delta_{s t}(v)
+++++
 
-L'algoritmo sequenziale introdotto da Brandes cite:[brandes_faster_2001], rappresenta un notevole miglioramento rispetto ai precedenti in quanto esegue in tempo _θ(nm)_ in grafi non pesati e richiede una minore occupazione di memoria. Come evidenziato nell'<<alg-brandes>>, la {BC} (<<eq-bc>>) è calcolata come somma delle _dipendenze_:
+Dove stem:[\delta_{st} (v)] indica la dipendenza di _s_ su _v_.
 
+'''
 
+Si definisce stem:[P_s(v)] l'insieme dei predecessori del vertice _v_ sui cammini minimi da _s_ come:
 
-Dove _δₛₜ(v)_ indica la dipendenza di _s_ su _v_.
+[latexmath, id="eq-prec"]
+++++
+P_s(v) = \{ u \in V: \{u,v\} \in E, d_G(s,v) = d_G(s,u) + \omega(u,v) \}
+++++
 
+Dove:
 
+- stem:[d_G(s,v)] è la distanza tra i vertici stem:[s] e stem:[t], ovvero il cammino di lunghezza minore che congiunge i vertici stem:[s] e stem:[t] in stem:[G];
+- stem:[d_G(s,v)] è la distanza tra i vertici stem:[s] e stem:[t], ovvero il cammino di lunghezza minore che congiunge i vertici stem:[s] e stem:[t] in stem:[G];
+- stem:[\omega(u,v)] è una funzione peso definita sugli archi. In grafi non pesati si pone stem:[\omega(e) = 1, e \in E].
+
+'''
+
+Brandes dimostra che le dipendenze soddisfano la seguente relazione ricorsiva:
+
+[latexmath, id="eq-rec"]
+++++
+\delta_{s \! *}(v) = \sum_{w, \! v \in P_{\! s}(w)} \frac{\sigma_{sv}}{\sigma_{sw}} \cdot \left(1 + \delta_{s \! *}(w) \right)
+++++
+
+Con questa relazione è possibile effettuare l'accumulazione delle dipendenze, riducendo sia l'occupazione in termini di memoria che il tempo richiesto. Ciò si verifica perché non è più necessario sommare esplicitamente le pair dependency.
+
+<<<
 
 [source, pseudocode, id="alg-brandes"]
 .Calcolo della betweenness centrality di Brandes
 ----
-procedure BC(G)
-    for v in G.V
-        label v.bc as 0
-    for v in G.V
-        let Q be a queue
-
-----
-
-L'algoritmo di Brandes impiega una tecnica di accumulazione che si integra con la risoluzione del problema dei cammini minimi tramite algoritmi di attraversamento dei grafi. Applicando il risultato di Brandes, si ha che tutte le misure di centralità che richiedono il calcolo dei cammini minimi possono essere computate simultaneamente. Esempi di misure di questo tipo sono la _closeness centrality_ cite:[sabidussi_centrality_1966] e la varianti della {BC} cite:[brandes_variants_2008], come la _load centrality_ e la _stress centrality_ (APP ?).
-
-Nell'algoritmo di Brandes per il calcolo dei cammini minimi in un grafo non pesato si impiega una visita in ampiezza (BFS), ovvero l'<<Bfs>>. Per l'implementazione si è consultato cite:[cormen2009introduction(497)]. Il tempo richiesto dalla BFS è pari a _θ(m)_. Di conseguenza il tempo richiesto per il calcolo di _δₛₜ, s, t ∈ V_ è pari a _θ(nm)_.
-
-[source, pseudocode, id="Bfs"]
-.Visita in ampiezza
-----
-procedure BFS(G, s)
-    for v in G.V - {s} # <1>
-        label v.c as White
-        label v.d as nil
-    label s.c as Grey
-    label s.d as 0
+procedure BC_Computation(G)
+let G.V be the set of vertices of the graph G
+let v.bc be the betweneess centrality of a vertex v
+for v in G.V do # <1>
+    label v.bc as 0
+end
+for v in G.V do
+    for s in G.V do
+        let v.d be the distance of a vertex v from s
+        let v.δ be the pair dependency of a vertex v on s
+        let v.σ be the shortest path from v to s
+        label v.d as -1
+        label v.δ as 0
+        label v.σ as 0
+    end
+    let S be a stack
     let Q be a queue
-    Q.enqueue(s) # <2>
-    while Q is not empty
-        u := Q.dequeue() # <3>
-        for v in G.adjacentVertices(u) # <4>
-            if v.c is not Grey # <5>
-                label v.c as Grey
-                label v.d as u.d + 1
-                Q.enqueue(v)
-        label u.c as Black # <6>
+    let P be a list
+    label v.σ as 1
+    label v.d as 0
+    Q.enqueue(s)
+    while Q is not empty do
+        Q.dequeue(v)
+        S.push(v)
+        for w in G.adjacentVertices(v) do # <2>
+            if w.d < 0 then # <3>
+                Q.enqueue(w)
+                label w.d as v.d + 1
+            end
+            if w.d = v.d + 1 then # <4>
+                label w.σ as w.σ + v.σ
+                P.append(v)
+            end
+        end
+    end
+    while S is not empty do # <5>
+        S.pop(w)
+        for v in P do
+            label v.δ as
+                v.δ + (v.σ / w.σ) * (1 + w.δ)
+        end
+        if w != s then
+            label w.bc as w.bc + w.δ
+        end
+    end
+end
 ----
 
-<1> Inizializza ciascun vertice del grafo eccetto l'origine;
-<2> Scopre il vertice d'origine;
-<3> Esamina il vertice `u`;
-<4> Esamina l'arco `(u,v)`;
-<5> Scopre il vertice `v`;
-<6> Rimuove il vertice `u`.
+<<<
 
-=== Shortest Path Vertex Betweenness
+<1> Inizializzazione della {BC} di ogni vertice;
+<2> Esamina i vicini di `v`;
+<3> Se `w` non è stato ancora scoperto;
+<4> Se è un cammino minimo verso `w` che attraversa `v`;
+<5> Lo stack `S` restituisce i vertici in ordine non crescente di distanza da `s`.
 
-=== Edge and Node parallelism
+L'algoritmo di Brandes impiega una tecnica di accumulazione che si integra con la risoluzione del problema dei cammini minimi tramite algoritmi di attraversamento dei grafi e permette di ottenere un notevole speedup.
+
+Nell'algoritmo di Brandes per il calcolo dei cammini minimi in un grafo non pesato si impiega una visita in ampiezza (BFS). Il tempo richiesto dalla BFS è pari a _θ(m)_. Di conseguenza il tempo richiesto per il calcolo di _δₛₜ, s, t ∈ V_ è pari a _θ(nm)_.
+
+Applicando il risultato di Brandes, si ha che tutte le misure di centralità che richiedono il calcolo dei cammini minimi possono essere computate simultaneamente. Esempi di misure di questo tipo sono la _closeness centrality_ cite:[sabidussi_centrality_1966] e la varianti della {BC} cite:[brandes_variants_2008], come la _load centrality_ e la _stress centrality_ (APP ?).
+
+=== Rappresentazione di un grafo
+
+Le principali tipologie di rappresentazione di un grafo sono su lista di adiacenza e come matrice di adiacenza.
+
+L'impiego delle liste di adiacenza ha il vantaggio, tuttavia ...
+
+Dato che la GPU mette a disposizione processori di tipo SIMD che rendono l'esecuzione di operazioni di tipo vettoriale particolarmente conveniente si impiegano le matrici di adiacenza per rappresentare un grafo. In particolare, come visibile nell'esempio in C nel <<matrix>>, una matrice di adiacenza può essere rappresentata in un formato che sfrutta il principio di località tramite l'impiego di una _Structure of Arrays_ (SoA).
+
+[source, c, id="matrix", reftext=Listato 1]
+----
+typedef struct {
+int nrows;
+int ncols;
+int *rows;
+int *cols;
+} matrix_t;
+----
+
+Dato che i grafi che si incontrano nell'ambito dell'analisi delle reti sociali sono sparsi (cit. needed) e di notevoli dimensioni (da centinaia di migliaia a milioni di nodi e in crescita) il costo stem:[\theta(n^2)] in termini di occupazione di memoria non è sostenibile. Perciò si sfruttano le caratteristiche strutturali di queste reti rappresentandole come matrici sparse, ovvero come matrici in cui gli elementi nulli sono omessi. In questo modo è possibile ottenere un notevole risparmio in termini di occupazione di memoria in funzione del grado di sparsità della rete.
+
+Esistono diversi formati di rappresentazione di una matrice sparsa, ciascuno avente impatto sia sull'occupazione del disco che sulle prestazioni del programma a tempo di esecuzione. Alcuni dei formati di rappresentazione più diffusi e più semplici sono _COOrdinate Format_ (COO) e _Compressed Sparse Row_ (CSR).
+
+A partire dal <<matrix>> si può ottenere la rappresentazione di una matrice di adiacenza in formato COO:
+
+[source, c, id="coo", reftext=Listato 2]
+----
+typedef struct {
+int nrows; # <1>
+int nnz; # <2>
+int *rows; # <3>
+int *cols; # <4>
+int *values; # <5>
+} matrix_coo_t;
+----
+
+<1> sad;
+<2> number of non-zero elements;
+<3> row index for each non-zero value;
+<4> column index for each non-zero value;
+<5> value of each non-zero entry.
+
+Il formato COO rappresenta il modo più semplice per memorizzare una matrice sparsa ma non è particolarmente efficiente. Ad esempio, in un grafo diretto con almeno 400 nodi se è necessario effettuare una ricerca per stabilire se il nodo numero 400 è legato a un altro è necessario scorrere tutti e 400 gli elementi del vettore `rows` prima di poter ottenere il risultato. Ciò accade perché nel vettore `rows` sono memorizzati tutti i valori
+
+Una matrice in formato CSR
+
+[source, c, id="csr", reftext=Listato 3]
+----
+typedef struct {
+int nrows;
+int nnz;
+int *row_offsets; # <1>
+int *cols;
+} matrix_csr_t;
+----
+
+<1> offset in columns.
+
+=== Algoritmo parallelo su GPU
 
 cite:[jia_chapter_2012]
 
-=== Implementazione di un algoritmo parallelo su GPU
-
-[#_studio_di_scalabilità_e_throughput]
 === Studio di scalabilità e throughput
-
-Come visto nell'introduzione agli algoritmi di Cormen, Leiserson e Rivest cite:[cormen2009introduction]...]
 
 Per i test sono stati impiegati una CPU {hardware_local} con frequenza di funzionamento pari a 2.9 Ghz, una cache di 16 Mb e 16 Gb di DRAM.
 
-La GPU è una {hardware_nvidia} con quattro Streaming Multiprocessors e clock di base di 2505 Mhz.
-Ci sono due Gb di memoria GDDR5 a disposizione e la _compute capability_ è pari a 6.1
-(architettura Pascal).
+La GPU è una {hardware_nvidia} con quattro _Streaming Multiprocessors_ e clock di base di 2505 Mhz. La memoria GDDR5 a disposizione è pari a due Gb e la _compute capability_ è 6.1 (architettura Pascal).
 
-I dataset per effettuare i test sono stati presi dalla Sparse Matrix Collection dell'Università della Florida cite:[davis_university_2011] e dalla Standford Network Analysis Platform (SNAP).
+I dataset per effettuare i test sono reperibili nella _Sparse Matrix Collection_ dell'Università della Florida cite:[davis_university_2011] e dalla _Standford Network Analysis Platform_ (SNAP) cite:[snapnets].
 
-[[omp-speedup]]
-.Confronto delle prestazioni, definite in termini di speedup, della versione OpenMP con alcuni degli insiemi di dati forniti.
-gnuplot::{srcdir}/figure1.plot[svg, align="center"]
+Per la generazione casuale di grafi secondo i modelli di Erdös-Rényi, Watts-Strogatz e Barabàsi-Albert citenp:[gkoulalas-divanis_large-scale_2014(7)] sono state impiegate le funzioni rese disponibili dalla libreria SNAP cite:[leskovec2016snap].
+
+Di seguito si analizzano i risultati ottenuti.
 
 == Conclusioni
 
@@ -231,7 +326,7 @@ Il software sviluppato è liberamente disponibile in un link:https://github.com/
 
 <<<
 
-[bibliography, small]
+[bibliography]
 == Riferimenti bibliografici
 
 bibliography::[]

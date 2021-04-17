@@ -1,19 +1,39 @@
+= Social Network Analysis Algorithms on GPU
+:repo-name: SocNetAlgsOnGPU
+
 ifdef::env-github[]
 :note-caption: :information_source:
 endif::[]
 
-= Social Network Analysis Algorithms on GPU
-:repo-name: SocNetAlgsOnGPU
-
-A command-line application for computing Betweenness Centrality of sparse graphs that represent social networks.
+A command-line application for computing Betweenness Centrality of sparse
+graphs that represent social networks.
 
 == Prerequisites
 
+These are the dependencies needed to build the project:
+
+- A compiler for C and {cpp} must be installed;
+- link:https://developer.nvidia.com/cuda-downloads[CUDA Toolkit 11+] must be installed;
+- link:https://cmake.org/download/[CMake 3.9+] to build the project on MacOS or Windows.
+
+There also some optional dependencies:
+
+- To launch the benchmarks with the script given, link:scripts/perf_eval.sh[perf-eval,sh], a Unix Shell must be available;
+- link:https://www.ruby-lang.org/en/downloads/[Ruby] and some gems listed in the link:{docdir}/scripts/Gemfile[Gemfile] to generate the documentation;
+- link:https://www.python.org/downloads/[Python 3.8+] to execute the script that
+processes the result of the benchmarking.
+
+[WARNING]
+====
+During the development of the project only GCC has been tested so other C and {cpp}
+compilers like CLang have not been tested.
+====
+
 == Installation
 
-First of all clone this repo and enter it:
+First clone this repo and enter it:
 
-[source,shell, subs="attributes"]
+[source,shell]
 ----
 git clone https://github.com/Da3dalu2/{repo-name}.git
 cd {repo-name}
@@ -30,18 +50,23 @@ make
 
 [NOTE]
 ====
-There are different targets available, they are all listed in the link:Makefile[Makefile]
+There are different targets available, they are all listed in the
+link:Makefile[Makefile]
 ====
+
+To build with CMake:
 
 [source,shell]
 ----
 mkdir build
-# use the following command to build if you are in project root
 cmake -Bbuild -DCMAKE_BUILD_TYPE=Default
-
-# or use the following command if you are in build directory
-# cmake ../ -DCMAKE_BUILD_TYPE=Default
 ----
+
+No Debug or Release profiles have been defined so Default is the only one
+available.
+
+To compile a single .cu or .cpp source file follow the instructions given in the
+header of the file.
 
 == Usage
 
