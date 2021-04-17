@@ -91,6 +91,27 @@ void fillPrefixSum(const int *arr, int n, int *prefixSum) {
 }
 
 /**
+ * Compute the partial sum of an integers array arr in a given interval
+ * of indexes.
+ *
+ * @param arr the array of which the sum reduction will be computed
+ * @param n number of elements in arr
+ * @param start first index of the interval given
+ * @param end last index of the interval given
+ * @return the result of the sum reduction or -1 if the given interval is
+ * invalid.
+ */
+int reduceSum(const int *arr, int n, int start, int end) {
+    if(end >= n || start < 0)
+        return -1;
+
+    int tmp = 0;
+    for (int i = start; i <= end; i++)
+        tmp += arr[i];
+    return tmp;
+}
+
+/**
  * Convert a matrix A, stored in COO format, to a matrix B, stored in the CSR
  * format.
  *

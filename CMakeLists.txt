@@ -37,3 +37,11 @@ foreach(sample ${samples})
     GET_FILENAME_COMPONENT(samplename ${sample} NAME_WLE)
     add_executable(${samplename} ${sample})
 endforeach()
+
+add_executable(brandes_serial src/brandes_serial.cpp)
+target_link_libraries(brandes_serial PRIVATE libmmio)
+
+add_executable(bsf_test src/bfs.cpp)
+target_link_libraries(bsf_test PRIVATE libmmio)
+
+add_executable(bsf src/bfs.c)

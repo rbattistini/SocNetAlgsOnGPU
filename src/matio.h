@@ -139,7 +139,7 @@ int readMatrixMarketFile(const char *fname, matrix_coo_t *m_coo,
     m_coo->rows = rows;
     m_coo->cols = columns;
 
-#ifdef DEBUG
+#ifndef DEBUG
     mm_write_banner(stdout, matcode);
     mm_write_mtx_crd_size(stdout, m, n, nz);
     for (int i=0; i<nz; i++)
