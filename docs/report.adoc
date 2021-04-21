@@ -2,7 +2,7 @@
 8 Aprile 2021
 :toc-title: Tavola dei contenuti
 :figure-caption: Fig.
-:listing-caption: Algoritmo
+:listing-caption: Listato
 :section-refsig: Sezione
 :version-label: ""
 :stem: latexmath
@@ -93,7 +93,7 @@ Di seguito si assume che un grafo sia descritto come stem:[G = (V, E)], dove ste
 
 === Misure di centralità e betweenness
 
-Le misure di centralità permettono di quantificare l'importanza di un nodo in base a diversi criteri, come la sua posizione nella rete, e costituiscono uno strumento fondamentale per l'analisi delle reti sociali.
+Le misure di centralità permettono di quantificare l'importanza di un nodo in base a diversi criteri, come la sua posizione nella rete, e costituiscono uno strumento fondamentale per l'analisi delle reti.
 
 Una delle più note e diffuse misure di centralità è la _betweenness centrality_ cite:[freeman_set_1977, jm_anthonisse_rush_1971]. Si tratta di una misura della proporzione dei cammini minimi di una rete che attraversano uno specifico nodo.
 
@@ -139,9 +139,9 @@ La {BC} è di particolare interesse anche perché è alla base di algoritmi più
 
 === Algoritmo seriale di Brandes
 
-I primi algoritmi introdotti per il calcolo della {BC} sono piuttosto onerosi, cite:[freeman_set_1977, jm_anthonisse_rush_1971] eseguono in tempo stem:[\theta(n^3)] e richiedono stem:[\theta(n^2)] in termini di spazio.
+I primi algoritmi introdotti per il calcolo della {BC} sono piuttosto onerosi, cite:[freeman_set_1977, jm_anthonisse_rush_1971] eseguono in tempo stem:[\theta(n^3)] e richiedono stem:[\theta(n^2)] in termini di spazio. Impiegano l'algoritmo di Floyd-Warshall per risolvere il problema dell'APSP.
 
-L'algoritmo sequenziale introdotto da Brandes cite:[brandes_faster_2001], rappresenta un notevole miglioramento rispetto ai precedenti in quanto esegue in tempo stem:[\theta(nm)] in grafi non pesati e richiede una minore occupazione di memoria. Come evidenziato nell'<<alg-brandes>>, la {BC} (<<eq-bc>>) è calcolata come somma delle _pair dependency_ stem:[\delta_{s t}(v) = \sigma_{st}(v) / \sigma_{st}] di _s_ su _t_:
+L'algoritmo sequenziale introdotto da Brandes cite:[brandes_faster_2001], rappresenta un notevole miglioramento rispetto ai precedenti in quanto esegue in tempo stem:[\theta(nm)] in grafi non pesati e richiede una minore occupazione di memoria. La {BC} (<<eq-bc>>) è calcolata come somma delle _pair dependency_ stem:[\delta_{s t}(v) = \sigma_{st}(v) / \sigma_{st}] di _s_ su _t_:
 
 [latexmath, id="sum-pair-dep"]
 ++++
@@ -176,14 +176,84 @@ Brandes dimostra che le dipendenze soddisfano la seguente relazione ricorsiva:
 
 Con questa relazione è possibile effettuare l'accumulazione delle dipendenze, riducendo sia l'occupazione in termini di memoria che il tempo richiesto. Ciò si verifica perché non è più necessario sommare esplicitamente le pair dependency.
 
+L'algoritmo di Brandes impiega una tecnica di accumulazione che si integra con la risoluzione del problema dei cammini minimi tramite algoritmi di attraversamento dei grafi e permette di ottenere un notevole speedup. In particolare l'algoritmo di Brandes parte effettuando una BFS a partire da un vertice stem:[s]. La BFS individua un _Directed Acyclic Graph_ (DAG), radicato in stem:[s], e applicando la relazione ricorsiva <<eq-rec>> calcola la {BC} effettuando un'accumulazione che parte dalle foglie fino ad arrivare alla radice del DAG.
+
+Nell'algoritmo di Brandes per il calcolo dei cammini minimi in un grafo non pesato si impiega una visita in ampiezza (BFS). Il tempo richiesto dalla BFS è pari a _θ(m)_. Di conseguenza il tempo richiesto per il calcolo di _δₛₜ, s, t ∈ V_ è pari a _θ(nm)_.
+
+Applicando il risultato di Brandes, si ha che tutte le misure di centralità che richiedono il calcolo dei cammini minimi possono essere computate simultaneamente. Esempi di misure di questo tipo sono la _closeness centrality_ cite:[sabidussi_centrality_1966] e la varianti della {BC} cite:[brandes_variants_2008], come la _load centrality_ e la _stress centrality_.
+
+== Algoritmo seriale SPVB
+
+L'algoritmo SPVB, illustrato in <<alg-spvb>>, permette di sfruttare la struttura delle reti sociali per velocizzare significativamente l'algoritmo seriale di Brandes.
+
+LA SPVB effettua il calcolo della {BC} dei vertici che appartengono agli alberi nella rete ottenuti eliminando iterativamente i nodi di grado unitario. L'idea che sta alla base dell'algoritmo è di eliminare i nodi che hanno un solo vicino in quanto possono essere unicamente il punto di arrivo di un cammino minimo ed hanno perciò {BC} nulla. Per poter eliminare questi nodi è prima necessario considerare l'impatto che hanno sulla {BC} del proprio vicino. Infatti ciascun vicino funge da collegamento per tutti gli altri nodi della rete poiché tutti i cammini minimi che partono da ciascun nodo di grado unitario passano per il rispettivo vicino.
+
+La procedura SPVB ha quindi lo scopo di calcolare la {BC} di un vertice stem:[v] come la somma dei contributi di tutti i nodi stem:[u] che hanno stem:[v] come unico vicino. Successivamente è possibile eliminare i vertici di grado unitario dal grafo e gli archi stem:[(u,v)]. Se la rimozione di questo insieme di vertici genera altri vertici di grado unitario si può applicare nuovamente la procedura SPVB a patto di registrare il numero di nodi connessi a ciascuno dei nodi di grado unitario che sono stati rimossi dal grafo. In questo modo è possibile calcolare la {BC} di alberi del grafo.
+
+Dal punto di vista formale l'insieme dei nodi di grado unitario stem:[F] che possono essere rimossi dal grafo stem:[G] è definito come stem:[F = \{ v \in V \ | \ deg(v) = 1 \} ]. I vertici in stem:[F] sono detti _tree-nodes_.
+
+Il calcolo della {BC} di un vertice stem:[v \in V] richiede la somma di coppie di vertici stem:[s, t \in V]. Queste somme possono essere divise in più sotto-somme che coinvolgono o meno tree-nodes e possono essere calcolate con diversi algoritmi.
+
 <<<
 
-[source, pseudocode, id="alg-brandes"]
-.Calcolo della betweenness centrality di Brandes
+[source, pseudocode, id="alg-spvb"]
+.Pseudocodice della Shortest Path Vertex Betweenneess
 ----
-procedure BC_Computation(G)
+procedure SPVB(G)
+let G.V be the set of vertices of the graph G
+let G.n be the number of vertices in G
+let v.d be the degree of a vertex v
+let v.bc be the betweneess centrality of a vertex v
+let p[] be an array # <1>
+for v in G.V do # <2>
+    label v.bc as 0
+    label p[v] as 0
+end
+let i be the counter of the iterations done
+let G_i be the i-th graph
+let deg be a queue
+label i as 0
+label G_i as G
+for v in G.V do # <3>
+    if v.d = 1 then
+        deg.enqueue(v)
+    end
+end
+do
+    deg.dequeue(v)
+    let u be the set obtained from G_i.adjacentVertices(v)
+    label u.bc as u.bc + 2(G.n - v.p - u.p - 2)(v.p + 1)
+    label p[u] as p[u] + p[v] + 1
+    label i as i + 1
+    delete v from G_i
+    label G_i.V as G_(i-1).V \ {v}
+    label G_i.E as G_(i-1).E \ {(v,u)}
+    if u.d = 1 then
+        deg.enqueue(u)
+    end
+while deg is not empty
+if G_i.n > 1 then
+    BC_Mod_Computation(G_i)
+end
+----
+
+<1> Per un vertice di grado unitario il vettore `p` indica il numero di vertici del sotto-albero radicato in `v` (esclusa la radice). Per un qualsiasi altro vertice `u`, `p` registra la somma delle dimensioni dei sotto-alberi radicati nei figli di quel vertice che non stati eliminati nelle precedenti iterazioni;
+<2> Inizializzazione della {BC} di ogni vertice;
+<3> Inizializzazione dell'insieme di nodi di grado unitario in `G`;
+
+<<<
+
+L'algoritmo SPVB, illustrato in <<alg-spvb>>, può essere eseguito su grafi disconnessi applicandolo a ogni componente connessa separatamente.
+
+<<<
+
+[source, pseudocode, id="alg-brandes-mod"]
+.Algoritmo modificato per il calcolo della betweenness centrality di Brandes
+----
+procedure BC_Mod_Computation(G)
 let G.V be the set of vertices of the graph G
 let v.bc be the betweneess centrality of a vertex v
+let v.p be the number of tree nodes connected to a vertex v
 for v in G.V do # <1>
     label v.bc as 0
 end
@@ -220,13 +290,12 @@ for v in G.V do
         S.pop(w)
         for v in P do
             label v.δ as
-                v.δ + (v.σ / w.σ) * (1 + w.δ)
+                v.δ + (v.σ / w.σ) * (1 + w.δ + w.p)
         end
         if w != s then
-            label w.bc as w.bc + w.δ
+            label w.bc as w.bc + w.δ * (1 + s.p)
         end
     end
-end
 ----
 
 <<<
@@ -237,68 +306,104 @@ end
 <4> Se è un cammino minimo verso `w` che attraversa `v`;
 <5> Lo stack `S` restituisce i vertici in ordine non crescente di distanza da `s`.
 
-L'algoritmo di Brandes impiega una tecnica di accumulazione che si integra con la risoluzione del problema dei cammini minimi tramite algoritmi di attraversamento dei grafi e permette di ottenere un notevole speedup.
-
-Nell'algoritmo di Brandes per il calcolo dei cammini minimi in un grafo non pesato si impiega una visita in ampiezza (BFS). Il tempo richiesto dalla BFS è pari a _θ(m)_. Di conseguenza il tempo richiesto per il calcolo di _δₛₜ, s, t ∈ V_ è pari a _θ(nm)_.
-
-Applicando il risultato di Brandes, si ha che tutte le misure di centralità che richiedono il calcolo dei cammini minimi possono essere computate simultaneamente. Esempi di misure di questo tipo sono la _closeness centrality_ cite:[sabidussi_centrality_1966] e la varianti della {BC} cite:[brandes_variants_2008], come la _load centrality_ e la _stress centrality_ (APP ?).
-
 === Rappresentazione di un grafo
 
-Le principali tipologie di rappresentazione di un grafo sono su lista di adiacenza e come matrice di adiacenza.
+Un grafo generalmente è rappresentato in due modi: come collezione di liste di adiacenza e come una matrice di adiacenza.
 
-L'impiego delle liste di adiacenza ha il vantaggio, tuttavia ...
+Entrambe i metodi permettono di rappresentare grafi sparsi, ovvero in cui stem:[|E| \ll |V|^2], impiegando opportuni formati di memorizzazione approfonditi in seguito. Tuttavia le operazioni di ricerca nella collezione di liste di adiacenza hanno costo lineare rispetto al numero di vertici mentre in una rappresentazione come matrice di adiacenza il costo è costante.
 
-Dato che la GPU mette a disposizione processori di tipo SIMD che rendono l'esecuzione di operazioni di tipo vettoriale particolarmente conveniente si impiegano le matrici di adiacenza per rappresentare un grafo. In particolare, come visibile nell'esempio in C nel <<matrix>>, una matrice di adiacenza può essere rappresentata in un formato che sfrutta il principio di località tramite l'impiego di una _Structure of Arrays_ (SoA).
+Dato che per il calcolo delle misure di centralità d'interesse si impiegano degli algoritmi che non richiedono l'inserimento o la rimozione di vertici dai grafi in analisi e che sono necessarie frequenti operazioni di ricerca per determinare se c'è un arco che collega due vertici, si preferisce l'uso della rappresentazione come matrice di adiacenza.
 
-[source, c, id="matrix", reftext=Listato 1]
+Dato un grafo stem:[G], con stem:[n] vertici si ha che nella matrice di adiacenza stem:[A(G) \ n \times n]:
+
+- stem:[A_{ij} = 1] se esiste un arco che congiunge il vertice stem:[i] al vertice stem:[j];
+- stem:[A_{ij} = 0] altrimenti.
+
+Si osserva che la matrice di adiacenza di un grafo non diretto ha due elementi per ogni arco, ovvero stem:[(1,2)] è rappresentato come stem:[A_{12} = 1] e stem:[A_{21} = 1]. Ciò significa che la matrice di adiacenza di un grafo non diretto è simmetrica, ovvero stem:[A_{ij} = A_{ji}]. Questa proprietà può essere sfruttata, come accade nel formato Matrix Market, per ridurre significativamente l'occupazione su disco di questa tipologia di grafi.
+
+Un altro vantaggio dovuto alla scelta della matrice di adiacenza sta nel poter definire con chiarezza gli schemi di accesso ai dati e di realizzare una rappresentazione più efficiente per la cache. In questo modo è possibile parallelizzare efficacemente e con maggior facilità gli algoritmi su grafi. In particolare una matrice di adiacenza, come si può vedere nel <<matrix>>, può essere rappresentata in un formato che sfrutta il principio di località tramite l'impiego di una _Structure of Arrays_ (SoA).
+
+[source, c, id="matrix"]
+.Matrice di adiacenza rappresentata come SoA in C
 ----
 typedef struct {
-int nrows;
-int ncols;
-int *rows;
-int *cols;
+    int nrows # <1>
+    int *rows; # <2>
+    int *cols; # <3>
+    int *values; # <4>
 } matrix_t;
 ----
 
-Dato che i grafi che si incontrano nell'ambito dell'analisi delle reti sociali sono sparsi (cit. needed) e di notevoli dimensioni (da centinaia di migliaia a milioni di nodi e in crescita) il costo stem:[\theta(n^2)] in termini di occupazione di memoria non è sostenibile. Perciò si sfruttano le caratteristiche strutturali di queste reti rappresentandole come matrici sparse, ovvero come matrici in cui gli elementi nulli sono omessi. In questo modo è possibile ottenere un notevole risparmio in termini di occupazione di memoria in funzione del grado di sparsità della rete.
+<1> Numero di vertici stem:[n];
+<2> indice riga per ogni elemento;
+<3> indice colonna per ogni elemento:
+<4> valore di ogni elemento. È omesso se si vuole rappresentare un grafo con pesi uniformi.
 
-Esistono diversi formati di rappresentazione di una matrice sparsa, ciascuno avente impatto sia sull'occupazione del disco che sulle prestazioni del programma a tempo di esecuzione. Alcuni dei formati di rappresentazione più diffusi e più semplici sono _COOrdinate Format_ (COO) e _Compressed Sparse Row_ (CSR).
+Dato che i grafi che si incontrano nell'ambito dell'analisi delle reti sociali sono sparsi {wj}citenp:[barabasi2016network(13)], ovvero stem:[|E| \ll |V|^2], e di notevoli dimensioni (da centinaia di migliaia a milioni di vertici e in crescita) il costo stem:[\theta(n^2)] della tipologia di rappresentazione scelta in termini di occupazione di memoria non è sostenibile. Perciò si sfruttano le caratteristiche strutturali di queste reti rappresentandole come matrici sparse, ovvero come matrici in cui gli elementi nulli sono omessi. In questo modo è possibile ottenere un notevole risparmio in termini di occupazione di memoria in funzione del grado di sparsità della rete. Un esempio di matrice sparsa si ha in <<sparse-matrix>>.
+
+[[sparse-matrix]]
+.Rappresentazione di una matrice sparsa simmetrica ottenuta dal dataset `ca-GrQc`, costruito a partire dalla rete di collaborazioni delle pubblicazioni nel campo della Relatività Generale e della Cosmologia Quantica su arXiv dal 1993 al 2003. Il grafico è stato realizzato tramite la funzione `spy` in GNU Octave. Il grado di sparsità della matrice è superiore al 95%.
+image::../fig1.png[Esempio di matrice sparsa, align="center", pdfwidth="70%"]
+
+Esistono diversi metodi per rappresentare una matrice sparsa, ciascuno avente impatto sia sull'occupazione del disco che sulle prestazioni del programma a tempo di esecuzione. Alcuni dei formati di memorizzazione più noti sono _COOrdinate Format_ (COO) e _Compressed Sparse Row_ (CSR).
 
 A partire dal <<matrix>> si può ottenere la rappresentazione di una matrice di adiacenza in formato COO:
 
-[source, c, id="coo", reftext=Listato 2]
+[source, c, id="coo"]
+.Matrice di adiacenza rappresentata in formato COO in C
 ----
 typedef struct {
-int nrows; # <1>
-int nnz; # <2>
-int *rows; # <3>
-int *cols; # <4>
-int *values; # <5>
+    int nrows;
+    int nnz; # <1>
+    int *rows; # <2>
+    int *cols; # <3>
+    int *values; # <4>
 } matrix_coo_t;
 ----
 
-<1> sad;
-<2> number of non-zero elements;
-<3> row index for each non-zero value;
-<4> column index for each non-zero value;
-<5> value of each non-zero entry.
+<1> Numero di elementi non nulli, ovvero _number of non-zeros_;
+<2> indice riga per ogni elemento non nullo;
+<3> indice colonna per ogni elemento non nullo;
+<4> valore di ogni elemento non nullo.
 
-Il formato COO rappresenta il modo più semplice per memorizzare una matrice sparsa ma non è particolarmente efficiente. Ad esempio, in un grafo diretto con almeno 400 nodi se è necessario effettuare una ricerca per stabilire se il nodo numero 400 è legato a un altro è necessario scorrere tutti e 400 gli elementi del vettore `rows` prima di poter ottenere il risultato. Ciò accade perché nel vettore `rows` sono memorizzati tutti i valori
+Il formato COO rappresenta il modo più semplice per memorizzare una matrice sparsa ma non è particolarmente efficiente. Ad esempio, in un grafo diretto con stem:[n] vertici se si effettua una ricerca per stabilire se il vertice ennesimo è legato a un altro è necessario scorrere tutti gli stem:[n] elementi del vettore `rows` prima di poter ottenere il risultato. Ciò accade perché nel vettore `rows` sono memorizzati tutti i valori ripetuti degli indici riga degli elementi non nulli. Il formato CSR è stato introdotto per eliminare gli elementi ridondanti in `rows` e per rendere la ricerca di un elemento più rapida. Questo formato è molto simile alla rappresentazione di un grafo tramite liste di adiacenza ma non ha i costi aggiuntivi legati all'uso dei puntatori ed è molto più efficiente nell'uso della cache.
 
-Una matrice in formato CSR
-
-[source, c, id="csr", reftext=Listato 3]
+[source, c, id="csr"]
+.Matrice di adiacenza rappresentata in formato CSR in C
 ----
 typedef struct {
-int nrows;
-int nnz;
-int *row_offsets; # <1>
-int *cols;
+    int nrows;
+    int *row_offsets; # <1>
+    int *cols; # <2>
+    int *values;
 } matrix_csr_t;
 ----
 
-<1> offset in columns.
+<1> Punta all'inizio e alla fine di ciascun lista di adiacenza contenuta in `cols` ed è formato da `nrows+1` elementi. L'ultimo valore memorizza il numero totale di elementi non nulli perciò non è necessario memorizzare il campo `nnz`;
+<2> rappresenta la concatenazione delle liste di adiacenza di ciascun vertice in un vettore di `nrows` elementi.
+
+Perché sia possibile stabilire se conviene rappresentare una matrice stem:[M] in uno di questi formati è necessario determinare il suo grado di sparsità stem:[S]. Quest'ultimo può essere definito in percentuale nel seguente modo:
+
+[latexmath, id="eq-sparsity"]
+++++
+S(M) \stackrel{\text { def }}{=} \left(1 - \frac{nnz}{n^2} \right) \cdot 100
+++++
+
+Sapendo che il costo in termini di memoria per la rappresentazione di stem:[M] è pari a stem:[\theta(3 nnz)] in formato COO e a stem:[\theta(2 nnz + n)] in formato CSR si ha che perché sia conveniente rappresentare stem:[M] in formato COO deve valere:
+
+[latexmath, id="eq-coo"]
+++++
+nnz \ < \ \frac{n^2}{3}
+++++
+
+per il formato CSR deve valere:
+
+[latexmath, id="eq-csr"]
+++++
+nnz \ < \ \frac{n (n - 1)}{2}
+++++
+
+I dataset impiegati per valutare l'algoritmo parallelo implementato in <<Studio di scalabilità e throughput>> sono stati memorizzati su disco con il formato COO e in memoria principale con il formato CSR. La scelta è motivata dal grado di sparsità superiore al 90% in tutte le reti considerate.
 
 === Algoritmo parallelo su GPU
 
@@ -323,6 +428,8 @@ pregi e difetti dell’esperienza e, più specificamente, riassumendo quanto
 appreso.
 
 Il software sviluppato è liberamente disponibile in un link:https://github.com/Da3dalu2/SocNetAlgsOnGPU[repository su GitHub].
+
+Impiegando l'algoritmo di DIjstra nel caso di pesi positivi o di Bellman Ford nel caso di pesi negativi è possibile applicare ...
 
 <<<
 

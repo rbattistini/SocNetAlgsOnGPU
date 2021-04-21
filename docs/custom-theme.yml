@@ -51,7 +51,7 @@ thematic-break:
 
 base:
   font-family: Merriweather
-  font-size: 10.5
+  font-size: 10
   align: justify
 
 role:
