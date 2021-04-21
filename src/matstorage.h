@@ -43,15 +43,10 @@
  *
  ****************************************************************************/
 
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef MATSTORAGE_H
+#define MATSTORAGE_H
 
-/*
- * from http://www.graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2
- */
-//int is_power_of2(int n) {
-//    return (n & (n - 1)) == 0;
-//}
+#include "utils.h"
 
 typedef struct matrix_coo_t {
     int nrows;  // = ncols since adj matrix is a square matrix
@@ -62,54 +57,11 @@ typedef struct matrix_coo_t {
 
 typedef struct matrix_csr_t {
     int nrows;
-    int nnz;
+//    int nnz;  // found at row_offsets[nrows]
     int *row_offsets;    // offset in columns
     int *cols;           // column index for each non-zero value
+    int *degrees;
 } matrix_csr_t;
-
-/**
- * Initialize an array.
- *
- * @param arr pointer to the array to be initialized
- * @param n length of the array to be initialized
- * @param v value used to initialize the array
- */
-void fill( int *arr, int n, int v) {
-    for (int i = 0; i < n; i++)
-        arr[i] = v;
-}
-
-//void printArray(int *array, int n) {
-//    for(int i = 0; i < n; i++)
-//        printf("[%d]: %d\n", i, array[i]);
-//}
-
-void fillPrefixSum(const int *arr, int n, int *prefixSum) {
-    prefixSum[0] = arr[0];
-    for (int i = 1; i < n; i++)
-        prefixSum[i] = prefixSum[i - 1] + arr[i];
-}
-
-/**
- * Compute the partial sum of an integers array arr in a given interval
- * of indexes.
- *
- * @param arr the array of which the sum reduction will be computed
- * @param n number of elements in arr
- * @param start first index of the interval given
- * @param end last index of the interval given
- * @return the result of the sum reduction or -1 if the given interval is
- * invalid.
- */
-int reduceSum(const int *arr, int n, int start, int end) {
-    if(end >= n || start < 0)
-        return -1;
-
-    int tmp = 0;
-    for (int i = start; i <= end; i++)
-        tmp += arr[i];
-    return tmp;
-}
 
 /**
  * Convert a matrix A, stored in COO format, to a matrix B, stored in the CSR
@@ -124,6 +76,9 @@ int reduceSum(const int *arr, int n, int start, int end) {
  * The conversion algorithm has linear complexity.
  * Specifically O(nnz(A) + max(nrows, ncols)).
  *
+ * As long as the average number of non-zeroes per row is > 1,
+ * this format saves space relative to COO.
+ *
  * @param nrows_dense
  * @param m_coo
  * @param m_csr structure representing the matrix in the new format.
@@ -131,19 +86,20 @@ int reduceSum(const int *arr, int n, int start, int end) {
  */
 void coo_to_csr(matrix_coo_t *m_coo, matrix_csr_t *m_csr)
 {
-    int *row_offsets, *scan;
+    int *row_offsets, *scan, *degrees;
     int *rows = m_coo->rows;    // row indices of A
     int nnz = m_coo->nnz;       // number of nnz in A
     int nrows = m_coo->nrows;   // number of rows in A
     int *cols;
 
+    row_offsets = (int *) malloc((nrows + 1) * sizeof(*row_offsets));
+    scan = (int *) malloc(nrows * sizeof(*scan));
+    cols = (int *) malloc(nnz * sizeof(*cols));
+    fill(row_offsets, (nrows + 1), 0);
+
     /*
      * Compute number of non-zero entries per row of A.
      */
-    row_offsets = (int *) malloc((nrows + 1) * sizeof(*row_offsets));
-    scan = (int *) malloc(nrows * sizeof(*scan));
-    fill(row_offsets, (nrows + 1), 0);
-
     for (int n = 0; n < nnz; n++){
         row_offsets[rows[n]]++;
     }
@@ -151,16 +107,15 @@ void coo_to_csr(matrix_coo_t *m_coo, matrix_csr_t *m_csr)
     /*
      * Compute row offsets
      */
-    fillPrefixSum(row_offsets, nrows, scan);
+    degrees = row_offsets;
+    fill_prefix_sum(row_offsets, nrows, scan);
     row_offsets = scan;
 
     /*
      * Copy cols array of A in cols of B
      */
-    cols = (int *) malloc(nnz * sizeof(*cols));
-
     for(int n = 0; n < nnz; n++) {
-        cols[n] = m_coo->cols[n] + 1;
+        cols[n] = m_coo->cols[n];
     }
 
     for(int i = 0, last = 0; i <= nrows; i++){
@@ -171,17 +126,35 @@ void coo_to_csr(matrix_coo_t *m_coo, matrix_csr_t *m_csr)
     row_offsets[nrows] = nnz;
 
     m_csr->nrows = nrows;
-    m_csr->nnz = nnz;
     m_csr->cols = cols;
     m_csr->row_offsets = row_offsets;
+    m_csr->degrees = degrees;
+
 }
 
-/**
- * Deallocate resources and reset values of a structure of matrix in COO format.
- *
- * @param matrix the structure to be deallocated
- */
-void free_matrix_coo(matrix_coo_t* matrix )
+void print_matrix_coo(matrix_coo_t* matrix) {
+
+    printf("nrows = %d\n", matrix->nrows);
+    printf("nnz = %d\n", matrix->nnz);
+    printf("rows = \n");
+    print_array(matrix->rows, matrix->nnz - 1);
+    printf("cols = \n");
+    print_array(matrix->cols, matrix->nnz - 1);
+}
+
+void print_matrix_csr(matrix_csr_t* matrix) {
+
+    int nnz = matrix->row_offsets[matrix->nrows];
+    printf("nrows = %d\n", matrix->nrows);
+    printf("offsets = \n");
+    print_array(matrix->row_offsets, matrix->nrows);
+    printf("cols = \n");
+    print_array(matrix->cols, nnz - 1);
+    printf("degrees = \n");
+    print_array(matrix->degrees, matrix->nrows - 1);
+}
+
+void free_matrix_coo(matrix_coo_t* matrix)
 {
     free(matrix->rows);
     free(matrix->cols);
@@ -191,19 +164,13 @@ void free_matrix_coo(matrix_coo_t* matrix )
     matrix->nrows = -1;
 }
 
-/**
- * Deallocate resources and reset values of a structure of matrix in CSR format.
- *
- * @param matrix the structure to be deallocated
- */
-void free_matrix_csr(matrix_csr_t* matrix )
+void free_matrix_csr(matrix_csr_t* matrix)
 {
     free(matrix->row_offsets);
     free(matrix->cols);
     matrix->row_offsets = nullptr;
     matrix->cols = nullptr;
-    matrix->nnz = -1;
     matrix->nrows = -1;
 }
 
-#endif
+#endif // MATSTORAGE_H

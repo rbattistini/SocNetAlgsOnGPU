@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * matio.h - Functions for reading and writing Matrix Market files (.mm, .mtx)
+ * matio.h - Functions for reading and writing external matrix storage file
+ * formats (COO or edge list)
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
@@ -30,6 +31,22 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
+ * ---------------------------------------------------------------------------
+ *
+ * Note that only two types of files are supported and each with its own
+ * restrictions.
+ *
+ * The only type of graph supported is the undirected and with uniform weights
+ * one. Connectedness and the presence of loops are not checked.
+ *
+ * TODO read from SNAP file
+ *
+ * TODO write to Matrix Market file
+ *
+ * TODO handle unconnected graphs by extraction of largest SCC
+ *
+ * REVIEW symmetric matrices parsing in read_matrix_market()
+ *
  ****************************************************************************/
 
 #ifndef MATIO_H
@@ -39,14 +56,22 @@ extern "C" {
     #include "mmio.h"
 };
 
+#include <string>
 #include "matstorage.h"
 
-int readMatrixMarketFile(const char *fname, matrix_coo_t *m_coo,
-                         const int nedges) {
+/*
+ * Quick and dirty check
+ */
+std::string get_extension(const std::string& fn) {
+    return fn.substr(fn.find_last_of('.') + 1);
+}
+
+int read_matrix_market(const char *fname, matrix_coo_t *m_coo) {
+
     FILE *f;
     MM_typecode matcode;
-    int nz, m, n;
-    int *rows, *columns;
+    int nnz, m, n;
+    int *rows, *cols;
 
     f = fopen(fname, "r");
 
@@ -61,9 +86,10 @@ int readMatrixMarketFile(const char *fname, matrix_coo_t *m_coo,
     }
 
     /*
-     * Only matrices of reals are supported.
+     * Only matrices of reals or pattern are supported.
      */
-    if (!mm_is_real(matcode) || !mm_is_matrix(matcode)) {
+    if (!(( mm_is_pattern(matcode) || mm_is_real(matcode) )
+        && mm_is_matrix(matcode))) {
         fprintf(stderr, "This application does not support\n"
                         "Market Matrix type: %s\n",
                 mm_typecode_to_str(matcode));
@@ -73,7 +99,7 @@ int readMatrixMarketFile(const char *fname, matrix_coo_t *m_coo,
     /*
      * Get the shape of the sparse matrix and the number of non zero elements.
      */
-    if (mm_read_mtx_crd_size(f, &m, &n, &nz) != 0) {
+    if (mm_read_mtx_crd_size(f, &m, &n, &nnz) != 0) {
         fprintf(stderr, "Could not read shape and nnz elements of the sparse"
                         "matrix\n");
         return EXIT_FAILURE;
@@ -82,17 +108,18 @@ int readMatrixMarketFile(const char *fname, matrix_coo_t *m_coo,
     /*
      * Allocate memory for the matrix.
      */
-    size_t diag_elems = ( (2 * nz) - nedges ) / 2;
-    size_t size = (nz - diag_elems) * 2 + diag_elems;
+//    size_t diag_elems = ((2 * nnz) - nedges ) / 2;
+//    size_t size = (nnz - diag_elems) * 2 + diag_elems;
+    size_t size = 2 * nnz + 1;
     rows = (int *) malloc(size * sizeof(*rows));
-    columns = (int *) malloc(size * sizeof(*columns));
+    cols = (int *) malloc(size * sizeof(*cols));
 
     if( mm_is_symmetric(matcode) ) {
         int cnt = 0, i = 0;
-        while(cnt < nz) {
+        while(cnt < nnz) {
             int tmp_col, tmp_row;
 
-            int err_code = fscanf(f, "%d %d\n", &tmp_col, &tmp_row);
+            int err_code = fscanf(f, "%d %d\n", &tmp_row, &tmp_col);
             if(err_code == 0) {
                 fprintf(stderr, "Could not read entry %d", i);
                 return EXIT_FAILURE;
@@ -101,29 +128,36 @@ int readMatrixMarketFile(const char *fname, matrix_coo_t *m_coo,
             /*
              * Reindex from 0 to 1.
              */
-            if(tmp_col != tmp_row) {
-                columns[i] = tmp_col - 1;
-                columns[i + 1] = tmp_row - 1;
-                rows[i] = tmp_row - 1;
-                rows[i + 1] = tmp_col - 1;
+            if(tmp_col != tmp_row) { // if not diagonal
+                cols[i] = tmp_col;
+                cols[i + 1] = tmp_row;
+                rows[i] = tmp_row;
+                rows[i + 1] = tmp_col;
                 i += 2;
             } else {
-                columns[i] = tmp_col - 1;
-                rows[i] = tmp_row - 1;
+                cols[i] = tmp_col;
+                rows[i] = tmp_row;
                 i++;
             }
 
             cnt++;
         };
-    } else {
 
         /*
-         * Reindex from 0 to 1.
+         * Resize if there is excess space, i. e. if there is at least one
+         * value on the matrix diagonal.
          */
-        for (int i = 0; i < nz; i++) {
-            int err_code = fscanf(f, "%d %d\n", &columns[i], &rows[i]);
-            rows[i]--;
-            columns[i]--;
+        if( 2 * nnz != i ){
+            rows = (int *) realloc(rows, i * sizeof(*rows));
+            cols = (int *) realloc(cols, i * sizeof(*cols));
+        }
+
+        nnz = i;
+
+    } else {
+
+        for (int i = 0; i < nnz; i++) {
+            int err_code = fscanf(f, "%d %d\n", &rows[i], &cols[i]);
 
             if(err_code == 0) {
                 fprintf(stderr, "Could not read entry %d", i);
@@ -134,22 +168,33 @@ int readMatrixMarketFile(const char *fname, matrix_coo_t *m_coo,
 
     fclose(f);
 
-    m_coo->nnz = nz;
+    m_coo->nnz = nnz;
     m_coo->nrows = m; // m = n
     m_coo->rows = rows;
-    m_coo->cols = columns;
-
-#ifndef DEBUG
-    mm_write_banner(stdout, matcode);
-    mm_write_mtx_crd_size(stdout, m, n, nz);
-    for (int i=0; i<nz; i++)
-        fprintf(stdout, "%d %d\n", rows[i] + 1, columns[i] + 1);
-#endif
+    m_coo->cols = cols;
 
     return 0;
 }
 
-// TODO
-// int writeMatrixMarketFile()
+int read_snap(const char *fname, matrix_coo_t *m_coo) {
+    return EXIT_FAILURE;
+};
+
+int read_matrix(const char *fname, matrix_coo_t *m_coo)
+{
+    std::string ext = get_extension(fname);
+    int status = 0;
+
+    if (ext == "mtx" || ext == "mm")
+        status = read_matrix_market(fname, m_coo);
+    else if(ext == "txt")
+        status = read_snap(fname, m_coo);
+    else {
+        fprintf(stderr, "Unsupported file type\n");
+        return EXIT_FAILURE;
+    }
+
+    return status;
+}
 
 #endif //MATIO_H

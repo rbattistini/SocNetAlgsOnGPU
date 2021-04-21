@@ -97,8 +97,15 @@ private:
 };
 
 /*
+ * The throughput is measured as ...
+ */
+class ThroughputComputer {
+
+};
+
+/*
  * Only for profiling and eventually debugging memory transfers from device to
- * host and from host to device.
+ * host and from host to device. |nvperf| profiles them too.
  */
 float cudaMemcpyProfiled(void *dst, const void *src, size_t count,
                          cudaMemcpyKind kind) {

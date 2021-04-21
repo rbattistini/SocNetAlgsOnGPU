@@ -18,9 +18,9 @@ endif()
 
 # from https://developer.nvidia.com/blog/building-cuda-applications-cmake/
 
-add_library(libmmio STATIC libs/mmio/mmio.c libs/mmio/mmio.h)
-target_compile_features(libmmio PUBLIC cxx_std_11)
-set_target_properties(libmmio PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+add_library(mmio STATIC libs/mmio/mmio.c libs/mmio/mmio.h)
+target_compile_features(mmio PUBLIC cxx_std_11)
+set_target_properties(mmio PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 include_directories(libs/mmio)
 
@@ -29,7 +29,7 @@ add_executable(betweenness src/betweenness.cu)
 set_target_properties(
         betweenness PROPERTIES CUDA_SEPARABLE_COMPILATION ON
         COMPILE_FLAGS -DCUDA_DEBUG COMPILE_FLAGS -DDEBUG)
-target_link_libraries(betweenness PRIVATE libmmio)
+target_link_libraries(betweenness PRIVATE mmio)
 
 file(GLOB samples samples/*.cu)
 
@@ -39,9 +39,9 @@ foreach(sample ${samples})
 endforeach()
 
 add_executable(brandes_serial src/brandes_serial.cpp)
-target_link_libraries(brandes_serial PRIVATE libmmio)
+target_link_libraries(brandes_serial PRIVATE mmio)
 
-add_executable(bsf_test src/bfs.cpp)
-target_link_libraries(bsf_test PRIVATE libmmio)
+add_executable(bsf_test scripts/bfs.cpp)
+target_link_libraries(bsf_test PRIVATE mmio)
 
-add_executable(bsf src/bfs.c)
+add_executable(bsf scripts/bfs.c)

@@ -37,10 +37,18 @@
 
 #ifdef __CUDACC__
 
-int get_driver_version() {
+#include "errcheck.cuh"
+
+int get_runtime_version() {
     int driverVersion;
-    cudaSafeCall( cudaDriverGetVersion(&driverVersion) );
+    cudaSafeCall( cudaRuntimeGetVersion(&driverVersion) );
     return driverVersion;
+}
+
+size_t get_global_mem_size() {
+    size_t totalMem;
+    cudaSafeCall( cudaMemGetInfo(nullptr, &totalMem) );
+    return totalMem;
 }
 
 /*
@@ -56,12 +64,12 @@ int get_compute_capability() {
     return computeCap;
 }
 
-int get_max_shared_mem() {
-    int devId, smemSize;
+int get_max_threads_per_block() {
+    int devId, threadsPerBlock;
     cudaSafeCall( cudaGetDevice(&devId) );
-    cudaSafeCall( cudaDeviceGetAttribute(&smemSize,
-                                         cudaDevAttrMaxSharedMemoryPerBlock, devId) );
-    return smemSize;
+    cudaSafeCall( cudaDeviceGetAttribute(&threadsPerBlock,
+                                         cudaDevAttrMaxThreadsPerBlock, devId) );
+    return threadsPerBlock;
 }
 
 int get_sm_count() {
@@ -70,6 +78,27 @@ int get_sm_count() {
     cudaSafeCall( cudaDeviceGetAttribute(&numProcs,
                                          cudaDevAttrMultiProcessorCount, devId) );
     return numProcs;
+}
+
+double get_mem_bandwidth() {
+    int devId, clock_rate, mem_bus_width;
+    cudaSafeCall( cudaGetDevice(&devId) );
+    cudaSafeCall( cudaDeviceGetAttribute(&clock_rate,
+                                        cudaDevAttrClockRate, devId) );
+    cudaSafeCall( cudaDeviceGetAttribute(&mem_bus_width,
+                                         cudaDevAttrGlobalMemoryBusWidth, devId) );
+
+    return (clock_rate * 1000.0) * (mem_bus_width / 8 * 2) / 1.0e9;
+}
+
+void print_gpu_overview() {
+
+    printf("CUDA Runtime version: %d\n", get_runtime_version());
+    printf("Compute Capability: %d\n", get_compute_capability());
+    printf("Memory bandwidth: %.2f GB/s\n", get_mem_bandwidth());
+    printf("Global Memory size: %.2f GB\n",
+           get_global_mem_size() / (double)(1 << 30));
+    printf("Number of Streaming Multiprocessors: %d\n", get_sm_count());
 }
 
 #endif
