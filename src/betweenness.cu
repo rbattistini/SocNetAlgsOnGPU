@@ -43,7 +43,8 @@
  *
  ****************************************************************************/
 
-#define CUDA_DEBUG
+//#define BENCHMARK
+
 #include <cstdlib>
 #include <cstdio>
 
@@ -51,6 +52,7 @@
 #include "matstorage.h"
 //#include "timing.cuh"
 //#include "errcheck.cuh"
+//#include "graphs_kernels.cuh"
 #include "device_props.cuh"
 
 typedef struct device_graph_t {
@@ -64,6 +66,10 @@ typedef struct device_graph_t {
  * TODO memory requirement
  * TODO diameter estimation
  * TODO sampling technique
+ * TODO handle output file
+ *
+ * TODO add measurement of throughput as edges traversed per second (TEPS)
+ * refer to: https://gunrock.github.io/docs/#/gunrock/methodology
  */
 int main( int argc, char *argv[] ) {
 
@@ -71,9 +77,10 @@ int main( int argc, char *argv[] ) {
     matrix_coo_t m_coo;
     matrix_csr_t m_csr;
     int *d_row_offsets, *d_cols;
+    float *bc_cpu, *bc_gpu;
 
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s [input_filename]", argv[0]);
+    if (argc != 3) {
+        fprintf(stderr, "Usage: %s [input_filename] [output_filename]", argv[0]);
         return EXIT_FAILURE;
     }
 
@@ -112,6 +119,20 @@ int main( int argc, char *argv[] ) {
 //    cudaSafeCall( cudaMalloc((void**)&d_row_offsets, size_rows) );
 //    cudaSafeCall( cudaMalloc((void**)&d_cols, size_cols) );
 
+#ifdef BENCHMARK
+    /*
+     * Compute BC with the algorithm that uses  multithreading of the BGL.
+     */
+    size_t nvertices = m_csr.nrows;
+    bc_cpu = (float*) malloc(nvertices * sizeof(bc_cpu));
+
+    /*
+     * Check whether BC was computed correctly.
+     */
+    check_bc(m_csr, bc_cpu, bc_gpu);
+    free(bc_cpu);
+#endif
+
     free_matrix_coo(&m_coo);
     free_matrix_csr(&m_csr);
 //    cudaSafeCall( cudaFree(d_row_offsets) );
@@ -119,208 +140,3 @@ int main( int argc, char *argv[] ) {
 
     return EXIT_SUCCESS;
 }
-//
-//__global__ void vertex_parallel_bfs(int nnz, int *sigma, int *d,
-//                                       int source, const int *row_offsets,
-//                                       const int *cols) {
-//
-//    int idx = (int) threadIdx.x;
-//
-//    /*
-//     * Initialize d and sigma.
-//     */
-//    for(int v = idx; v < nnz; v += (int) blockDim.x) {
-//        if(v == source) {
-//            d[v] = 0;
-//            sigma[v] = 1;
-//        } else {
-//            d[v] = -1;
-//            sigma[v] = 0;
-//        }
-//    }
-//    __shared__ int current_depth;
-//    __shared__ bool done;
-//
-//    if(idx == 0) {
-//        done = false;
-//        current_depth = 0;
-//    }
-//    __syncthreads();
-//
-//    /*
-//     * Calculate the number of shortest paths and the distance from s
-//     * (the root) to each vertex.
-//     */
-//    while(!done)
-//    {
-//        __syncthreads();
-//        done = true;
-//        __syncthreads();
-//
-//        /*
-//         * For each vertex, traverse its neighbours and update the
-//         */
-//        for(int v = idx; v < nnz; v += (int) blockDim.x) {
-//
-//            if(d[v] == current_depth) {
-//
-//                for(int r = row_offsets[v]; r < row_offsets[v+1]; r++) {
-//
-//                    int w = cols[r];
-//
-//                    if(d[w] == -1) {
-//                        d[w] = d[v] + 1;
-//                        done = false;
-//                    }
-//
-//                    if(d[w] == (d[v] + 1))
-//                        atomicAdd(&sigma[w], sigma[v]);
-//                }
-//            }
-//        }
-//        __syncthreads();
-//
-//        if(idx == 0)
-//            current_depth++;
-//    }
-//}
-//
-//__global__ void edge_parallel_bfs(int nnz, int *sigma, int *d,
-//                                     int source, const int *rows,
-//                                     const int *cols, int nedges) {
-//
-//    int idx = (int) threadIdx.x;
-//
-//    /*
-//     * Initialize d and sigma.
-//     */
-//    for(int k = idx; k < nnz; k += (int) blockDim.x)
-//    {
-//        if(k == source) {
-//            d[k] = 0;
-//            sigma[k] = 1;
-//        } else {
-//            d[k] = -1;
-//            sigma[k] = 0;
-//        }
-//    }
-//
-//    __shared__ int current_depth;
-//    __shared__ bool done;
-//
-//    if(idx == 0) {
-//        done = false;
-//        current_depth = 0;
-//    }
-//    __syncthreads();
-//
-//    /*
-//     * Calculate the number of shortest paths and the distance from s
-//     * (the root) to each vertex.
-//     */
-//    while(!done)
-//    {
-//        __syncthreads();
-//        done = true;
-//        __syncthreads();
-//
-//        for(int k = idx; k < nedges; k += (int) blockDim.x) {
-//
-//            int v = rows[k];
-//
-//            // If the head is in the vertex frontier, look at the tail
-//            if(d[v] == current_depth) {
-//
-//                int w = cols[k];
-//
-//                if(d[w] == -1) {
-//                    d[w] = d[v] + 1;
-//                    done = false;
-//                }
-//
-//                if(d[w] == (d[v] + 1))
-//                    atomicAdd(&sigma[w], sigma[v]);
-//            }
-//        }
-//
-//        __syncthreads();
-//        if (threadIdx.x == 0)
-//            current_depth++;
-//    }
-//}
-//
-///*
-// * REVIEW
-// */
-//__global__ void work_efficient_bfs(int nnz, int *sigma, int *d,
-//                                      int source, const int *row_offsets,
-//                                      const int *cols) {
-//
-//    int idx = (int) threadIdx.x;
-//
-//    /*
-//     * Initialize d and sigma.
-//     */
-//    for(int k = idx; k < nnz; k += (int) blockDim.x)
-//    {
-//        if(k == source) {
-//            d[k] = 0;
-//            sigma[k] = 1;
-//        } else {
-//            d[k] = -1;
-//            sigma[k] = 0;
-//        }
-//    }
-//
-//    __shared__ int Q_len;
-//    __shared__ int Q2_len;
-//
-//    if(idx == 0)
-//    {
-//        Q[0] = source;
-//        Q_len = 1;
-//        Q2_len = 0;
-//    }
-//    __syncthreads();
-//
-//    while(true)
-//    {
-//        for(int k = idx; k < Q_len; k += (int) blockDim.x) {
-//
-//            int v = Q[k];
-//
-//            for(int r = row_offsets[v]; r < row_offsets[v+1]; r++) {
-//
-//                // Use atomicCAS to prevent duplicates
-//                if(atomicCAS(&d[w], -1, d[v] + 1) == -1) {
-//                    int t = atomicAdd(&Q2_len,1);
-//                    Q2[t] = w;
-//                }
-//
-//                if(d[w] == (d[v]+1))
-//                    atomicAdd(&sigma[w],sigma[v]);
-//            }
-//        }
-//        __syncthreads();
-//
-//        /*
-//         * The next vertex frontier is empty, so we're done searching.
-//         */
-//        if(Q2_len == 0) {
-//            break;
-//        } else {
-//
-//            for(int k = idx; k < Q2_len; k += (int) blockDim.x) {
-//                Q[k] = Q2[k];
-//            }
-//
-//            __syncthreads();
-//
-//            if(idx == 0) {
-//                Q_len = Q2_len;
-//                Q2_len = 0;
-//            }
-//            __syncthreads();
-//        }
-//    }
-//}

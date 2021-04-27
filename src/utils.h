@@ -31,14 +31,20 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * ---------------------------------------------------------------------------
- *
- * TODO implement check_bc()
- *
  ****************************************************************************/
 
 #ifndef SOCNETALGSONGPU_UTILS_H
 #define SOCNETALGSONGPU_UTILS_H
+
+#include <cassert>
+#include <stdio_ext.h>
+#include <cerrno>
+
+void check_bc(matrix_csr_t g, const float *bc_cpu, const float *bc_gpu) {
+    for(int i = 0; i < g.row_offsets[g.nrows]; i++) {
+        assert(bc_cpu[i] == bc_gpu[i]);
+    }
+}
 
 /*
  * from http://www.graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2
@@ -94,6 +100,34 @@ int reduce_sum(const int *arr, int n, int start, int end) {
     return tmp;
 }
 
+/*
+ * Taken from:
+ * https://stackoverflow.com/questions/4972994/how-to-close-stdout-and-stderr-in-c
+ */
+int close_stream(FILE *stream) {
+
+    const bool some_pending = (__fpending (stream) != 0);
+    const bool prev_fail = (ferror (stream) != 0);
+    const bool fclose_fail = (fclose (stream) != 0);
+
+    /* Return an error indication if there was a previous failure or if
+       fclose failed, with one exception: ignore an fclose failure if
+       there was no previous error, no data remains to be flushed, and
+       fclose failed with EBADF.  That can happen when a program like cp
+       is invoked like this 'cp a b >&-' (i.e., with standard output
+       closed) and doesn't generate any output (hence no previous error
+       and nothing to be flushed).  */
+
+    if (prev_fail || (fclose_fail && (some_pending || errno != EBADF))) {
+
+        if (! fclose_fail)
+            errno = 0;
+        return EOF;
+    }
+
+    return 0;
+}
+
 void print_array(const int *arr, int n) {
     printf("[ ");
 
@@ -110,7 +144,7 @@ void print_edge_list(const int *row_offsets, const int *cols, int nrows) {
     for(int i = 0; i < nrows; i++) {
 
         int begin = row_offsets[i];
-        int end = row_offsets[i+1];
+        int end = row_offsets[i + 1];
 
         for(int j = begin; j < end; j++) {
 
@@ -120,17 +154,14 @@ void print_edge_list(const int *row_offsets, const int *cols, int nrows) {
                 printf(", %d", cols[j]);
         }
 
+        /*
+         * For isolated vertices.
+         */
         if(begin == end) {
             printf("%d | ", i);
         }
 
         printf("\n");
-    }
-}
-
-void check_bc(cudaGraph_t g, const float *bc_cpu, const float *bc_gpu) {
-    for(int i = 0; i < g; i++) {
-        assert();
     }
 }
 

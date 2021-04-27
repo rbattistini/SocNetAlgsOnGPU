@@ -1,4 +1,4 @@
-# Datasets description
+= Datasets description
 
 - `wiki-vote.dot`: directed, unweighted and connected graph;
 - `email-Eu-core`: directed, unweighted and connected graph.

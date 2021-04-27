@@ -14,7 +14,7 @@
 :source-indent: 2
 :toc: macro
 :sectnums:
-:bibtex-file: ./docs/bibliography.bib
+:bibtex-file: bibliography.bib
 :bibtex-order: alphabetical
 :bibtex-style: ieee
 :bibtex-locale: it-IT
@@ -296,6 +296,7 @@ for v in G.V do
             label w.bc as w.bc + w.δ * (1 + s.p)
         end
     end
+end
 ----
 
 <<<

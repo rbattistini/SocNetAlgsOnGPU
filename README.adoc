@@ -8,7 +8,9 @@ endif::[]
 A command-line application for computing Betweenness Centrality of sparse
 graphs that represent social networks.
 
-== Prerequisites
+== Installation
+
+=== Prerequisites
 
 These are the dependencies needed to build the project:
 
@@ -29,7 +31,7 @@ During the development of the project only GCC has been tested so other C and {c
 compilers like CLang have not been tested.
 ====
 
-== Installation
+=== Compilation
 
 First clone this repo and enter it:
 
@@ -68,8 +70,6 @@ available.
 To compile a single .cu or .cpp source file follow the instructions given in the
 header of the file.
 
-== Usage
-
 [source,shell]
 ----
 mkdir build
@@ -80,4 +80,6 @@ cmake -Bbuild -DCMAKE_BUILD_TYPE=Default
 # cmake ../ -DCMAKE_BUILD_TYPE=Default
 ----
 
-== References
+=== Generating Datasets
+
+== Performance Analysis
