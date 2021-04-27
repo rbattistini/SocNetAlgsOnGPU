@@ -16,14 +16,13 @@ endif()
 add_library(mmio STATIC libs/libmmio/mmio.c libs/libmmio/mmio.h)
 target_compile_features(mmio PUBLIC cxx_std_11)
 set_target_properties(mmio PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-
 include_directories(libs/libmmio)
 
-add_executable(betweenness src/betweenness.cu)
+add_executable(parallel src/betweenness.cu)
 set_target_properties(
-        betweenness PROPERTIES CUDA_SEPARABLE_COMPILATION ON
+        parallel PROPERTIES CUDA_SEPARABLE_COMPILATION ON
         COMPILE_FLAGS -DCUDA_DEBUG COMPILE_FLAGS -DDEBUG)
-target_link_libraries(betweenness PRIVATE mmio)
+target_link_libraries(parallel PRIVATE mmio)
 
 file(GLOB samples samples/*.cu)
 
@@ -32,5 +31,8 @@ foreach(sample ${samples})
     add_executable(${samplename} ${sample})
 endforeach()
 
-add_executable(brandes_serial src/brandes_serial.cpp)
-target_link_libraries(brandes_serial PRIVATE mmio)
+#file(GLOB serial_srcs src/*.cpp src/*.h)
+
+add_executable(serial src/main.cpp src/utils.h src/utils.cpp src/matio.h
+        src/matio.cpp src/matstorage.h src/matstorage.cpp src/bc.h src/bc.cpp )
+target_link_libraries(serial PRIVATE mmio)

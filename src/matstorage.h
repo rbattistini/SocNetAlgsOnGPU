@@ -48,6 +48,8 @@
 #ifndef MATSTORAGE_H
 #define MATSTORAGE_H
 
+#include <cstdlib>
+
 typedef struct matrix_coo_t {
     int nrows;  // = ncols since adj matrix is a square matrix
     int nnz;
@@ -69,14 +71,10 @@ typedef struct gprops_t {
     bool is_connected;
 } gprops_t;
 
-#include "utils.h"
 
-int all_matrix_coo_init(matrix_coo_t* matrix) {
-    return  (matrix->cols != NULL) &&
-            (matrix->rows != NULL) &&
-            (matrix->nrows > -1) &&
-            (matrix->nnz > -1);
-}
+void check_bc(matrix_csr_t g, const float *bc_cpu, const float *bc_gpu);
+
+int all_matrix_coo_init(matrix_coo_t* matrix);
 
 /**
  * Convert a matrix A, stored in COO format, to a matrix B, stored in the CSR
@@ -99,167 +97,19 @@ int all_matrix_coo_init(matrix_coo_t* matrix) {
  * @param m_csr structure representing the matrix in the new format.
  * Row_offsets and cols fields *must not* be preallocated.
  */
-void coo_to_csr(matrix_coo_t *m_coo, matrix_csr_t *m_csr)
-{
+void coo_to_csr(matrix_coo_t *m_coo, matrix_csr_t *m_csr);
 
-    if(!all_matrix_coo_init(m_coo)) {
-        fprintf(stderr, "The matrix is not initialized");
-        return;
-    }
+void print_matrix_coo(matrix_coo_t* matrix);
 
-    int *row_offsets, *scan;
-    int *rows = m_coo->rows;    // row indices of A
-    int nnz = m_coo->nnz;       // number of nnz in A
-    int nrows = m_coo->nrows;   // number of rows in A
-    int *cols;
+void print_matrix_csr(matrix_csr_t* matrix);
 
-    row_offsets = (int *) malloc((nrows + 1) * sizeof(*row_offsets));
-    cols = (int *) malloc(nnz * sizeof(*cols));
-    assert(row_offsets);
-    assert(cols);
-    fill(row_offsets, (nrows + 1), 0);
+void free_matrix_coo(matrix_coo_t* matrix);
 
-    /*
-     * Compute number of non-zero entries per column of A.
-     */
-    for (int n = 0; n < nnz; n++){
-        row_offsets[rows[n]]++;
-    }
+void free_matrix_csr(matrix_csr_t* matrix);
 
-    /*
-     * Compute row offsets
-     */
-    for(int i = 0, psum = 0; i < nrows; i++){
-        int temp = row_offsets[i];
-        row_offsets[i] = psum;
-        psum += temp;
-    }
-    row_offsets[nrows] = nnz;
-
-    /*
-     * Copy cols array of A in cols of B
-     */
-    for(int n = 0; n < nnz; n++) {
-        int row = rows[n];
-        int dest = row_offsets[row];
-
-        cols[dest] = m_coo->cols[n];
-
-        row_offsets[row]++;
-    }
-
-    for(int i = 0, last = 0; i <= nrows; i++){
-        int temp = row_offsets[i];
-        row_offsets[i] = last;
-        last = temp;
-    }
-
-    m_csr->nrows = nrows;
-    m_csr->cols = cols;
-    m_csr->row_offsets = row_offsets;
-
-}
-
-void print_matrix_coo(matrix_coo_t* matrix) {
-
-    if(!all_matrix_coo_init(matrix)) {
-        fprintf(stderr, "The matrix is not initialized");
-        return;
-    }
-
-    printf("nrows = %d\n", matrix->nrows);
-    printf("nnz = %d\n", matrix->nnz);
-    printf("rows = \n");
-    print_array(matrix->rows, matrix->nnz - 1);
-    printf("cols = \n");
-    print_array(matrix->cols, matrix->nnz - 1);
-}
-
-void print_matrix_csr(matrix_csr_t* matrix) {
-
-    if(matrix->row_offsets == NULL) {
-        fprintf(stderr, "The matrix is not initialized");
-        return;
-    }
-
-    int nnz = matrix->row_offsets[matrix->nrows];
-    printf("nrows = %d\n", matrix->nrows);
-    printf("offsets = \n");
-    print_array(matrix->row_offsets, matrix->nrows);
-    printf("cols = \n");
-    print_array(matrix->cols, nnz - 1);
-}
-
-void free_matrix_coo(matrix_coo_t* matrix)
-{
-    free(matrix->rows);
-    free(matrix->cols);
-    matrix->rows = nullptr;
-    matrix->cols = nullptr;
-    matrix->nnz = -1;
-    matrix->nrows = -1;
-}
-
-void free_matrix_csr(matrix_csr_t* matrix)
-{
-    free(matrix->row_offsets);
-    free(matrix->cols);
-    matrix->row_offsets = nullptr;
-    matrix->cols = nullptr;
-    matrix->nrows = -1;
-}
-
-void compute_degrees_undirected(matrix_coo_t* g, int *degree) {
-
-    if(!all_matrix_coo_init(g)) {
-        fprintf(stderr, "The graph is not initialized");
-        return;
-    }
-
-    int *rows = g->rows;    // row indices of A
-    int nnz = g->nnz;       // number of nnz in A
-    int nrows = g->nrows;   // number of rows in A
-
-    fill(degree, nrows, 0);
-
-    /*
-     * Compute number of non-zero entries per row of A.
-     */
-    for (int n = 0; n < nnz; n++){
-        degree[rows[n]]++;
-    }
-}
+void compute_degrees_undirected(matrix_coo_t* g, int *degree);
 
 void compute_degrees_directed(matrix_coo_t*  g, int *in_degree,
-                              int *out_degree) {
-
-    if(g->rows == NULL) {
-        fprintf(stderr, "The graph is not initialized");
-        return;
-    }
-
-    int *rows = g->rows;    // row indices of A
-    int nnz = g->nnz;       // number of nnz in A
-    int length = g->nrows;  // number of rows and columns in A
-    int *cols = g->cols;    // column indices of A
-
-//    offsets = (int *) malloc((length + 1) * sizeof(*offsets));
-    fill(in_degree, length, 0);
-    fill(out_degree, length, 0);
-
-    /*
-     * Compute number of non-zero entries per column of A.
-     */
-    for (int n = 0; n < nnz; n++){
-        out_degree[rows[n]]++;
-    }
-
-    /*
-     * Compute number of non-zero entries per row of A.
-     */
-    for (int n = 0; n < nnz; n++){
-        in_degree[cols[n]]++;
-    }
-}
+                              int *out_degree);
 
 #endif // MATSTORAGE_H
