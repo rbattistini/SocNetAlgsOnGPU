@@ -34,16 +34,11 @@
  ****************************************************************************/
 
 #include "matio.h"
-#include "matstorage.h"
-#include "utils.h"
+#include <cassert>
 
-/*
- * from https://stackoverflow.com/questions/3437404/min-and-max-in-c
- */
-#define max(a,b) \
-   ({ __typeof__ (a) _a = (a); \
-       __typeof__ (b) _b = (b); \
-     _a > _b ? _a : _b; })
+inline int max(int a, int b) {
+    return a > b ? a : b;
+}
 
 /*
  * Check if a filename has a given extension.
@@ -52,7 +47,7 @@
 static int has_extension(const char* name, const char* extension, size_t length)
 {
     const char* ldot = strrchr(name, '.');
-    if (ldot != NULL)
+    if (ldot != nullptr)
     {
         if (length == 0)
             length = strlen(extension);
@@ -69,10 +64,10 @@ static int get_line (FILE *f, char *buf) {
     buf [0] = '\0' ;
     buf [1] = '\0' ;
     buf [BUFFER_SIZE] = '\0' ;
-    return (fgets (buf, BUFFER_SIZE, f) != NULL) ;
+    return (fgets (buf, BUFFER_SIZE, f) != nullptr) ;
 }
 
-int read_matrix_market(const char *fname, matrix_coo_t *m_coo) {
+int read_matrix_market(const char *fname, matrix_coo_t *m_coo, gprops_t *gp) {
 
     FILE *f;
     MM_typecode matcode;
@@ -103,6 +98,18 @@ int read_matrix_market(const char *fname, matrix_coo_t *m_coo) {
                 mm_typecode_to_str(matcode));
         return EXIT_FAILURE;
     }
+
+    /*
+     * Undirected graphs must be stored as symmetric matrices.
+     */
+    if(mm_is_symmetric(matcode)) {
+        gp->is_directed = false;
+    }
+
+    /*
+     * Self-loops are discarded.
+     */
+    gp->has_self_loops = false;
 
     /*
      * Get the shape of the sparse matrix and the number of non zero elements.
@@ -155,11 +162,17 @@ int read_matrix_market(const char *fname, matrix_coo_t *m_coo) {
         }
 
         /*
-         * Check indexing, only for the first pair/triplet.
+         * Check indexing and whether the graph is weighted, only for the first
+         * pair/triplet.
          */
         if(cnt == 0) {
             if(tmp_row == 0 || tmp_col == 0)
                 one_based = false;
+
+            if(nitems == 2)
+                gp->is_weighted = false;
+            else if(nitems == 3)
+                gp->is_weighted = true;
         }
 
         /*
@@ -226,14 +239,14 @@ int read_matrix_market(const char *fname, matrix_coo_t *m_coo) {
     return 0;
 }
 
-int read_matrix(const char *fname, matrix_coo_t *m_coo)
-{
+int read_matrix(const char *fname, matrix_coo_t *m_coo, gprops_t *gp) {
+
     int status;
 
     if (has_extension(fname, "mtx", strlen(fname)) ||
         has_extension(fname, "mm", strlen(fname)))
 
-        status = read_matrix_market(fname, m_coo);
+        status = read_matrix_market(fname, m_coo, gp);
     else {
         fprintf(stderr, "Unsupported file type\n");
         status = EXIT_FAILURE;

@@ -113,3 +113,25 @@ void print_edge_list(const int *row_offsets, const int *cols, int nrows) {
         printf("\n");
     }
 }
+
+void bucket_sort(const int *arr, int n) {
+    // 1) Create n empty buckets
+    int *aux = (int*) malloc(n  * sizeof(*aux));
+
+    // 2) Put array elements
+    // in different buckets
+    for (int i = 0; i < n; i++) {
+        int bi = n * arr[i]; // Index in bucket
+        aux[bi] = arr[i];
+    }
+
+//    // 3) Sort individual buckets
+//    for (int i = 0; i < n; i++)
+//        sort(aux[i].begin(), aux[i].end());
+//
+//    // 4) Concatenate all buckets into arr[]
+//    int index = 0;
+//    for (int i = 0; i < n; i++)
+//        for (int j = 0; j < aux[i].size(); j++)
+//            arr[index++] = aux[i][j];
+}

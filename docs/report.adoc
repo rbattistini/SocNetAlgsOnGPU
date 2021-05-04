@@ -58,7 +58,7 @@ una metrica comunemente impiegata nel campo dell'Analisi delle Reti Sociali.
 
 Per realizzare l'applicativo sono stati impiegati i linguaggi C, {cpp} e CUDA C.
 In particolare il software realizzato impiega il Compute Unified Device Architecture (CUDA) Toolkit 11.2 cite:[cuda] e
-gli standard C99 e {cpp}11. Come sistema per l'automazione dello sviluppo è stato impiegato il software multipiattaforma CMake 3.9. Git 2.3 è stato utilizzato per il controllo di versione.
+gli standard C99 e {cpp}11. Inoltre durante lo sviluppo dell'applicazione sono stati impiegati The GNU Project Debugger (GDB) e Valgrind. Come sistema per l'automazione dello sviluppo è stato impiegato il software multipiattaforma CMake 3.9. Git 2.3 è stato utilizzato per il controllo di versione.
 
 Per la scrittura della documentazione del progetto sono stati impiegati
 il linguaggio di markup Asciidoc, Gnuplot 5.2 per la creazione dei grafici e
@@ -202,7 +202,7 @@ Il calcolo della {BC} di un vertice stem:[v \in V] richiede la somma di coppie d
 procedure SPVB(G)
 let G.V be the set of vertices of the graph G
 let G.n be the number of vertices in G
-let v.d be the degree of a vertex v
+let v.dg be the degree of a vertex v
 let v.bc be the betweneess centrality of a vertex v
 let p[] be an array # <1>
 for v in G.V do # <2>
@@ -215,7 +215,7 @@ let deg be a queue
 label i as 0
 label G_i as G
 for v in G.V do # <3>
-    if v.d = 1 then
+    if v.dg = 1 then
         deg.enqueue(v)
     end
 end
@@ -228,7 +228,7 @@ do
     delete v from G_i
     label G_i.V as G_(i-1).V \ {v}
     label G_i.E as G_(i-1).E \ {(v,u)}
-    if u.d = 1 then
+    if u.dg = 1 then
         deg.enqueue(u)
     end
 while deg is not empty

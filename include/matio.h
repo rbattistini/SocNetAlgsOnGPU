@@ -58,11 +58,12 @@
 #define BUFFER_SIZE 1030
 
 #include "matstorage.h"
-#include <cstdio>
-#include <cstdbool>
-#include <cstring>
-#include <cstdlib>
-#include <climits>
+#include "graphs.h"
+#include <c++/10/cstdio>
+#include <c++/10/cstdbool>
+#include <c++/10/cstring>
+#include <c++/10/cstdlib>
+#include <c++/10/climits>
 extern "C" {
     #include "mmio.h"
 }
@@ -94,8 +95,8 @@ extern "C" {
  * @param m_coo
  * @return
  */
-int read_matrix_market(const char *fname, matrix_coo_t *m_coo);
+int read_matrix_market(const char *fname, matrix_coo_t *m_coo, gprops_t *gp);
 
-int read_matrix(const char *fname, matrix_coo_t *m_coo);
+int read_matrix(const char *fname, matrix_coo_t *m_coo, gprops_t *gp);
 
 #endif //MATIO_H

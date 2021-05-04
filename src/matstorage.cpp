@@ -33,8 +33,8 @@
  *
  ****************************************************************************/
 
-#include "matstorage.h"
-#include "utils.h"
+#include "../include/matstorage.h"
+#include "../include/utils.h"
 
 void check_bc(matrix_csr_t g, const float *bc_cpu, const float *bc_gpu) {
     for(int i = 0; i < g.row_offsets[g.nrows]; i++) {
@@ -42,16 +42,16 @@ void check_bc(matrix_csr_t g, const float *bc_cpu, const float *bc_gpu) {
     }
 }
 
-int all_matrix_coo_init(matrix_coo_t* matrix) {
-    return  (matrix->cols != NULL) &&
-            (matrix->rows != NULL) &&
+int check_matrix_coo_init(matrix_coo_t* matrix) {
+    return  (matrix->cols != nullptr) &&
+            (matrix->rows != nullptr) &&
             (matrix->nrows > -1) &&
             (matrix->nnz > -1);
 }
 
 void coo_to_csr(matrix_coo_t *m_coo, matrix_csr_t *m_csr) {
 
-    if(!all_matrix_coo_init(m_coo)) {
+    if(!check_matrix_coo_init(m_coo)) {
         fprintf(stderr, "The matrix is not initialized");
         return;
     }
@@ -91,9 +91,7 @@ void coo_to_csr(matrix_coo_t *m_coo, matrix_csr_t *m_csr) {
     for(int n = 0; n < nnz; n++) {
         int row = rows[n];
         int dest = row_offsets[row];
-
         cols[dest] = m_coo->cols[n];
-
         row_offsets[row]++;
     }
 
@@ -106,12 +104,13 @@ void coo_to_csr(matrix_coo_t *m_coo, matrix_csr_t *m_csr) {
     m_csr->nrows = nrows;
     m_csr->cols = cols;
     m_csr->row_offsets = row_offsets;
+    print_matrix_csr(m_csr);
 
 }
 
 void print_matrix_coo(matrix_coo_t* matrix) {
 
-    if(!all_matrix_coo_init(matrix)) {
+    if(!check_matrix_coo_init(matrix)) {
         fprintf(stderr, "The matrix is not initialized");
         return;
     }
@@ -126,7 +125,7 @@ void print_matrix_coo(matrix_coo_t* matrix) {
 
 void print_matrix_csr(matrix_csr_t* matrix) {
 
-    if(matrix->row_offsets == NULL) {
+    if(matrix->row_offsets == nullptr) {
         fprintf(stderr, "The matrix is not initialized");
         return;
     }
@@ -160,7 +159,7 @@ void free_matrix_csr(matrix_csr_t* matrix)
 
 void compute_degrees_undirected(matrix_coo_t* g, int *degree) {
 
-    if(!all_matrix_coo_init(g)) {
+    if(!check_matrix_coo_init(g)) {
         fprintf(stderr, "The graph is not initialized");
         return;
     }
@@ -182,7 +181,7 @@ void compute_degrees_undirected(matrix_coo_t* g, int *degree) {
 void compute_degrees_directed(matrix_coo_t*  g, int *in_degree,
                               int *out_degree) {
 
-    if(g->rows == NULL) {
+    if(g->rows == nullptr) {
         fprintf(stderr, "The graph is not initialized");
         return;
     }

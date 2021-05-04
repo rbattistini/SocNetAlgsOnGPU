@@ -64,17 +64,15 @@ typedef struct matrix_csr_t {
     int *cols;           // column index for each non-zero value
 } matrix_csr_t;
 
-typedef struct gprops_t {
-    bool is_directed;
-    bool is_weighted;
-    bool has_self_loops;
-    bool is_connected;
-} gprops_t;
-
+typedef struct submatrix_array_t {
+    int *nrows;
+    int **row_offsets;    // offset in columns
+    int **cols;           // column index for each non-zero value
+} submatrix_array_t;
 
 void check_bc(matrix_csr_t g, const float *bc_cpu, const float *bc_gpu);
 
-int all_matrix_coo_init(matrix_coo_t* matrix);
+int check_matrix_coo_init(matrix_coo_t* matrix);
 
 /**
  * Convert a matrix A, stored in COO format, to a matrix B, stored in the CSR
@@ -106,10 +104,5 @@ void print_matrix_csr(matrix_csr_t* matrix);
 void free_matrix_coo(matrix_coo_t* matrix);
 
 void free_matrix_csr(matrix_csr_t* matrix);
-
-void compute_degrees_undirected(matrix_coo_t* g, int *degree);
-
-void compute_degrees_directed(matrix_coo_t*  g, int *in_degree,
-                              int *out_degree);
 
 #endif // MATSTORAGE_H

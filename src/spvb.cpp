@@ -32,18 +32,62 @@
  *
  ****************************************************************************/
 
-#include "bc.h"
-#include "utils.h"
+#include "../include/spvb.h"
+#include "../include/utils.h"
 
-void spvb(matrix_csr_t *g, const float *p) {
+using std::queue;
+using std::stack;
 
+void spvb(PUNGraph& g, const int *degrees, float *bc_scores, float *p,
+          bool directed) {
+//
+//    matrix_coo_t g_i;
+//    std::queue<int> Q;
+//
+//    for(int i = 0; i < g->nrows; i++) {
+//        p[i] = 0.0f;
+//        bc_scores[i] = 0.0f;
+//    }
+//
+//    /*
+//     * Initialize first set of 1-degree vertices.
+//     */
+//    for(int i = 0; i < g->nrows; i++) {
+//        if(degrees[i] == 1) {
+//            Q.push(i);
+//        }
+//    }
+//
+//    do {
+//        int v = Q.front();
+//        Q.pop();
+//
+//        for(int k = g->rows[v]; k < g->rows[v + 1]; k++) {
+//            int w = g->cols[k];
+//
+//            bc_scores[w] += 2 * ( (float) g->nrows - p[v] - p[w - 2]) *
+//                    (p[v] + 1);
+//            p[w] += p[v] + 1;
+//
+//            // TODO delete v from g_i and related edges
+//
+//            if(degrees[w] == 1) {
+//                Q.push(w);
+//            }
+//        }
+//
+//    } while(!Q.empty());
+//
+//    /*
+//     * Call the BC of Brandes procedure on the new graph g_i.
+//     */
+//    if(g_i.nrows > 1)
+//        BC_mod_computation(&g_i, p, bc_scores, directed);
+//
 }
 
-void BC_mod_computation(matrix_csr_t *g, const float *p, float *bc_scores,
+void BC_mod_computation(matrix_coo_t *g, const float *p, float *bc_scores,
                         bool directed) {
-
-    for(int i = 0; i < g->nrows; i++)
-        bc_scores[i] = 0;
 
     for(int j = 0; j < g->nrows; j++) {
 
@@ -61,8 +105,8 @@ void BC_mod_computation(matrix_csr_t *g, const float *p, float *bc_scores,
             distance[i] = INT_MAX;
         }
 
-        std::queue<int> Q;
-        std::stack<int> S;
+        queue<int> Q;
+        stack<int> S;
 
         sigma[s] = 1;
         distance[s] = 0;
@@ -76,7 +120,7 @@ void BC_mod_computation(matrix_csr_t *g, const float *p, float *bc_scores,
             S.push(v);
 
 //            printf("%d | ", v);
-            for(int k = g->row_offsets[v]; k < g->row_offsets[v + 1]; k++) {
+            for(int k = g->rows[v]; k < g->rows[v + 1]; k++) { //TODO
 
                 int w = g->cols[k];
 //                printf("%d ", w);
@@ -108,7 +152,7 @@ void BC_mod_computation(matrix_csr_t *g, const float *p, float *bc_scores,
             int w = S.top();
             S.pop();
 
-            for(int i = g->row_offsets[w]; i < g->row_offsets[w + 1]; i++) {
+            for(int i = g->rows[w]; i < g->rows[w + 1]; i++) {
                 int v = g->cols[i];
                 if(distance[v] == (distance[w] - 1)) {
                     delta[v] += (sigma[v] / (float) sigma[w]) *
@@ -158,8 +202,8 @@ void BC_computation(matrix_csr_t *g, float *bc_scores, bool directed) {
             distance[i] = INT_MAX;
         }
 
-        std::queue<int> Q;
-        std::stack<int> S;
+        queue<int> Q;
+        stack<int> S;
 
         sigma[source] = 1;
         distance[source] = 0;
@@ -233,10 +277,10 @@ void BC_computation(matrix_csr_t *g, float *bc_scores, bool directed) {
 
 }
 
-void print_bc_scores(matrix_csr_t g, const float *bc_scores, FILE* fout) {
+void print_bc_scores(matrix_csr_t *g, const float *bc_scores, FILE* fout) {
 
-    unsigned int nvertices = g.nrows;
-    unsigned int nedges = g.row_offsets[nvertices];
+    unsigned int nvertices = g->nrows;
+    unsigned int nedges = g->row_offsets[nvertices];
 
     if(fout != nullptr) {
         fprintf(fout, "Number of vertices: %d\n", nvertices);

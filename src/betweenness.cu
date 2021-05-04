@@ -48,12 +48,12 @@
 #include <cstdlib>
 #include <cstdio>
 
-#include "matio.h"
-#include "matstorage.h"
+#include "../include/matio.h"
+#include "../include/matstorage.h"
 //#include "timing.cuh"
 //#include "errcheck.cuh"
 //#include "graphs_kernels.cuh"
-#include "device_props.cuh"
+#include "../include/device_props.cuh"
 
 typedef struct device_graph_t {
     int *row_offsets;

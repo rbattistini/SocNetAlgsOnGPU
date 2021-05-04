@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * bc.h - Serial algorithm of Brandes for computing betweenness centrality.
+ * utils.h - basic serial prefix Sum and reduce operators and functions for
+ * printing some types of arrays related to internal memory storage of graphs
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
@@ -32,23 +33,25 @@
  *
  ****************************************************************************/
 
-#ifndef BC_H
-#define BC_H
+#ifndef SOCNETALGSONGPU_UTILS_H
+#define SOCNETALGSONGPU_UTILS_H
 
-#include "matstorage.h"
+#include <cassert>
 #include <cstdlib>
-#include <queue>
-#include <stack>
-#include <climits>
 #include <cstdio>
+#include <cerrno>
+#include <stdio_ext.h>
 
-void spvb(matrix_csr_t *g, const float *p);
+#define array_length(x) (sizeof(x) / sizeof((x)[0]))
 
-void BC_mod_computation(matrix_csr_t *g, const float *p, float *bc_scores,
-                        bool directed);
+void fill( int *arr, int n, int v);
 
-void BC_computation(matrix_csr_t *g, float *bc_scores, bool directed);
+int close_stream(FILE *stream);
 
-void print_bc_scores(matrix_csr_t g, const float *bc_scores, FILE* fout);
+void print_array(const int *arr, int n);
 
-#endif //BC_H
+void print_edge_list(const int *row_offsets, const int *cols, int nrows);
+
+void bucket_sort(const int *arr, int n);
+
+#endif //SOCNETALGSONGPU_UTILS_H

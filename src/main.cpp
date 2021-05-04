@@ -30,109 +30,16 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * ---------------------------------------------------------------------------
- *
- * Compile with:
- * g++ -O3 betweenness.cpp -o betweenness
- *
- * Run with:
- * ./betweenness [input_filename] [output_filename]
- *
- * ---------------------------------------------------------------------------
- *
- * TODO Test BC of directed graphs
- *
  ****************************************************************************/
 
 #include <cassert>
-#include "utils.h"
-#include "matio.h"
-#include "matstorage.h"
-#include "bc.h"
-
-void extract_subgraph(int* ids, int nids, matrix_csr_t* g, matrix_coo_t* m) {
-    const float *p;
-    for(int i = 0; i < nids; i++) {
-        for(int j = 0; j < g->nrows; j++) {
-            spvb(g, p);
-        }
-    }
-}
-
-void DFS_visit(matrix_csr_t* g, bool* visited, int s, int* cc_array, int nids) {
-
-    /*
-     * Let the STL vector manage memory allocation.
-     */
-    std::stack<int> S;
-    std::vector<int> subgraph_vertices;
-    S.push(s);
-    int vertices_cnt = 0;
-
-    while (!S.empty()) {
-        s = S.top();
-        S.pop();
-
-        if (!visited[s]) {
-            visited[s] = true;
-            subgraph_vertices.push_back(s);
-            vertices_cnt++;
-        }
-
-        /*
-         * Get all adjacent vertices of the vertex s.
-         * If a adjacent has not been visited, then push it to the S.
-         */
-        for (int i = g->row_offsets[s]; i < g->row_offsets[s + 1]; i++) {
-            int v = g->cols[i];
-            if (!visited[v]) {
-                S.push(v);
-            }
-        }
-    }
-
-    /*
-     * Copy the vector into an array of known size.
-     */
-    nids = subgraph_vertices.size();
-    cc_array = (int*) malloc(nids * sizeof(int));
-    assert(cc_array);
-
-    for(int i = 0; i < nids; i++) {
-        cc_array[i] = cc_array[i];
-    }
-}
-
-int get_cc(matrix_csr_t* g, matrix_csr_t** ccs_array) {
-
-    auto visited = (bool*) malloc(g->nrows * sizeof(bool));
-    assert(visited);
-    int *ids = nullptr, nids = 0, cc_count = 0;
-
-    for(int i = 0; i < g->nrows; i++)
-        visited[i] = false;
-
-    for(int i = 0; i < g->nrows; i++) {
-        if(!visited[i]) {
-            DFS_visit(g, visited, i, ids, nids);
-            matrix_coo_t subgraph_coo;
-            matrix_csr_t subgraph;
-
-            /*
-             * WARNING: too much memory required here. Extract in csr directly.
-             */
-            extract_subgraph(ids, nids, g, &subgraph_coo);
-            coo_to_csr(&subgraph_coo, &subgraph);
-            ccs_array[cc_count] = &subgraph;
-            print_matrix_csr(&subgraph);
-
-            cc_count++;
-            printf(" |\n");
-        }
-    }
-
-    return cc_count;
-}
+#include <iostream>
+#include "Snap.h"
+#include "../include/utils.h"
+#include "../include/matio.h"
+#include "../include/matstorage.h"
+#include "../include/spvb.h"
+#include "../include/graphs.h"
 
 int main( int argc, char *argv[] ) {
 
@@ -142,87 +49,119 @@ int main( int argc, char *argv[] ) {
         return EXIT_FAILURE;
     }
 
-    matrix_csr_t m_csr;
-    float* bc_scores;
-    gprops_t graph_props;
-    int *in_degree, *out_degree, *degree;
-
-    /*
-     * State graph type.
-     */
-    graph_props.is_directed = false;
-    graph_props.has_self_loops = false;
-    graph_props.is_connected = false;
-    graph_props.is_weighted = false;
+    float *bc_scores, *bc_scores_mod, *partial_bc_scores;
+    int *degree;
 
    /*
     * Load matrix in COO format.
     */
+    matrix_csr_t m_csr;
     matrix_coo_t m_coo;
-    if(read_matrix(argv[1], &m_coo)) {
+    gprops_t gp;
+    if(read_matrix(argv[1], &m_coo, &gp)) {
         fprintf(stderr, "Error reading matrix\n");
         return EXIT_FAILURE;
     }
 
     /*
-     * Convert the internal storage representation of the matrix from COO to
-     * CSR.
-     *
-     * WARNING: Too much memory used, parse into CSR directly.
+     * Load the matrix in COO as an undirected graph in SNAP.
+     * This way enhanced algorithm can run efficiently.
      */
-    coo_to_csr(&m_coo, &m_csr);
-    print_matrix_csr(&m_csr);
-    print_edge_list(m_csr.row_offsets, m_csr.cols, m_csr.nrows);
-
-    /*
-     * Compute degrees.
-     */
-    if(graph_props.is_directed) {
-        in_degree = (int*) malloc(m_coo.nrows * sizeof(int));
-        out_degree = (int*) malloc(m_coo.nrows * sizeof(int));
-        assert(in_degree);
-        assert(out_degree);
-        compute_degrees_directed(&m_coo, in_degree, out_degree);
-//        print_array(in_degree, m_coo.nrows - 1);
-//        print_array(out_degree, m_coo.nrows - 1);
-
-    } else {
-        degree = (int*) malloc(m_coo.nrows * sizeof(int));
-        assert(degree);
-        compute_degrees_undirected(&m_coo, degree);
-//        print_array(degree, m_coo.nrows - 1);
-    }
+//    matrix_coo_t subgraph_coo;
+//    matrix_csr_t subgraph_csr;
+    degree = (int*) malloc(m_coo.nrows * sizeof(int));
+    assert(degree);
+    compute_degrees_undirected(&m_coo, degree);
 
     /*
      * Get connected components of undirected graph.
      */
-//    matrix_csr_t **cc_list = nullptr;
-//    int cc_count = get_cc(&m_csr, cc_list);
-//    graph_props.is_connected = (cc_count > 1) ? false : true;
-//    printf("cc: %d\n", cc_count);
+    coo_to_csr(&m_coo, &m_csr);
+    print_matrix_csr(&m_csr);
+
+    std::vector<matrix_csr_t> cc_list;
+    int cc_count = get_cc(&m_csr, cc_list);
+    gp.is_connected = (cc_count == 1);
+    printf("cc: %d\n", cc_count);
+
+#pragma region other
+//    PUNGraph g = TUNGraph::New();
+//    for(int i = 0; i < m_coo.nrows; i++) {
+//        g->AddNode(i);
+//    }
+//
+//    for(int i = 0; i < m_coo.nnz; i++) {
+//        g->AddEdge(m_coo.rows[i], m_coo.cols[i]);
+//    }
+//
+    /*
+     * Extract ccs and induced subgraphs.
+     */
+//    TCnComV cc_array;
+//    TSnap::GetWccs(g, cc_array);
+//
+//    PUNGraph subg = TSnap::GetSubGraph(g, TIntV::GetV(cc_array[0]));
 
     /*
-     * Compute BC.
+     * Convert the subgraphs obtained in COO, then in CSR.
      */
-    bc_scores = (float*) malloc(m_csr.nrows * sizeof(*bc_scores));
-    assert(bc_scores);
-    BC_computation(&m_csr, bc_scores, graph_props.is_directed);
+
+    // traverse the nodes
+//    int i = 0;
+//    degree = (int*) malloc(m_coo.nrows * sizeof(*degree));
+//    assert(degree);
+//
+//    for(TUNGraph::TNodeI NI = g->BegNI(); NI < g->EndNI(); NI++) {
+//        degree[i] = NI.GetDeg();
+//        i++;
+//    }
+//
+//    // traverse the edges
+//    i = 0;
+//    subgraph_coo.nnz = m_coo.nrows;
+//    subgraph_coo.nrows = m_coo.nrows;
+//
+//    for(TUNGraph::TEdgeI EI = g->BegEI(); EI < g->EndEI(); EI++) {
+//        subgraph_coo.rows[i] = EI.GetSrcNId();
+//        subgraph_coo.cols[i] = EI.GetDstNId();
+//        printf("edge (%d, %d)\n", EI.GetSrcNId(), EI.GetDstNId());
+//        i++;
+//    }
+
+//    coo_to_csr(&subgraph_coo, &subgraph_csr);
+//    print_matrix_coo(&m_coo);
+//    print_matrix_csr(&m_csr);
+//    print_edge_list(m_csr.row_offsets, m_csr.cols, m_csr.nrows);
+
+    /*
+     * Compute BC using CSR.
+     */
+//    bc_scores = (float*) malloc(m_coo.nrows * sizeof(*bc_scores));
+//    assert(bc_scores);
+//    BC_computation(&m_csr, bc_scores, gp.is_directed);
 //    FILE *fout = fopen(argv[2], "w");
 //    print_bc_scores(m_csr, bc_scores, stdout);
 //    fclose(fout);
 
     /*
+     * Compute BC with enhanced algorithm, using TUNGraph.
+     */
+//    bc_scores_mod = (float*) malloc(m_coo.nrows * sizeof(*bc_scores));
+//    partial_bc_scores = (float*) malloc(m_coo.nrows * sizeof(*bc_scores));
+//    assert(bc_scores_mod);
+//    assert(partial_bc_scores);
+//    spvb(g, degree, bc_scores_mod, partial_bc_scores, gp.is_directed);
+//    FILE *fout = fopen(argv[2], "w");
+//    print_bc_scores(m_csr, bc_scores, stdout);
+//    fclose(fout);
+#pragma endregion
+    /*
      * Cleanup.
      */
     free_matrix_coo(&m_coo);
     free_matrix_csr(&m_csr);
-    free(bc_scores);
-    if(graph_props.is_directed) {
-        free(in_degree);
-        free(out_degree);
-    } else {
-        free(degree);
-    }
+//    free(bc_scores);
+    free(degree);
 
     /*
      * Closing standard streams with error checking.
