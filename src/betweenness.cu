@@ -74,8 +74,8 @@ typedef struct device_graph_t {
 int main( int argc, char *argv[] ) {
 
     device_graph_t graph;
-    matrix_coo_t m_coo;
-    matrix_csr_t m_csr;
+    matrix_pcoo_t m_coo;
+    matrix_pcsr_t m_csr;
     int *d_row_offsets, *d_cols;
     float *bc_cpu, *bc_gpu;
 
@@ -109,7 +109,7 @@ int main( int argc, char *argv[] ) {
      * Convert the internal storage representation of the matrix from COO to
      * the more efficient CSR.
      */
-    coo_to_csr(&m_coo, &m_csr);
+    pcoo_to_pcsr(&m_coo, &m_csr);
 
     /*
      * Allocate the matrix in CSR on the device.

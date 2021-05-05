@@ -1,7 +1,6 @@
 /****************************************************************************
  *
- * utils.h - basic serial prefix Sum and reduce operators and functions for
- * printing some types of arrays related to internal memory storage of graphs
+ * graphs.h - Algorithms for graph manipulation
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
@@ -33,29 +32,42 @@
  *
  ****************************************************************************/
 
-#ifndef SOCNETALGSONGPU_UTILS_H
-#define SOCNETALGSONGPU_UTILS_H
+#ifndef GRAPHS_H
+#define GRAPHS_H
 
-#include <cassert>
-#include <cstdlib>
-#include <cstdio>
-#include <cerrno>
 #include <vector>
-#include <stdio_ext.h>
+#include <queue>
+#include <climits>
+#include <cstdio>
+#include "matstorage.h"
 
-#define IDX(i, j, n) ((i)*(n) + (j))
-#define array_length(x) (sizeof(x) / sizeof((x)[0]))
+typedef int vertex;
 
-int* stlvector_to_array_int(const std::vector<int>& v, int n);
+typedef struct gprops_t {
+    bool is_directed;
+    bool is_weighted;
+    bool is_connected;
+} gprops_t;
 
-void fill( int *arr, int n, int v);
+typedef struct components_t {
+    vertex *ccs_array;  // vertices ids of each cc
+    int *ccs_size;      // size of each cc
+} components_t;
 
-int close_stream(FILE *stream);
+void BC_computation(matrix_pcsr_t *g, float *bc_scores, bool directed);
 
-void print_array(const int *arr, int n);
+void print_bc_scores(matrix_pcsr_t *g, const float *bc_scores, FILE* fout);
 
-void print_edge_list(const int *row_offsets, const int *cols, int nrows);
+void extract_und_subgraph(const vertex *vertices, int nvertices, matrix_pcsr_t *g,
+                          matrix_pcsr_t *m);
 
-void bucket_sort(const int *arr, int n);
+int* DFS_visit(matrix_pcsr_t *g, bool *visited, int s, int *cc_size);
 
-#endif //SOCNETALGSONGPU_UTILS_H
+int get_cc(matrix_pcsr_t *g, components_t *ccs);
+
+void compute_degrees_undirected(matrix_pcoo_t* g, int *degree);
+
+void compute_degrees_directed(matrix_pcoo_t*  g, int *in_degree,
+                              int *out_degree);
+
+#endif //GRAPHS_H

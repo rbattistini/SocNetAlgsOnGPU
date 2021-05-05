@@ -50,29 +50,38 @@
 
 #include <cstdlib>
 
-typedef struct matrix_coo_t {
+typedef struct matrix_pcoo_t {
     int nrows;  // = ncols since adj matrix is a square matrix
     int nnz;
     int *rows;  // row index for each non-zero value
     int *cols;  // column index for each non-zero value
-} matrix_coo_t;
+} matrix_pcoo_t;
 
-typedef struct matrix_csr_t {
+typedef struct matrix_rcoo_t {
+    int nrows;      // = ncols since adj matrix is a square matrix
+    int nnz;
+    int *rows;      // row index for each non-zero value
+    int *cols;      // column index for each non-zero value
+    int *weights;   // value of each entry
+} matrix_rcoo_t;
+
+typedef struct matrix_pcsr_t {
     int nrows;
 //    int nnz;  // found at row_offsets[nrows]
     int *row_offsets;    // offset in columns
     int *cols;           // column index for each non-zero value
-} matrix_csr_t;
+} matrix_pcsr_t;
 
-typedef struct submatrix_array_t {
-    int *nrows;
-    int **row_offsets;    // offset in columns
-    int **cols;           // column index for each non-zero value
-} submatrix_array_t;
+typedef struct matrix_rcsr_t {
+    int nrows;
+    int *row_offsets;    // offset in columns
+    int *cols;           // column index for each non-zero value
+    int *weights;        // value of each entry
+} matrix_rcsr_t;
 
-void check_bc(matrix_csr_t g, const float *bc_cpu, const float *bc_gpu);
+void check_bc(matrix_pcsr_t g, const float *bc_cpu, const float *bc_gpu);
 
-int check_matrix_coo_init(matrix_coo_t* matrix);
+int check_matrix_pcoo_init(matrix_pcoo_t* matrix);
 
 /**
  * Convert a matrix A, stored in COO format, to a matrix B, stored in the CSR
@@ -95,14 +104,20 @@ int check_matrix_coo_init(matrix_coo_t* matrix);
  * @param m_csr structure representing the matrix in the new format.
  * Row_offsets and cols fields *must not* be preallocated.
  */
-void coo_to_csr(matrix_coo_t *m_coo, matrix_csr_t *m_csr);
+void pcoo_to_pcsr(matrix_pcoo_t *m_coo, matrix_pcsr_t *m_csr);
 
-void print_matrix_coo(matrix_coo_t* matrix);
+void rcoo_to_rcsr(matrix_pcoo_t *m_coo, matrix_pcsr_t *m_csr);
 
-void print_matrix_csr(matrix_csr_t* matrix);
+void print_matrix_coo(matrix_pcoo_t* matrix);
 
-void free_matrix_coo(matrix_coo_t* matrix);
+void print_matrix_csr(matrix_pcsr_t* matrix);
 
-void free_matrix_csr(matrix_csr_t* matrix);
+void free_matrix_pcoo(matrix_pcoo_t* matrix);
+
+void free_matrix_pcsr(matrix_pcsr_t* matrix);
+
+void free_matrix_rcoo(matrix_rcoo_t* matrix);
+
+void free_matrix_rcsr(matrix_rcsr_t* matrix);
 
 #endif // MATSTORAGE_H

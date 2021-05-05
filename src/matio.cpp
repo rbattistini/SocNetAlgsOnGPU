@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * matio.c - Functions for reading and writing external matrix storage file
+ * matio.cpp - Functions for reading and writing external matrix storage file
  * formats (COO or edge list)
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
@@ -67,13 +67,11 @@ static int get_line (FILE *f, char *buf) {
     return (fgets (buf, BUFFER_SIZE, f) != nullptr) ;
 }
 
-int read_matrix_market(const char *fname, matrix_coo_t *m_coo, gprops_t *gp) {
+int query_gprops(const char *fname, gprops_t *gp) {
 
     FILE *f;
     MM_typecode matcode;
-    int nnz, m, n, rmax = 0, cmax = 0, nitems = 0;
-    bool one_based = true;
-    int *rows, *cols;
+    int nnz, m, n, nitems = 0;
     char buf[BUFFER_SIZE];
 
     f = fopen(fname, "r");
@@ -107,11 +105,6 @@ int read_matrix_market(const char *fname, matrix_coo_t *m_coo, gprops_t *gp) {
     }
 
     /*
-     * Self-loops are discarded.
-     */
-    gp->has_self_loops = false;
-
-    /*
      * Get the shape of the sparse matrix and the number of non zero elements.
      */
     if (mm_read_mtx_crd_size(f, &m, &n, &nnz) != 0) {
@@ -130,6 +123,200 @@ int read_matrix_market(const char *fname, matrix_coo_t *m_coo, gprops_t *gp) {
         return EXIT_FAILURE;
     }
 
+    int j = 0;
+
+    get_line (f, buf);
+    int tmp_col, tmp_row;
+    while(buf[j] != '\0') {
+        if(buf[j] == ' ' || buf[j] == '\n' || buf[j] == '\t') {
+            nitems++;
+        }
+        j++;
+    }
+
+    if(nitems == 2 && mm_is_pattern(matcode)) {
+        int tmp_wgh;
+        sscanf(buf, "%d %d %d\n", &tmp_row, &tmp_col, &tmp_wgh);
+        gp->is_weighted = true;
+    } else if(nitems == 3 && mm_is_real(matcode)) {
+        sscanf(buf, "%d %d\n", &tmp_row, &tmp_col);
+        gp->is_weighted = false;
+    } else {
+        fprintf(stderr, "Only two or three entries per row are supported\n");
+        fprintf(stderr, "Pattern must have two entries per row\n");
+        fprintf(stderr, "Real must have three entries per row\n");
+        return EXIT_FAILURE;
+    }
+
+    gp->is_connected = -1;
+
+    return 0;
+}
+
+int read_matrix_market_real(const char *fname, matrix_rcoo_t *m_coo) {
+
+    FILE *f;
+    MM_typecode matcode;
+    int nnz, m, n, rmax = 0, cmax = 0, nitems = 0;
+    bool one_based = true;
+    int *rows, *cols, *weights;
+    char buf[BUFFER_SIZE];
+
+    f = fopen(fname, "r");
+
+    if( f == nullptr) {
+        fprintf(stderr, "Could not open %s\n", fname);
+        return EXIT_FAILURE;
+    }
+
+    if (mm_read_banner(f, &matcode) != 0) {
+        printf("Could not process Matrix Market banner\n");
+        return EXIT_FAILURE;
+    }
+
+    /*
+     * Get the shape of the sparse matrix and the number of non zero elements.
+     */
+    if (mm_read_mtx_crd_size(f, &m, &n, &nnz) != 0) {
+        fprintf(stderr, "Could not read shape and nnz elements of the sparse"
+                        "matrix\n");
+        return EXIT_FAILURE;
+    }
+
+    /*
+     * Allocate memory for the matrix.
+     */
+    size_t size = mm_is_symmetric(matcode) ? 2 * nnz + 1 : nnz + 1;
+
+    rows = (int *) malloc(size * sizeof(*rows));
+    cols = (int *) malloc(size * sizeof(*cols));
+    weights = (int *) malloc(size * sizeof(*weights));
+    assert(rows);
+    assert(cols);
+    assert(weights);
+
+    int i = 0;
+    for(int cnt = 1; cnt < nnz; cnt++) {
+        int tmp_row, tmp_col, tmp_wgh;
+
+        /*
+         * Premature end of file.
+         */
+        if (!get_line (f, buf))
+            return EXIT_FAILURE;
+
+        nitems = sscanf(buf, "%d %d %d\n", &tmp_row, &tmp_col, &tmp_wgh);
+
+        if(cnt == 0 && (tmp_row == 0 || tmp_col == 0))
+            one_based = false;
+
+        /*
+         * Check number of entries and their value.
+         */
+        if (nitems != 3 || tmp_row > INT_MAX || tmp_col > INT_MAX) {
+            return EXIT_FAILURE;
+        }
+
+        /*
+         * Discard self-loops.
+         */
+        if(tmp_col != tmp_row) {
+            if( mm_is_symmetric(matcode) ) {
+                cols[i] = tmp_col;
+                rows[i] = tmp_row;
+                weights[i] = tmp_wgh;
+                rmax = max(rows[i], rmax);
+                cmax = max(cols[i], cmax);
+                i++;
+
+                cols[i] = tmp_row;
+                rows[i] = tmp_col;
+                weights[i] = tmp_wgh;
+                rmax = max(rows[i], rmax);
+                cmax = max(cols[i], cmax);
+                i++;
+            } else {
+                cols[i] = tmp_col;
+                rows[i] = tmp_row;
+                weights[i] = tmp_wgh;
+                rmax = max(rows[i], rmax);
+                cmax = max(cols[i], cmax);
+                i++;
+            }
+        }
+    }
+
+    if (one_based ? (rmax > n || cmax > n) : (rmax >= n || cmax >= n)) {
+        fprintf(stderr, "Indices out of range\n");
+        return EXIT_FAILURE;
+    }
+
+    /*
+     * If there are self-edges removed and the allocated space is not entirely
+     * used reallocate memory.
+     */
+    if( (mm_is_symmetric(matcode)  && (2 * nnz != i) ) ||
+        (!mm_is_symmetric(matcode) && (nnz != i) ) ) {
+        nnz = i;
+        rows = (int*) realloc(rows, (nnz) * sizeof(int));
+        cols = (int*) realloc(cols, (nnz) * sizeof(int));
+    } else {
+        nnz = i;
+    }
+
+    /*
+     * Convert to zero-based representation.
+     */
+    if(one_based) {
+        for(i = 0; i < nnz; i++) {
+            cols[i]--;
+            rows[i]--;
+        }
+    }
+
+    fclose(f);
+
+    m_coo->nnz = nnz;
+    m_coo->nrows = n;
+    m_coo->rows = rows;
+    m_coo->cols = cols;
+    m_coo->weights = weights;
+
+    return 0;
+}
+
+int read_matrix_market_pattern(const char *fname, matrix_pcoo_t *m_coo) {
+
+    FILE *f;
+    MM_typecode matcode;
+    int nnz, m, n, rmax = 0, cmax = 0, nitems = 0;
+    bool one_based = true;
+    int *rows, *cols;
+    char buf[BUFFER_SIZE];
+
+    f = fopen(fname, "r");
+
+    if( f == nullptr) {
+        fprintf(stderr, "Could not open %s\n", fname);
+        return EXIT_FAILURE;
+    }
+
+    if (mm_read_banner(f, &matcode) != 0) {
+        printf("Could not process Matrix Market banner\n");
+        return EXIT_FAILURE;
+    }
+
+    /*
+     * Get the shape of the sparse matrix and the number of non zero elements.
+     */
+    if (mm_read_mtx_crd_size(f, &m, &n, &nnz) != 0) {
+        fprintf(stderr, "Could not read shape and nnz elements of the sparse"
+                        "matrix\n");
+        return EXIT_FAILURE;
+    }
+
+    int i = 0;
+
     /*
      * Allocate memory for the matrix.
      */
@@ -140,39 +327,24 @@ int read_matrix_market(const char *fname, matrix_coo_t *m_coo, gprops_t *gp) {
     assert(rows);
     assert(cols);
 
-    int i = 0;
-
-    for(int cnt = 0; cnt < nnz; cnt++) {
-        int tmp_col, tmp_row;
-
+    for(int cnt = 1; cnt < nnz; cnt++) {
+        int tmp_row, tmp_col;
         /*
          * Premature end of file.
          */
         if (!get_line (f, buf))
             return EXIT_FAILURE;
 
-        nitems = sscanf (buf, "%d %d\n", &tmp_row, &tmp_col) ;
+        nitems = sscanf(buf, "%d %d\n", &tmp_row, &tmp_col);
+
+        if(cnt == 0 && (tmp_row == 0 || tmp_col == 0))
+            one_based = false;
 
         /*
-         * Check number of entries.
+         * Check number of entries and their value.
          */
-        if (nitems < 2 || nitems > 3
-            || tmp_row > INT_MAX || tmp_col > INT_MAX) {
+        if (nitems != 2 || tmp_row > INT_MAX || tmp_col > INT_MAX) {
             return EXIT_FAILURE;
-        }
-
-        /*
-         * Check indexing and whether the graph is weighted, only for the first
-         * pair/triplet.
-         */
-        if(cnt == 0) {
-            if(tmp_row == 0 || tmp_col == 0)
-                one_based = false;
-
-            if(nitems == 2)
-                gp->is_weighted = false;
-            else if(nitems == 3)
-                gp->is_weighted = true;
         }
 
         /*
@@ -239,18 +411,22 @@ int read_matrix_market(const char *fname, matrix_coo_t *m_coo, gprops_t *gp) {
     return 0;
 }
 
-int read_matrix(const char *fname, matrix_coo_t *m_coo, gprops_t *gp) {
-
-    int status;
+int read_matrix(const char *fname, matrix_pcoo_t *m_coo, gprops_t *gp) {
 
     if (has_extension(fname, "mtx", strlen(fname)) ||
-        has_extension(fname, "mm", strlen(fname)))
+        has_extension(fname, "mm", strlen(fname))) {
 
-        status = read_matrix_market(fname, m_coo, gp);
-    else {
+        if(gp->is_weighted) {
+            fprintf(stderr, "Weighted graph is not supported\n");
+            return EXIT_FAILURE;
+        } else {
+            read_matrix_market_pattern(fname, m_coo);
+        }
+
+    } else {
         fprintf(stderr, "Unsupported file type\n");
-        status = EXIT_FAILURE;
+        return EXIT_FAILURE;
     }
 
-    return status;
+    return EXIT_SUCCESS;
 }

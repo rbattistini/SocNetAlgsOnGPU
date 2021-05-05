@@ -33,13 +33,12 @@
  ****************************************************************************/
 
 #include <cassert>
-#include <iostream>
 #include "Snap.h"
-#include "../include/utils.h"
-#include "../include/matio.h"
-#include "../include/matstorage.h"
-#include "../include/spvb.h"
-#include "../include/graphs.h"
+#include "utils.h"
+#include "matio.h"
+#include "matstorage.h"
+#include "spvb.h"
+#include "graphs.h"
 
 int main( int argc, char *argv[] ) {
 
@@ -51,13 +50,16 @@ int main( int argc, char *argv[] ) {
 
     float *bc_scores, *bc_scores_mod, *partial_bc_scores;
     int *degree;
+    const char *fname = argv[1];
 
-   /*
-    * Load matrix in COO format.
-    */
-    matrix_csr_t m_csr;
-    matrix_coo_t m_coo;
+    matrix_pcsr_t m_csr;
+    matrix_pcoo_t m_coo;
     gprops_t gp;
+    query_gprops(fname, &gp);
+
+    /*
+     * Load matrix in COO format.
+     */
     if(read_matrix(argv[1], &m_coo, &gp)) {
         fprintf(stderr, "Error reading matrix\n");
         return EXIT_FAILURE;
@@ -67,8 +69,8 @@ int main( int argc, char *argv[] ) {
      * Load the matrix in COO as an undirected graph in SNAP.
      * This way enhanced algorithm can run efficiently.
      */
-//    matrix_coo_t subgraph_coo;
-//    matrix_csr_t subgraph_csr;
+//    matrix_pcoo_t subgraph_coo;
+//    matrix_pcsr_t subgraph_csr;
     degree = (int*) malloc(m_coo.nrows * sizeof(int));
     assert(degree);
     compute_degrees_undirected(&m_coo, degree);
@@ -76,15 +78,15 @@ int main( int argc, char *argv[] ) {
     /*
      * Get connected components of undirected graph.
      */
-    coo_to_csr(&m_coo, &m_csr);
-    print_matrix_csr(&m_csr);
+    pcoo_to_pcsr(&m_coo, &m_csr);
+//    print_matrix_csr(&m_csr);
+//
+//    components_t cc_array;
+//    int cc_count = get_cc(&m_csr, &cc_array);
+//    gp.is_connected = (cc_count == 1);
+//    printf("cc: %d\n", cc_count);
 
-    std::vector<matrix_csr_t> cc_list;
-    int cc_count = get_cc(&m_csr, cc_list);
-    gp.is_connected = (cc_count == 1);
-    printf("cc: %d\n", cc_count);
 
-#pragma region other
 //    PUNGraph g = TUNGraph::New();
 //    for(int i = 0; i < m_coo.nrows; i++) {
 //        g->AddNode(i);
@@ -128,7 +130,7 @@ int main( int argc, char *argv[] ) {
 //        i++;
 //    }
 
-//    coo_to_csr(&subgraph_coo, &subgraph_csr);
+//    pcoo_to_pcsr(&subgraph_coo, &subgraph_csr);
 //    print_matrix_coo(&m_coo);
 //    print_matrix_csr(&m_csr);
 //    print_edge_list(m_csr.row_offsets, m_csr.cols, m_csr.nrows);
@@ -136,12 +138,12 @@ int main( int argc, char *argv[] ) {
     /*
      * Compute BC using CSR.
      */
-//    bc_scores = (float*) malloc(m_coo.nrows * sizeof(*bc_scores));
-//    assert(bc_scores);
-//    BC_computation(&m_csr, bc_scores, gp.is_directed);
-//    FILE *fout = fopen(argv[2], "w");
-//    print_bc_scores(m_csr, bc_scores, stdout);
-//    fclose(fout);
+    bc_scores = (float*) malloc(m_coo.nrows * sizeof(*bc_scores));
+    assert(bc_scores);
+    BC_computation(&m_csr, bc_scores, gp.is_directed);
+    FILE *fout = fopen(argv[2], "w");
+    print_bc_scores(&m_csr, bc_scores, stdout);
+    fclose(fout);
 
     /*
      * Compute BC with enhanced algorithm, using TUNGraph.
@@ -154,12 +156,12 @@ int main( int argc, char *argv[] ) {
 //    FILE *fout = fopen(argv[2], "w");
 //    print_bc_scores(m_csr, bc_scores, stdout);
 //    fclose(fout);
-#pragma endregion
+
     /*
      * Cleanup.
      */
-    free_matrix_coo(&m_coo);
-    free_matrix_csr(&m_csr);
+    free_matrix_pcoo(&m_coo);
+    free_matrix_pcsr(&m_csr);
 //    free(bc_scores);
     free(degree);
 

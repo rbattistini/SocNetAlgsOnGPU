@@ -35,6 +35,16 @@
 
 #include "utils.h"
 
+int* stlvector_to_array_int(const std::vector<int>& v, int n) {
+    auto array = (int*) malloc(sizeof(int) * n);
+
+    for(int i = 0; i < n; i++) {
+        array[i] = v[i];
+    }
+
+    return array;
+}
+
 /**
  * Initialize an array.
  *

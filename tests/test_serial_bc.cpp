@@ -1,7 +1,6 @@
 /****************************************************************************
  *
- * utils.h - basic serial prefix Sum and reduce operators and functions for
- * printing some types of arrays related to internal memory storage of graphs
+ * test_serial_bc_computation.cpp
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
@@ -33,29 +32,53 @@
  *
  ****************************************************************************/
 
-#ifndef SOCNETALGSONGPU_UTILS_H
-#define SOCNETALGSONGPU_UTILS_H
-
-#include <cassert>
-#include <cstdlib>
 #include <cstdio>
-#include <cerrno>
-#include <vector>
-#include <stdio_ext.h>
+#include <cstdlib>
+#include "utils.h"
+#include "graphs.h"
+#include "tests.h"
 
-#define IDX(i, j, n) ((i)*(n) + (j))
-#define array_length(x) (sizeof(x) / sizeof((x)[0]))
+static matrix_pcsr_t csr;
+static gprops_t gprops;
 
-int* stlvector_to_array_int(const std::vector<int>& v, int n);
+static void clear_workspace() {
 
-void fill( int *arr, int n, int v);
+    /*
+     * Closing standard streams with error checking.
+     */
+    close_stream(stdin);
+    close_stream(stdout);
+    close_stream(stderr);
+}
 
-int close_stream(FILE *stream);
+TEST_CASE("Test BC computation on an undirected unweighted graph") {
 
-void print_array(const int *arr, int n);
+    /*
+     * Workspace setup for this test.
+     */
+    int nrows = 9;
+    int row_offsets[] = {0, 4, 6, 9, 10, 12, 14, 15, 17, 18};
+    int cols[] = {1, 3, 4, 5, 0, 2, 1, 6, 7, 0, 0, 5, 0, 4, 2, 2, 8, 7};
 
-void print_edge_list(const int *row_offsets, const int *cols, int nrows);
+    float expected_bc_scores[] =
+            {17.0, 16.0, 17.0, 0.0, 0.0, 0.0, 0.0, 7.0, 0.0};
+    float *bc_scores;
 
-void bucket_sort(const int *arr, int n);
+    csr.nrows = nrows;
+    csr.row_offsets = row_offsets;
+    csr.cols = cols;
 
-#endif //SOCNETALGSONGPU_UTILS_H
+    gprops.is_directed = false;
+
+    bc_scores = (float*) malloc(csr.nrows * sizeof(*bc_scores));
+    REQUIRE(bc_scores);
+
+    BC_computation(&csr, bc_scores, gprops.is_directed);
+
+    for(int i = 0; i < nrows; i++) {
+        CHECK(bc_scores[i] == expected_bc_scores[i]);
+    }
+
+    free(bc_scores);
+    clear_workspace();
+}

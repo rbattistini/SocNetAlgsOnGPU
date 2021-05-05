@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.9 FATAL_ERROR)
 project(SocNetAlgsOnGPU C CXX CUDA)
 
 if(NOT DEFINED CMAKE_CUDA_STANDARD)
@@ -40,8 +40,11 @@ set_target_properties(
         COMPILE_FLAGS -DCUDA_DEBUG COMPILE_FLAGS -DDEBUG)
 target_link_libraries(parallel PRIVATE mmio)
 
-add_executable(serial src/main.cpp include/utils.h src/utils.cpp include/matio.h
-        src/matio.cpp include/matstorage.h src/matstorage.cpp include/spvb.h src/spvb.cpp
+add_executable(serial src/main.cpp
+        include/utils.h src/utils.cpp
+        include/matio.h src/matio.cpp
+        include/matstorage.h src/matstorage.cpp
+        include/spvb.h src/spvb.cpp
         src/graphs.cpp include/graphs.h)
 
 target_link_libraries(serial PRIVATE mmio)
