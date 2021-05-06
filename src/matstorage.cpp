@@ -33,41 +33,41 @@
  *
  ****************************************************************************/
 
-#include "../include/matstorage.h"
-#include "../include/utils.h"
+#include "matstorage.h"
+#include "utils.h"
 
 void check_bc(matrix_pcsr_t g, const float *bc_cpu, const float *bc_gpu) {
-    for(int i = 0; i < g.row_offsets[g.nrows]; i++) {
+    for (int i = 0; i < g.row_offsets[g.nrows]; i++) {
         assert(bc_cpu[i] == bc_gpu[i]);
     }
 }
 
-int check_matrix_pcoo_init(matrix_pcoo_t* matrix) {
-    return  (matrix->cols != nullptr) &&
-            (matrix->rows != nullptr) &&
-            (matrix->nrows > -1) &&
-            (matrix->nnz > -1);
+int check_matrix_pcoo_init(matrix_pcoo_t *matrix) {
+    return (matrix->cols != nullptr) &&
+           (matrix->rows != nullptr) &&
+           (matrix->nrows > -1) &&
+           (matrix->nnz > -1);
 }
 
-int check_matrix_rcoo_init(matrix_rcoo_t* matrix) {
-    return  (matrix->cols != nullptr) &&
-            (matrix->rows != nullptr) &&
-            (matrix->weights != nullptr) &&
-            (matrix->nrows > -1) &&
-            (matrix->nnz > -1);
+int check_matrix_rcoo_init(matrix_rcoo_t *matrix) {
+    return (matrix->cols != nullptr) &&
+           (matrix->rows != nullptr) &&
+           (matrix->weights != nullptr) &&
+           (matrix->nrows > -1) &&
+           (matrix->nnz > -1);
 }
 
 void pcoo_to_pcsr(matrix_pcoo_t *m_coo, matrix_pcsr_t *m_csr) {
 
-    if(!check_matrix_pcoo_init(m_coo)) {
+    if (!check_matrix_pcoo_init(m_coo)) {
         fprintf(stderr, "The matrix is not initialized");
         return;
     }
 
     int *row_offsets;
-    int *rows = m_coo->rows;    // row indices of A
-    int nnz = m_coo->nnz;       // number of nnz in A
-    int nrows = m_coo->nrows;   // number of rows in A
+    int *rows = m_coo->rows; // row indices of A
+    int nnz = m_coo->nnz;    // number of nnz in A
+    int nrows = m_coo->nrows;// number of rows in A
     int *cols;
 
     row_offsets = (int *) malloc((nrows + 1) * sizeof(*row_offsets));
@@ -79,14 +79,14 @@ void pcoo_to_pcsr(matrix_pcoo_t *m_coo, matrix_pcsr_t *m_csr) {
     /*
      * Compute number of non-zero entries per column of A.
      */
-    for (int n = 0; n < nnz; n++){
+    for (int n = 0; n < nnz; n++) {
         row_offsets[rows[n]]++;
     }
 
     /*
      * Compute row offsets
      */
-    for(int i = 0, psum = 0; i < nrows; i++){
+    for (int i = 0, psum = 0; i < nrows; i++) {
         int temp = row_offsets[i];
         row_offsets[i] = psum;
         psum += temp;
@@ -96,14 +96,14 @@ void pcoo_to_pcsr(matrix_pcoo_t *m_coo, matrix_pcsr_t *m_csr) {
     /*
      * Copy cols array of A in cols of B
      */
-    for(int n = 0; n < nnz; n++) {
+    for (int n = 0; n < nnz; n++) {
         int row = rows[n];
         int dest = row_offsets[row];
         cols[dest] = m_coo->cols[n];
         row_offsets[row]++;
     }
 
-    for(int i = 0, last = 0; i <= nrows; i++){
+    for (int i = 0, last = 0; i <= nrows; i++) {
         int temp = row_offsets[i];
         row_offsets[i] = last;
         last = temp;
@@ -116,15 +116,15 @@ void pcoo_to_pcsr(matrix_pcoo_t *m_coo, matrix_pcsr_t *m_csr) {
 
 void rcoo_to_rcsr(matrix_rcoo_t *m_coo, matrix_rcsr_t *m_csr) {
 
-    if(!check_matrix_rcoo_init(m_coo)) {
+    if (!check_matrix_rcoo_init(m_coo)) {
         fprintf(stderr, "The matrix is not initialized");
         return;
     }
 
     int *row_offsets;
-    int *rows = m_coo->rows;    // row indices of A
-    int nnz = m_coo->nnz;       // number of nnz in A
-    int nrows = m_coo->nrows;   // number of rows in A
+    int *rows = m_coo->rows; // row indices of A
+    int nnz = m_coo->nnz;    // number of nnz in A
+    int nrows = m_coo->nrows;// number of rows in A
     int *cols, *weights;
 
     row_offsets = (int *) malloc((nrows + 1) * sizeof(*row_offsets));
@@ -137,14 +137,14 @@ void rcoo_to_rcsr(matrix_rcoo_t *m_coo, matrix_rcsr_t *m_csr) {
     /*
      * Compute number of non-zero entries per column of A.
      */
-    for (int n = 0; n < nnz; n++){
+    for (int n = 0; n < nnz; n++) {
         row_offsets[rows[n]]++;
     }
 
     /*
      * Compute row offsets
      */
-    for(int i = 0, psum = 0; i < nrows; i++){
+    for (int i = 0, psum = 0; i < nrows; i++) {
         int temp = row_offsets[i];
         row_offsets[i] = psum;
         psum += temp;
@@ -154,7 +154,7 @@ void rcoo_to_rcsr(matrix_rcoo_t *m_coo, matrix_rcsr_t *m_csr) {
     /*
      * Copy cols array of A in cols of B
      */
-    for(int n = 0; n < nnz; n++) {
+    for (int n = 0; n < nnz; n++) {
         int row = rows[n];
         int dest = row_offsets[row];
         cols[dest] = m_coo->cols[n];
@@ -162,7 +162,7 @@ void rcoo_to_rcsr(matrix_rcoo_t *m_coo, matrix_rcsr_t *m_csr) {
         row_offsets[row]++;
     }
 
-    for(int i = 0, last = 0; i <= nrows; i++){
+    for (int i = 0, last = 0; i <= nrows; i++) {
         int temp = row_offsets[i];
         row_offsets[i] = last;
         last = temp;
@@ -173,9 +173,9 @@ void rcoo_to_rcsr(matrix_rcoo_t *m_coo, matrix_rcsr_t *m_csr) {
     m_csr->row_offsets = row_offsets;
 }
 
-void print_matrix_coo(matrix_pcoo_t* matrix) {
+void print_matrix_coo(matrix_pcoo_t *matrix) {
 
-    if(!check_matrix_pcoo_init(matrix)) {
+    if (!check_matrix_pcoo_init(matrix)) {
         fprintf(stderr, "The matrix is not initialized");
         return;
     }
@@ -188,9 +188,9 @@ void print_matrix_coo(matrix_pcoo_t* matrix) {
     print_array(matrix->cols, matrix->nnz - 1);
 }
 
-void print_matrix_csr(matrix_pcsr_t* matrix) {
+void print_matrix_csr(matrix_pcsr_t *matrix) {
 
-    if(matrix->row_offsets == nullptr) {
+    if (matrix->row_offsets == nullptr) {
         fprintf(stderr, "The matrix is not initialized");
         return;
     }
@@ -203,8 +203,7 @@ void print_matrix_csr(matrix_pcsr_t* matrix) {
     print_array(matrix->cols, nnz - 1);
 }
 
-void free_matrix_pcoo(matrix_pcoo_t* matrix)
-{
+void free_matrix_pcoo(matrix_pcoo_t *matrix) {
     free(matrix->rows);
     free(matrix->cols);
     matrix->rows = nullptr;
@@ -213,8 +212,7 @@ void free_matrix_pcoo(matrix_pcoo_t* matrix)
     matrix->nrows = -1;
 }
 
-void free_matrix_pcsr(matrix_pcsr_t* matrix)
-{
+void free_matrix_pcsr(matrix_pcsr_t *matrix) {
     free(matrix->row_offsets);
     free(matrix->cols);
     matrix->row_offsets = nullptr;
@@ -222,8 +220,7 @@ void free_matrix_pcsr(matrix_pcsr_t* matrix)
     matrix->nrows = -1;
 }
 
-void free_matrix_rcoo(matrix_rcoo_t* matrix)
-{
+void free_matrix_rcoo(matrix_rcoo_t *matrix) {
     free(matrix->rows);
     free(matrix->cols);
     free(matrix->weights);
@@ -233,8 +230,7 @@ void free_matrix_rcoo(matrix_rcoo_t* matrix)
     matrix->nrows = -1;
 }
 
-void free_matrix_rcsr(matrix_rcsr_t* matrix)
-{
+void free_matrix_rcsr(matrix_rcsr_t *matrix) {
     free(matrix->row_offsets);
     free(matrix->cols);
     free(matrix->weights);

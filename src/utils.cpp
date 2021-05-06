@@ -35,10 +35,10 @@
 
 #include "utils.h"
 
-int* stlvector_to_array_int(const std::vector<int>& v, int n) {
-    auto array = (int*) malloc(sizeof(int) * n);
+int *stlvector_to_array_int(const std::vector<int> &v, int n) {
+    auto array = (int *) malloc(sizeof(int) * n);
 
-    for(int i = 0; i < n; i++) {
+    for (int i = 0; i < n; i++) {
         array[i] = v[i];
     }
 
@@ -52,7 +52,7 @@ int* stlvector_to_array_int(const std::vector<int>& v, int n) {
  * @param n length of the array to be initialized
  * @param v value used to initialize the array
  */
-void fill( int *arr, int n, int v) {
+void fill(int *arr, int n, int v) {
     for (int i = 0; i < n; i++)
         arr[i] = v;
 }
@@ -65,9 +65,9 @@ void fill( int *arr, int n, int v) {
  */
 int close_stream(FILE *stream) {
 
-    const bool some_pending = (__fpending (stream) != 0);
-    const bool prev_fail = (ferror (stream) != 0);
-    const bool fclose_fail = (fclose (stream) != 0);
+    const bool some_pending = (__fpending(stream) != 0);
+    const bool prev_fail = (ferror(stream) != 0);
+    const bool fclose_fail = (fclose(stream) != 0);
 
     /* Return an error indication if there was a previous failure or if
        fclose failed, with one exception: ignore an fclose failure if
@@ -79,7 +79,7 @@ int close_stream(FILE *stream) {
 
     if (prev_fail || (fclose_fail && (some_pending || errno != EBADF))) {
 
-        if (! fclose_fail)
+        if (!fclose_fail)
             errno = 0;
         return EOF;
     }
@@ -90,7 +90,7 @@ int close_stream(FILE *stream) {
 void print_array(const int *arr, int n) {
     printf("[ ");
 
-    for(int i = 0; i < n + 1; i++)
+    for (int i = 0; i < n + 1; i++)
         printf("%d ", arr[i]);
 
     printf("]\n");
@@ -100,14 +100,14 @@ void print_edge_list(const int *row_offsets, const int *cols, int nrows) {
 
     printf("Edge lists for each vertex: \n");
 
-    for(int i = 0; i < nrows; i++) {
+    for (int i = 0; i < nrows; i++) {
 
         int begin = row_offsets[i];
         int end = row_offsets[i + 1];
 
-        for(int j = begin; j < end; j++) {
+        for (int j = begin; j < end; j++) {
 
-            if(j == begin)
+            if (j == begin)
                 printf("%d | %d", i, cols[j]);
             else
                 printf(", %d", cols[j]);
@@ -116,32 +116,10 @@ void print_edge_list(const int *row_offsets, const int *cols, int nrows) {
         /*
          * For isolated vertices.
          */
-        if(begin == end) {
+        if (begin == end) {
             printf("%d | ", i);
         }
 
         printf("\n");
     }
-}
-
-void bucket_sort(const int *arr, int n) {
-    // 1) Create n empty buckets
-    int *aux = (int*) malloc(n  * sizeof(*aux));
-
-    // 2) Put array elements
-    // in different buckets
-    for (int i = 0; i < n; i++) {
-        int bi = n * arr[i]; // Index in bucket
-        aux[bi] = arr[i];
-    }
-
-//    // 3) Sort individual buckets
-//    for (int i = 0; i < n; i++)
-//        sort(aux[i].begin(), aux[i].end());
-//
-//    // 4) Concatenate all buckets into arr[]
-//    int index = 0;
-//    for (int i = 0; i < n; i++)
-//        for (int j = 0; j < aux[i].size(); j++)
-//            arr[index++] = aux[i][j];
 }
