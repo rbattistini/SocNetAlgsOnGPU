@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * test_connectivity.cpp
+ * test_cc.cpp
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
@@ -32,32 +32,15 @@
  *
  ****************************************************************************/
 
-#include <cstdio>
 #include <cstdlib>
-#include "utils.h"
 #include "graphs.h"
 #include "tests.h"
 
 static matrix_pcsr_t csr;
-static matrix_pcoo_t coo;
 static gprops_t gprops;
 
-typedef matrix_pcsr_t graph;
-
-static int clear_workspace() {
-
-    /*
-     * Closing standard streams with error checking.
-     */
-    close_stream(stdin);
-    close_stream(stdout);
-    close_stream(stderr);
-
-    return EXIT_SUCCESS;
-}
-
-TEST_CASE("Test connected component algorithm with disconnected undirected graph") {
-
+TEST_CASE(
+        "Test connected component algorithm with disconnected undirected graph") {
     /*
      * Workspace setup for this test.
      */
@@ -75,12 +58,88 @@ TEST_CASE("Test connected component algorithm with disconnected undirected graph
     /*
      * Ensure the graph is not connected.
      */
-    CHECK_FALSE(gprops.is_connected);
+    CHECK_UNARY_FALSE(gprops.is_connected);
 
     /*
      * Ensure the graph has two connected components.
      */
-    CHECK(cc_count == 2);
+    CHECK_EQ(cc_count, 2);
+
+    /*
+     * Ensure that the first cc is composed by vertices: 0 1 4 2.
+     */
+    int cc[] = {0, 1, 4, 2};
+    for (int i = 0; i < cc_list.cc_size[0]; i++) {
+        CHECK_EQ(cc_list.array[i], cc[i]);
+    }
+
+    /*
+     * Ensure that the second cc is composed by vertices:  3 5 6.
+     */
+    int cc2[] = {3, 5, 6};
+    for (int i = cc_list.cc_size[0] + 1; i < cc_list.cc_size[1]; i++) {
+        CHECK_EQ(cc_list.array[i], cc2[i]);
+    }
+}
+
+TEST_CASE(
+        "Test connected component algorithm with connected undirected graph") {
+
+    /*
+     * Workspace setup for this test.
+     */
+    int source_row_offsets[] = {0, 4, 6, 9, 10, 12, 14, 15, 17, 18};
+    int source_cols[] = {1, 3, 4, 5, 0, 2, 1, 6, 7, 0, 0, 5, 0, 4, 2, 2, 8, 7};
+
+    csr.nrows = 9;
+    csr.cols = source_cols;
+    csr.row_offsets = source_row_offsets;
+
+    components_t cc_list;
+    int cc_count = get_cc(&csr, &cc_list);
+    gprops.is_connected = (cc_count == 1);
+
+    /*
+     * The graph is connected.
+     */
+    CHECK_UNARY(gprops.is_connected);
+
+    /*
+     * The graph has one connected component.
+     */
+    CHECK_EQ(cc_count, 1);
+
+    std::sort(cc_list.array, cc_list.array + 9);
+
+    /*
+     * The cc is composed by all vertices [0-8].
+     */
+    for (int i = 0; i < cc_list.cc_size[0]; i++) {
+        CHECK_EQ(cc_list.array[i], i);
+    }
+}
+
+TEST_CASE("Test subgraph extraction from undirected graph given vertices ids") {
+
+#pragma region setup
+    /*
+     * Workspace setup for this test.
+     */
+    matrix_pcsr_t subgraph;
+    components_t ccs;
+    int nccs = 2, nvertices = 7, size;
+    int *vertices;
+    int ccs_array[] = {0, 1, 4, 2, 3, 6, 5};
+
+    ccs.array = (int *) malloc(sizeof(*ccs.array) * nvertices);
+    ccs.cc_size = (int *) malloc(sizeof(*ccs.cc_size) * nccs);
+
+    for (int i = 0; i < nvertices; i++)
+        ccs.array[i] = ccs_array[i];
+
+    ccs.cc_size[0] = 4;
+    ccs.cc_size[1] = 3;
+#pragma endregion
 
     /*
      * Ensure that the first cc is composed by vertices: 0 1 4 2
@@ -91,31 +150,38 @@ TEST_CASE("Test connected component algorithm with disconnected undirected graph
      * R = [ 0 1 4 5 6 ]
      * C = [ 1 0 2 3 1 1 ]
      */
-    graph subgraph;
-    size_t size = cc_list.ccs_size[0];
-    auto *vertices = (vertex*) malloc(sizeof(vertex) * size);
+    size = ccs.cc_size[0];
+    vertices = (int *) malloc(sizeof(*vertices) * size);
 
-    for(int i = 0; i < size; i++) {
-        vertices[i] = cc_list.ccs_array[i];
+    for (int i = 0; i < size; i++) {
+        vertices[i] = ccs.array[i];
     }
 
-    extract_und_subgraph(cc_list.ccs_array, cc_list.ccs_size[0],
-                         &csr, &subgraph);
+    extract_und_subgraph(vertices, size, &csr, &subgraph);
 
     int nrows = subgraph.nrows;
-    int row_offsets[] = {0, 1, 4, 5, 6};
+    int expected_row_offsets[] = {0, 1, 4, 5, 6};
     int ncols = 6;
-    int cols[] = {1, 0, 2, 3, 1, 1};
+    int expected_cols[] = {1, 0, 2, 3, 1, 1};
 
-    CHECK(nrows == 4);
+    REQUIRE_EQ(nrows, 4);
 
-    for(int i = 0; i < ncols; i++) {
-        CHECK(subgraph.cols[i] == cols[i]);
+    print_array(subgraph.row_offsets, 4);
+    print_array(expected_row_offsets, 4);
+
+    print_array(subgraph.cols, 5);
+    print_array(expected_cols, 5);
+
+    for (int i = 0; i < ncols; i++) {
+        CHECK_EQ(subgraph.cols[i], expected_cols[i]);
     }
 
-    for(int i = 0; i < nrows; i++) {
-        CHECK(subgraph.row_offsets[i] == row_offsets[i]);
+    for (int i = 0; i < nrows; i++) {
+        CHECK_EQ(subgraph.row_offsets[i], expected_row_offsets[i]);
     }
+
+    free(vertices);
+    free_matrix_pcsr(&subgraph);
 
     /*
      * Ensure that the second cc is composed by vertices:  3 5 6
@@ -126,91 +192,36 @@ TEST_CASE("Test connected component algorithm with disconnected undirected graph
      * R = [ 0 2 4 6 ]
      * C = [ 1 2 0 2 0 1 ]
      */
-    free_matrix_csr(&subgraph);
-    free(vertices);
-    size = cc_list.ccs_size[1];
-    vertices = (vertex*) malloc(sizeof(vertex) * size);
+    size = ccs.cc_size[1];
+    vertices = (int *) malloc(sizeof(*vertices) * size);
 
-    for(int i = cc_list.ccs_size[1] - cc_list.ccs_size[0], j = 0; i < size; j++, i++) {
-        vertices[j] = cc_list.ccs_array[i];
+    for (int i = ccs.cc_size[1] - ccs.cc_size[0], j = 0; i < size; j++, i++) {
+        vertices[j] = ccs.array[i];
     }
 
     extract_und_subgraph(vertices, size, &csr, &subgraph);
 
     nrows = subgraph.nrows;
-    int row_offsets2[] = {0, 2, 4, 6};
+    int expected_row_offsets2[] = {0, 2, 4, 6};
     ncols = 6;
-    int cols2[] = {1, 2, 0, 2, 0, 1};
+    int expected_cols2[] = {1, 2, 0, 2, 0, 1};
 
-    CHECK(nrows == 3);
+    REQUIRE_EQ(nrows, 3);
 
-    for(int i = 0; i < ncols; i++) {
-        CHECK(subgraph.cols[i] == cols2[i]);
+    print_array(subgraph.row_offsets, 3);
+    print_array(expected_row_offsets2, 3);
+
+    print_array(subgraph.cols, 5);
+    print_array(expected_cols2, 5);
+
+    for (int i = 0; i < ncols; i++) {
+        CHECK_EQ(subgraph.cols[i], expected_cols[i]);
     }
 
-    for(int i = 0; i < nrows; i++) {
-        CHECK(subgraph.row_offsets[i] == row_offsets2[i]);
+    for (int i = 0; i < nrows; i++) {
+        CHECK_EQ(subgraph.row_offsets[i], expected_row_offsets[i]);
     }
 
     free(vertices);
-    clear_workspace();
+    free_matrix_pcsr(&subgraph);
 }
-
-//
-//TEST_CASE("Test connected component algorithm with connected undirected graph") {
-//
-//    /*
-//     * Workspace setup for this test.
-//     */
-//    int source_row_offsets[] = {0, 4, 6, 9, 10, 12, 14, 15, 17, 18};
-//    int source_cols[] = { 1, 3, 4, 5, 0, 2, 1, 6, 7, 0, 0, 5, 0, 4, 2, 2, 8, 7};
-//
-//    csr->nrows = 9;
-//    csr->cols = source_cols;
-//    csr->row_offsets = source_row_offsets;
-//
-//    components_t *cc_list = nullptr;
-//    int cc_count = get_cc(csr, cc_list);
-//    gprops.is_connected = (cc_count == 1);
-//
-//    /*
-//     * The graph is connected.
-//     */
-//    CHECK(gprops.is_connected);
-//
-//    /*
-//     * The graph has one connected component.
-//     */
-//    REQUIRE(cc_list);
-//    CHECK(cc_count == 1);
-//
-//    /*
-//     * The cc is composed by all vertices.
-//     *
-//     * in CSR this means:
-//     *
-//     * nrows = 9
-//     * R = [ 0 4 6 9 10 12 14 15 17 18 ]
-//     * C = [ 1 3 4 5 0 2 1 6 7 0 0 5 0 4 2 2 8 7 ]
-//     */
-//    graph *subgraph;
-//    extract_und_subgraph(cc_list->ccs_array, cc_list->ccs_size[0],
-//                         csr, &subgraph);
-//
-//    int nrows = subgraph->nrows;
-//    int row_offsets[] = {0, 4, 6, 9, 10, 12, 14, 15, 17, 18};
-//    int ncols = 18;
-//    int cols[] = {1, 3, 4, 5, 0, 2, 1, 6, 7, 0, 0, 5, 0, 4, 2, 2, 8, 7};
-//
-//    CHECK(nrows == 9);
-//
-//    for(int i = 0; i < ncols; i++) {
-//        CHECK(subgraph->cols[i] == cols[i]);
-//    }
-//
-//    for(int i = 0; i < nrows; i++) {
-//        CHECK(subgraph->row_offsets[i] == row_offsets[i]);
-//    }
-//
-//    clear_workspace();
-//}

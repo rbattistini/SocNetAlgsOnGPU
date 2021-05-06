@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * test_serial_bc_computation.cpp
+ * test_serial_bc.cpp
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
@@ -32,24 +32,12 @@
  *
  ****************************************************************************/
 
-#include <cstdio>
 #include <cstdlib>
-#include "utils.h"
 #include "graphs.h"
 #include "tests.h"
 
 static matrix_pcsr_t csr;
 static gprops_t gprops;
-
-static void clear_workspace() {
-
-    /*
-     * Closing standard streams with error checking.
-     */
-    close_stream(stdin);
-    close_stream(stdout);
-    close_stream(stderr);
-}
 
 TEST_CASE("Test BC computation on an undirected unweighted graph") {
 
@@ -71,14 +59,13 @@ TEST_CASE("Test BC computation on an undirected unweighted graph") {
     gprops.is_directed = false;
 
     bc_scores = (float*) malloc(csr.nrows * sizeof(*bc_scores));
-    REQUIRE(bc_scores);
+    REQUIRE_UNARY(bc_scores);
 
     BC_computation(&csr, bc_scores, gprops.is_directed);
 
     for(int i = 0; i < nrows; i++) {
-        CHECK(bc_scores[i] == expected_bc_scores[i]);
+        REQUIRE_EQ(bc_scores[i], expected_bc_scores[i]);
     }
 
     free(bc_scores);
-    clear_workspace();
 }
