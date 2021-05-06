@@ -49,6 +49,7 @@
  *
  ****************************************************************************/
 
+#pragma once
 #ifndef MATIO_H
 #define MATIO_H
 
@@ -57,15 +58,15 @@
  */
 #define BUFFER_SIZE 1030
 
-#include "matstorage.h"
 #include "graphs.h"
-#include <cstdio>
-#include <cstdbool>
-#include <cstring>
-#include <cstdlib>
+#include "matstorage.h"
 #include <climits>
+#include <cstdbool>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 extern "C" {
-    #include "mmio.h"
+#include "mmio.h"
 }
 
 int query_gprops(const char *fname, gprops_t *gp);
@@ -97,10 +98,10 @@ int query_gprops(const char *fname, gprops_t *gp);
  * @param m_coo
  * @return
  */
-int read_matrix_market_pattern(const char *fname, matrix_pcoo_t *m_coo);
+int read_matrix_market_pattern(FILE *f, matrix_pcoo_t *m_coo);
 
-int read_matrix_market_real(const char *fname, matrix_rcoo_t *m_coo);
+int read_matrix_market_real(FILE *f, matrix_rcoo_t *m_coo);
 
 int read_matrix(const char *fname, matrix_pcoo_t *m_coo, gprops_t *gp);
 
-#endif //MATIO_H
+#endif//MATIO_H

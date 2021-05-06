@@ -45,43 +45,44 @@
  *
  ****************************************************************************/
 
+#pragma once
 #ifndef MATSTORAGE_H
 #define MATSTORAGE_H
 
 #include <cstdlib>
 
 typedef struct matrix_pcoo_t {
-    int nrows;  // = ncols since adj matrix is a square matrix
+    int nrows;// = ncols since adj matrix is a square matrix
     int nnz;
-    int *rows;  // row index for each non-zero value
-    int *cols;  // column index for each non-zero value
+    int *rows;// row index for each non-zero value
+    int *cols;// column index for each non-zero value
 } matrix_pcoo_t;
 
 typedef struct matrix_rcoo_t {
-    int nrows;      // = ncols since adj matrix is a square matrix
+    int nrows;// = ncols since adj matrix is a square matrix
     int nnz;
-    int *rows;      // row index for each non-zero value
-    int *cols;      // column index for each non-zero value
-    int *weights;   // value of each entry
+    int *rows;   // row index for each non-zero value
+    int *cols;   // column index for each non-zero value
+    int *weights;// value of each entry
 } matrix_rcoo_t;
 
 typedef struct matrix_pcsr_t {
     int nrows;
-//    int nnz;  // found at row_offsets[nrows]
-    int *row_offsets;    // offset in columns
-    int *cols;           // column index for each non-zero value
+    //    int nnz;  // found at row_offsets[nrows]
+    int *row_offsets;// offset in columns
+    int *cols;       // column index for each non-zero value
 } matrix_pcsr_t;
 
 typedef struct matrix_rcsr_t {
     int nrows;
-    int *row_offsets;    // offset in columns
-    int *cols;           // column index for each non-zero value
-    int *weights;        // value of each entry
+    int *row_offsets;// offset in columns
+    int *cols;       // column index for each non-zero value
+    int *weights;    // value of each entry
 } matrix_rcsr_t;
 
 void check_bc(matrix_pcsr_t g, const float *bc_cpu, const float *bc_gpu);
 
-int check_matrix_pcoo_init(matrix_pcoo_t* matrix);
+int check_matrix_pcoo_init(matrix_pcoo_t *matrix);
 
 /**
  * Convert a matrix A, stored in COO format, to a matrix B, stored in the CSR
@@ -108,16 +109,16 @@ void pcoo_to_pcsr(matrix_pcoo_t *m_coo, matrix_pcsr_t *m_csr);
 
 void rcoo_to_rcsr(matrix_pcoo_t *m_coo, matrix_pcsr_t *m_csr);
 
-void print_matrix_coo(matrix_pcoo_t* matrix);
+void print_matrix_coo(matrix_pcoo_t *matrix);
 
-void print_matrix_csr(matrix_pcsr_t* matrix);
+void print_matrix_csr(matrix_pcsr_t *matrix);
 
-void free_matrix_pcoo(matrix_pcoo_t* matrix);
+void free_matrix_pcoo(matrix_pcoo_t *matrix);
 
-void free_matrix_pcsr(matrix_pcsr_t* matrix);
+void free_matrix_pcsr(matrix_pcsr_t *matrix);
 
-void free_matrix_rcoo(matrix_rcoo_t* matrix);
+void free_matrix_rcoo(matrix_rcoo_t *matrix);
 
-void free_matrix_rcsr(matrix_rcsr_t* matrix);
+void free_matrix_rcsr(matrix_rcsr_t *matrix);
 
-#endif // MATSTORAGE_H
+#endif// MATSTORAGE_H

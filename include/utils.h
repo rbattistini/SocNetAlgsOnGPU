@@ -33,22 +33,23 @@
  *
  ****************************************************************************/
 
+#pragma once
 #ifndef SOCNETALGSONGPU_UTILS_H
 #define SOCNETALGSONGPU_UTILS_H
 
 #include <cassert>
-#include <cstdlib>
-#include <cstdio>
 #include <cerrno>
-#include <vector>
+#include <cstdio>
+#include <cstdlib>
 #include <stdio_ext.h>
+#include <vector>
 
-#define IDX(i, j, n) ((i)*(n) + (j))
+#define IDX(i, j, n) ((i) * (n) + (j))
 #define array_length(x) (sizeof(x) / sizeof((x)[0]))
 
-int* stlvector_to_array_int(const std::vector<int>& v, int n);
+int *stlvector_to_array_int(const std::vector<int> &v, int n);
 
-void fill( int *arr, int n, int v);
+void fill(int *arr, int n, int v);
 
 int close_stream(FILE *stream);
 
@@ -58,4 +59,4 @@ void print_edge_list(const int *row_offsets, const int *cols, int nrows);
 
 void bucket_sort(const int *arr, int n);
 
-#endif //SOCNETALGSONGPU_UTILS_H
+#endif//SOCNETALGSONGPU_UTILS_H

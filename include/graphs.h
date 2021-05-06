@@ -32,16 +32,16 @@
  *
  ****************************************************************************/
 
+#pragma once
 #ifndef GRAPHS_H
 #define GRAPHS_H
 
-#include <vector>
-#include <queue>
+#include "matstorage.h"
+#include "utils.h"
 #include <climits>
 #include <cstdio>
-#include "matstorage.h"
-
-typedef int vertex;
+#include <queue>
+#include <vector>
 
 typedef struct gprops_t {
     bool is_directed;
@@ -50,24 +50,26 @@ typedef struct gprops_t {
 } gprops_t;
 
 typedef struct components_t {
-    vertex *ccs_array;  // vertices ids of each cc
-    int *ccs_size;      // size of each cc
+    int *array;  // vertices ids of each cc
+    int *cc_size;// size of each cc
 } components_t;
+
+void print_gprops(gprops_t *gp);
 
 void BC_computation(matrix_pcsr_t *g, float *bc_scores, bool directed);
 
-void print_bc_scores(matrix_pcsr_t *g, const float *bc_scores, FILE* fout);
+void print_bc_scores(matrix_pcsr_t *g, const float *bc_scores, FILE *fout);
 
-void extract_und_subgraph(const vertex *vertices, int nvertices, matrix_pcsr_t *g,
+void extract_und_subgraph(const int *vertices, int nvertices, matrix_pcsr_t *g,
                           matrix_pcsr_t *m);
 
-int* DFS_visit(matrix_pcsr_t *g, bool *visited, int s, int *cc_size);
+int *DFS_visit(matrix_pcsr_t *g, bool *visited, int s, int *cc_size);
 
 int get_cc(matrix_pcsr_t *g, components_t *ccs);
 
-void compute_degrees_undirected(matrix_pcoo_t* g, int *degree);
+void compute_degrees_undirected(matrix_pcoo_t *g, int *degree);
 
-void compute_degrees_directed(matrix_pcoo_t*  g, int *in_degree,
+void compute_degrees_directed(matrix_pcoo_t *g, int *in_degree,
                               int *out_degree);
 
-#endif //GRAPHS_H
+#endif//GRAPHS_H

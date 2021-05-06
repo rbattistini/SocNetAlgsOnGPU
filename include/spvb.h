@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * bc.h - Serial algorithm of Brandes for computing betweenness centrality.
+ * spvb.h - Modified version of serial algorithm of Brandes for computing
+ * betweenness centrality optimized for social networks.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
@@ -32,25 +33,22 @@
  *
  ****************************************************************************/
 
+#pragma once
 #ifndef BC_H
 #define BC_H
 
 #include "Snap.h"
 #include "matstorage.h"
-#include <c++/10/cstdlib>
-#include <c++/10/queue>
-#include <c++/10/stack>
-#include <c++/10/climits>
-#include <c++/10/cstdio>
+#include "utils.h"
+#include <climits>
+#include <cstdlib>
+#include <queue>
+#include <stack>
 
-void spvb(PUNGraph& g, const int *degrees, float *bc_scores, float *p,
+void spvb(PUNGraph &g, const int *degrees, float *bc_scores, float *p,
           bool directed);
 
-void BC_mod_computation(matrix_coo_t *g, const float *p, float *bc_scores,
+void BC_mod_computation(matrix_pcoo_t *g, const float *p, float *bc_scores,
                         bool directed);
 
-void BC_computation(matrix_csr_t *g, float *bc_scores, bool directed);
-
-void print_bc_scores(matrix_csr_t *g, const float *bc_scores, FILE* fout);
-
-#endif //BC_H
+#endif//BC_H
