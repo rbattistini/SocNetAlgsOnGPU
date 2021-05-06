@@ -1,10 +1,9 @@
 /* 
-*   Matrix Market I/O library for ANSI C
-*
-*   See http://math.nist.gov/MatrixMarket for details.
-*
-*
-*/
+ * Matrix Market I/O library for ANSI C
+ * See http://math.nist.gov/MatrixMarket for details.
+ *
+ * Last modified by Riccardo Battistini 06/05/21
+ */
 
 #ifndef MM_IO_H
 #define MM_IO_H
@@ -15,18 +14,12 @@
 
 typedef char MM_typecode[4];
 
-char *mm_typecode_to_str(MM_typecode matcode);
+char *mm_typecode_to_str(const MM_typecode matcode);
 
 int mm_read_banner(FILE *f, MM_typecode *matcode);
 int mm_read_mtx_crd_size(FILE *f, int *M, int *N, int *nz);
-int mm_read_mtx_array_size(FILE *f, int *M, int *N);
 
-int mm_write_banner(FILE *f, MM_typecode matcode);
-int mm_write_mtx_crd_size(FILE *f, int M, int N, int nz);
-int mm_write_mtx_array_size(FILE *f, int M, int N);
-
-
-/********************* MM_typecode query fucntions ***************************/
+/********************* MM_typecode query functions ***************************/
 
 #define mm_is_matrix(typecode)	((typecode)[0]=='M')
 
@@ -45,10 +38,7 @@ int mm_write_mtx_array_size(FILE *f, int M, int N);
 #define mm_is_skew(typecode)	((typecode)[3]=='K')
 #define mm_is_hermitian(typecode)((typecode)[3]=='H')
 
-int mm_is_valid(const MM_typecode matcode);		/* too complex for a macro */
-
-
-/********************* MM_typecode modify fucntions ***************************/
+/********************* MM_typecode modify functions ***************************/
 
 #define mm_set_matrix(typecode)	((*typecode)[0]='M')
 #define mm_set_coordinate(typecode)	((*typecode)[1]='C')
@@ -89,7 +79,7 @@ int mm_is_valid(const MM_typecode matcode);		/* too complex for a macro */
 
    MM_matrix_typecode: 4-character sequence
 
-				    ojbect 		sparse/   	data        storage 
+				    object 		sparse/   	data        storage
 						  		dense     	type        scheme
 
    string position:	 [0]        [1]			[2]         [3]
@@ -114,20 +104,5 @@ int mm_is_valid(const MM_typecode matcode);		/* too complex for a macro */
 #define MM_HERM_STR		"hermitian"
 #define MM_SKEW_STR		"skew-symmetric"
 #define MM_PATTERN_STR  "pattern"
-
-
-/*  high level routines */
-
-int mm_write_mtx_crd(char fname[], int M, int N, int nz, int I[], int J[],
-		 double val[], MM_typecode matcode);
-int mm_read_mtx_crd_data(FILE *f, int M, int N, int nz, int I[], int J[],
-		double val[], MM_typecode matcode);
-int mm_read_mtx_crd_entry(FILE *f, int *I, int *J, double *real, double *img,
-			MM_typecode matcode);
-
-int mm_read_unsymmetric_sparse(const char *fname, int *M_, int *N_, int *nz_,
-                double **val_, int **I_, int **J_);
-
-
 
 #endif
