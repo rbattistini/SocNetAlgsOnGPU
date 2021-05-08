@@ -45,10 +45,10 @@
 #include <queue>
 #include <stack>
 
-void spvb(PUNGraph &g, const int *degrees, float *bc_scores, float *p,
+void spvb(PUNGraph g, int *degrees, float *bc_scores, float *p,
           bool directed);
 
-void BC_mod_computation(matrix_pcoo_t *g, const float *p, float *bc_scores,
+void BC_mod_computation(PUNGraph g, const float *p, float *bc_scores,
                         bool directed);
 
 #endif//BC_H

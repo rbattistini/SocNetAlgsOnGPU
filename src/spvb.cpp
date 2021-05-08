@@ -38,67 +38,72 @@
 using std::queue;
 using std::stack;
 
-void spvb(PUNGraph &g, const int *degrees, float *bc_scores, float *p,
+void spvb(PUNGraph g_i, int *degrees, float *bc_scores, float *p,
           bool directed) {
-    //
-    //    matrix_pcoo_t g_i;
-    //    std::queue<int> Q;
-    //
-    //    for(int i = 0; i < g.nrows; i++) {
-    //        p[i] = 0.0f;
-    //        bc_scores[i] = 0.0f;
-    //    }
-    //
-    //    /*
-    //     * Initialize first set of 1-degree vertices.
-    //     */
-    //    for(int i = 0; i < g.nrows; i++) {
-    //        if(degrees[i] == 1) {
-    //            Q.push(i);
-    //        }
-    //    }
-    //
-    //    do {
-    //        int v = Q.front();
-    //        Q.pop();
-    //
-    //        for(int k = g->rows[v]; k < g->rows[v + 1]; k++) {
-    //            int w = g->cols[k];
-    //
-    //            bc_scores[w] += 2 * ( (float) g->nrows - p[v] - p[w - 2]) *
-    //                    (p[v] + 1);
-    //            p[w] += p[v] + 1;
-    //
-    //            // TODO delete v from g_i and related edges
-    //
-    //            if(degrees[w] == 1) {
-    //                Q.push(w);
-    //            }
-    //        }
-    //
-    //    } while(!Q.empty());
-    //
-    //    /*
-    //     * Call the BC of Brandes procedure on the new graph g_i.
-    //     */
-    //    if(g_i.nrows > 1)
-    //        BC_mod_computation(&g_i, p, bc_scores, directed);
+
+    int nit = 0;
+    int nvertices = g_i->GetNodes();
+    queue<int> Q;
+
+    for (int i = 0; i < nvertices; i++) {
+        p[i] = 0.0f;
+        bc_scores[i] = 0.0f;
+    }
+
+    /*
+     * Initialize first set of 1-degree vertices.
+     */
+    for (int i = 0; i < nvertices; i++) {
+        if (degrees[i] == 1) {
+            Q.push(i);
+        }
+    }
+
+    do {
+        int v = Q.front();
+        Q.pop();
+
+        const TUNGraph::TNodeI &NI = g_i->GetNI(v);
+        for (int e = 0; e < NI.GetOutDeg(); e++) {
+            int w = NI.GetOutNId(e);
+
+            bc_scores[w] += 2 * ((float) g_i->GetNodes() - p[v] - p[w] - 2) *
+                            (p[v] + 1);
+            p[w] += p[v] + 1;
+
+            g_i->DelEdge(v, w);
+            degrees[w]--;
+
+            if (degrees[w] == 1) {
+                Q.push(w);
+            }
+        }
+        g_i->DelNode(v);
+
+    } while (!Q.empty());
+
+    /*
+     * Call the BC of Brandes procedure on the new graph g_i.
+     */
+    if (g_i->GetNodes() > 1)
+        BC_mod_computation(g_i, p, bc_scores, directed);
 }
 
-void BC_mod_computation(matrix_pcoo_t *g, const float *p, float *bc_scores,
+void BC_mod_computation(PUNGraph g, const float *p, float *bc_scores,
                         bool directed) {
 
-    for (int j = 0; j < g->nrows; j++) {
+    int nvertices = g->GetNodes();
+    for (int j = 0; j < g->GetNodes(); j++) {
 
         int s = j;
-        auto *sigma = (unsigned long *) malloc(g->nrows * sizeof(unsigned long));
-        auto *distance = (int *) malloc(g->nrows * sizeof(int));
-        auto *delta = (float *) malloc(g->nrows * sizeof(float));
+        auto *sigma = (unsigned long *) malloc(nvertices * sizeof(unsigned long));
+        auto *distance = (int *) malloc(nvertices * sizeof(int));
+        auto *delta = (float *) malloc(nvertices * sizeof(float));
         assert(sigma);
         assert(distance);
         assert(delta);
 
-        for (int i = 0; i < g->nrows; i++) {
+        for (int i = 0; i < nvertices; i++) {
             sigma[i] = 0;
             delta[i] = 0.0f;
             distance[i] = INT_MAX;
@@ -118,11 +123,10 @@ void BC_mod_computation(matrix_pcoo_t *g, const float *p, float *bc_scores,
             // update for the backward propagation phase
             S.push(v);
 
-            //            printf("%d | ", v);
-            for (int k = g->rows[v]; k < g->rows[v + 1]; k++) {//TODO
+            const TUNGraph::TNodeI &NI = g->GetNI(v);
+            for (int e = 0; e < NI.GetOutDeg(); e++) {
 
-                int w = g->cols[k];
-                //                printf("%d ", w);
+                int w = NI.GetOutNId(e);
 
                 /*
                  * If the vertex was not discovered, discover it and add to
@@ -142,8 +146,6 @@ void BC_mod_computation(matrix_pcoo_t *g, const float *p, float *bc_scores,
                     sigma[w] += sigma[v];
                 }
             }
-
-            //            printf("\n");
         }
 
         while (!S.empty()) {
@@ -151,8 +153,11 @@ void BC_mod_computation(matrix_pcoo_t *g, const float *p, float *bc_scores,
             int w = S.top();
             S.pop();
 
-            for (int i = g->rows[w]; i < g->rows[w + 1]; i++) {
-                int v = g->cols[i];
+            const TUNGraph::TNodeI &NI = g->GetNI(w);
+            for (int e = 0; e < NI.GetOutDeg(); e++) {
+
+                int v = NI.GetOutNId(e);
+
                 if (distance[v] == (distance[w] - 1)) {
                     delta[v] += (sigma[v] / (float) sigma[w]) *
                                 (1.0f + delta[w] + p[w]);
@@ -174,7 +179,7 @@ void BC_mod_computation(matrix_pcoo_t *g, const float *p, float *bc_scores,
      * counted two times.
      */
     if (!directed) {
-        for (int k = 0; k < g->nrows; k++)
+        for (int k = 0; k < nvertices; k++)
             bc_scores[k] /= 2;
     }
 }
