@@ -109,7 +109,7 @@ TEST_CASE(
      */
     CHECK_EQ(cc_count, 1);
 
-    std::sort(cc_list.array, cc_list.array + 9);
+    std::sort(cc_list.array, cc_list.array + csr.nrows);
 
     /*
      * The cc is composed by all vertices [0-8].
@@ -121,7 +121,6 @@ TEST_CASE(
 
 TEST_CASE("Test subgraph extraction from undirected graph given vertices ids") {
 
-#pragma region setup
     /*
      * Workspace setup for this test.
      */
@@ -139,7 +138,13 @@ TEST_CASE("Test subgraph extraction from undirected graph given vertices ids") {
 
     ccs.cc_size[0] = 4;
     ccs.cc_size[1] = 3;
-#pragma endregion
+
+    int source_row_offsets[] = {0, 1, 4, 5, 7, 8, 10, 12};
+    int source_cols[] = {1, 0, 2, 4, 1, 5, 6, 1, 3, 6, 3, 5};
+
+    csr.nrows = nvertices;
+    csr.cols = source_cols;
+    csr.row_offsets = source_row_offsets;
 
     /*
      * Ensure that the first cc is composed by vertices: 0 1 4 2
@@ -162,15 +167,9 @@ TEST_CASE("Test subgraph extraction from undirected graph given vertices ids") {
     int nrows = subgraph.nrows;
     int expected_row_offsets[] = {0, 1, 4, 5, 6};
     int ncols = 6;
-    int expected_cols[] = {1, 0, 2, 3, 1, 1};
+    int expected_cols[] = {1, 0, 3, 2, 1, 1};
 
     REQUIRE_EQ(nrows, 4);
-
-    print_array(subgraph.row_offsets, 4);
-    print_array(expected_row_offsets, 4);
-
-    print_array(subgraph.cols, 5);
-    print_array(expected_cols, 5);
 
     for (int i = 0; i < ncols; i++) {
         CHECK_EQ(subgraph.cols[i], expected_cols[i]);
@@ -194,8 +193,10 @@ TEST_CASE("Test subgraph extraction from undirected graph given vertices ids") {
      */
     size = ccs.cc_size[1];
     vertices = (int *) malloc(sizeof(*vertices) * size);
+    int start = ccs.cc_size[0];
+    int end = ccs.cc_size[1] + ccs.cc_size[0];
 
-    for (int i = ccs.cc_size[1] - ccs.cc_size[0], j = 0; i < size; j++, i++) {
+    for (int i = start, j = 0; i < end; j++, i++) {
         vertices[j] = ccs.array[i];
     }
 
@@ -204,22 +205,16 @@ TEST_CASE("Test subgraph extraction from undirected graph given vertices ids") {
     nrows = subgraph.nrows;
     int expected_row_offsets2[] = {0, 2, 4, 6};
     ncols = 6;
-    int expected_cols2[] = {1, 2, 0, 2, 0, 1};
+    int expected_cols2[] = {2, 1, 0, 2, 0, 1};
 
-    REQUIRE_EQ(nrows, 3);
-
-    print_array(subgraph.row_offsets, 3);
-    print_array(expected_row_offsets2, 3);
-
-    print_array(subgraph.cols, 5);
-    print_array(expected_cols2, 5);
+    REQUIRE_EQ(nrows, size);
 
     for (int i = 0; i < ncols; i++) {
-        CHECK_EQ(subgraph.cols[i], expected_cols[i]);
+        CHECK_EQ(subgraph.cols[i], expected_cols2[i]);
     }
 
     for (int i = 0; i < nrows; i++) {
-        CHECK_EQ(subgraph.row_offsets[i], expected_row_offsets[i]);
+        CHECK_EQ(subgraph.row_offsets[i], expected_row_offsets2[i]);
     }
 
     free(vertices);

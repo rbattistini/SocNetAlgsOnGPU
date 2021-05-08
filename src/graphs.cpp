@@ -30,6 +30,10 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
+ * --------------------------------------------------------------------------
+ *
+ * TODO compute_network_bc_score
+ *
  ****************************************************************************/
 
 #include "graphs.h"
@@ -68,6 +72,8 @@ void extract_und_subgraph(const int *vertices, int nvertices, matrix_pcsr_t *g,
         }
     }
 
+//    print_array()
+//    printf("c: %d\n", c);
     rows = (int *) malloc(c * sizeof(*rows));
     cols = (int *) malloc(c * sizeof(*cols));
 
@@ -89,6 +95,8 @@ void extract_und_subgraph(const int *vertices, int nvertices, matrix_pcsr_t *g,
     subgraph.nrows = nvertices;
     subgraph.rows = rows;
     subgraph.cols = cols;
+
+//    print_matrix_coo(&subgraph);
 
     pcoo_to_pcsr(&subgraph, m);
     free_matrix_pcoo(&subgraph);
@@ -128,13 +136,7 @@ int *DFS_visit(matrix_pcsr_t *g, bool *visited, int s, int *cc_size) {
      * Copy the vector into an array of known size.
      */
     *cc_size = subgraph_vertices.size();
-    auto cc_array = (int *) malloc(*cc_size * sizeof(int));
-    assert(cc_array);
-
-    for (int i = 0; i < *cc_size; i++) {
-        cc_array[i] = subgraph_vertices[i];
-        printf("%d ", subgraph_vertices[i]);
-    }
+    int *cc_array = stlvector_to_array_int(subgraph_vertices, *cc_size);
 
     return cc_array;
 }
@@ -154,20 +156,15 @@ int get_cc(matrix_pcsr_t *g, components_t *ccs) {
             int cc_size = 0;
             int *cc_array = DFS_visit(g, visited, i, &cc_size);
 
-            /*
-             * Sort vertices ids.
-             */
-            std::sort(&cc_array[0], &cc_array[cc_size - 1]);
-
             for (int j = 0; j < cc_size; j++) {
                 ccs_array.push_back(cc_array[j]);
             }
 
             ccs_size.push_back(cc_size);
             cc_count++;
-            printf(" |\n");
         }
     }
+
 
     int *tmp_ccs_array = stlvector_to_array_int(ccs_array, ccs_array.size());
     ccs->array = tmp_ccs_array;
@@ -176,7 +173,6 @@ int get_cc(matrix_pcsr_t *g, components_t *ccs) {
 
     return cc_count;
 }
-
 
 void BC_computation(matrix_pcsr_t *g, float *bc_scores, bool directed) {
 
@@ -274,11 +270,6 @@ void BC_computation(matrix_pcsr_t *g, float *bc_scores, bool directed) {
             bc_scores[k] /= 2;
     }
 }
-
-// TODO
-//void compute_network_bc_score(matrix_pcsr_t *g, const float *bc_scores,
-//                              FILE *fout) {
-//}
 
 void print_bc_scores(matrix_pcsr_t *g, const float *bc_scores, FILE *fout) {
 
