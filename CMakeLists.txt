@@ -49,7 +49,15 @@ add_executable(serial src/main.cpp
 
 target_link_libraries(serial PRIVATE mmio)
 
+add_executable(graph_gen datasets/graph_gen.cpp
+        include/utils.h src/utils.cpp
+        include/matio.h src/matio.cpp
+        include/matstorage.h src/matstorage.cpp)
+
+target_link_libraries(graph_gen PRIVATE mmio)
+
 if(OpenMP_CXX_FOUND)
+    target_link_libraries(graph_gen PUBLIC OpenMP::OpenMP_CXX libsnap.a)
     target_link_libraries(serial PUBLIC OpenMP::OpenMP_CXX libsnap.a)
 endif()
 

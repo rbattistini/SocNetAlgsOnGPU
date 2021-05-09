@@ -38,12 +38,11 @@
 using std::queue;
 using std::stack;
 
-void spvb(PUNGraph g_i, int *degrees, float *bc_scores, float *p,
-          bool directed) {
+int spvb(const PUNGraph& g_i, float *bc_scores, float *p, bool directed) {
 
-    int nit = 0;
+    int nit = 0, tree_nodes = 0;
     int nvertices = g_i->GetNodes();
-    queue<int> Q;
+    stack<int> S;
 
     for (int i = 0; i < nvertices; i++) {
         p[i] = 0.0f;
@@ -53,46 +52,60 @@ void spvb(PUNGraph g_i, int *degrees, float *bc_scores, float *p,
     /*
      * Initialize first set of 1-degree vertices.
      */
-    for (int i = 0; i < nvertices; i++) {
-        if (degrees[i] == 1) {
-            Q.push(i);
+    for (TUNGraph::TNodeI NI = g_i->BegNI(); NI < g_i->EndNI(); NI++) {
+        if(NI.GetDeg() == 1) {
+            S.push(NI.GetId());
+            tree_nodes++;
         }
     }
 
     do {
-        int v = Q.front();
-        Q.pop();
 
-        const TUNGraph::TNodeI &NI = g_i->GetNI(v);
-        for (int e = 0; e < NI.GetOutDeg(); e++) {
-            int w = NI.GetOutNId(e);
+        int v = S.top();
+        S.pop();
 
-            bc_scores[w] += 2 * ((float) g_i->GetNodes() - p[v] - p[w] - 2) *
-                            (p[v] + 1);
-            p[w] += p[v] + 1;
+        const TUNGraph::TNodeI NI = g_i->GetNI(v);
+        int w = NI.GetOutNId(0);
 
-            g_i->DelEdge(v, w);
-            degrees[w]--;
+        bc_scores[w] += 2 * ((float) nvertices - p[v] - p[w] - 2) * (p[v] + 1);
+        p[w] += p[v] + 1;
 
-            if (degrees[w] == 1) {
-                Q.push(w);
-            }
-        }
+        nit++;
+        g_i->DelEdge(v, w);
         g_i->DelNode(v);
 
-    } while (!Q.empty());
+        const TUNGraph::TNodeI NIw = g_i->GetNI(w);
+        if (NIw.GetDeg() == 1) {
+            S.push(w);
+            tree_nodes++;
+        }
+
+
+    } while (!S.empty());
+
+//    printf("Nit: %d\n", nit);
 
     /*
      * Call the BC of Brandes procedure on the new graph g_i.
      */
     if (g_i->GetNodes() > 1)
-        BC_mod_computation(g_i, p, bc_scores, directed);
+        BC_mod_computation(g_i, p, bc_scores);
+
+    if (!directed) {
+        for (int k = 0; k < nvertices; k++)
+            bc_scores[k] /= 2;
+    }
+
+    return tree_nodes;
 }
 
-void BC_mod_computation(PUNGraph g, const float *p, float *bc_scores,
-                        bool directed) {
+void BC_computation(const PUNGraph& g, float *bc_scores, bool directed) {
 
     int nvertices = g->GetNodes();
+
+    for (int i = 0; i < g->GetNodes(); i++)
+        bc_scores[i] = 0;
+
     for (int j = 0; j < g->GetNodes(); j++) {
 
         int s = j;
@@ -160,12 +173,12 @@ void BC_mod_computation(PUNGraph g, const float *p, float *bc_scores,
 
                 if (distance[v] == (distance[w] - 1)) {
                     delta[v] += (sigma[v] / (float) sigma[w]) *
-                                (1.0f + delta[w] + p[w]);
+                                (1.0f + delta[w]);
                 }
             }
 
             if (w != s) {
-                bc_scores[w] += delta[w] * (1 + p[s]);
+                bc_scores[w] += delta[w];
             }
         }
 
@@ -181,5 +194,90 @@ void BC_mod_computation(PUNGraph g, const float *p, float *bc_scores,
     if (!directed) {
         for (int k = 0; k < nvertices; k++)
             bc_scores[k] /= 2;
+    }
+}
+
+void BC_mod_computation(const PUNGraph& g, const float *p, float *bc_scores) {
+
+    int nvertices = g->GetNodes();
+    for (TUNGraph::TNodeI NI = g->BegNI(); NI < g->EndNI(); NI++) {
+
+        int s = NI.GetId();
+        auto *sigma = (unsigned long *) malloc(nvertices * sizeof(unsigned long));
+        auto *distance = (int *) malloc(nvertices * sizeof(int));
+        auto *delta = (float *) malloc(nvertices * sizeof(float));
+        assert(sigma);
+        assert(distance);
+        assert(delta);
+
+        for (int i = 0; i < nvertices; i++) {
+            sigma[i] = 0;
+            delta[i] = 0.0f;
+            distance[i] = INT_MAX;
+        }
+
+        queue<int> Q;
+        stack<int> S;
+
+        sigma[s] = 1;
+        distance[s] = 0;
+        Q.push(s);
+
+        while (!Q.empty()) {
+
+            int v = Q.front();
+            Q.pop();
+            // update for the backward propagation phase
+            S.push(v);
+
+            const TUNGraph::TNodeI NI = g->GetNI(v);
+            for (int e = 0; e < NI.GetOutDeg(); e++) {
+
+                int w = NI.GetOutNId(e);
+
+                /*
+                 * If the vertex was not discovered, discover it and add to
+                 * the queue of new vertices to visit. Update its distance from
+                 * v.
+                 */
+                if (distance[w] == INT_MAX) {
+                    Q.push(w);
+                    distance[w] = distance[v] + 1;
+                }
+
+                /*
+                 * If the vertex is "safe" give him all the power v has
+                 * in terms of shortest paths crossing it.
+                 */
+                if (distance[w] == (distance[v] + 1)) {
+                    sigma[w] += sigma[v];
+                }
+            }
+        }
+
+        while (!S.empty()) {
+
+            int w = S.top();
+            S.pop();
+
+            const TUNGraph::TNodeI &NI = g->GetNI(w);
+            for (int e = 0; e < NI.GetOutDeg(); e++) {
+
+                int v = NI.GetOutNId(e);
+
+                if (distance[v] == (distance[w] - 1)) {
+                    delta[v] += (sigma[v] / (float) sigma[w]) *
+                                (1.0f + delta[w] + p[w]);
+                }
+            }
+
+            if (w != s) {
+                bc_scores[w] += delta[w] * (1 + p[s]);
+            }
+        }
+
+        free(sigma);
+        free(distance);
+        free(delta);
     }
 }

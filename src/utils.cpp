@@ -96,6 +96,15 @@ void print_array(const int *arr, int n) {
     printf("]\n");
 }
 
+void print_array(const float *arr, int n) {
+    printf("[ ");
+
+    for (int i = 0; i < n + 1; i++)
+        printf("%.2f ", arr[i]);
+
+    printf("]\n");
+}
+
 void print_edge_list(const int *row_offsets, const int *cols, int nrows) {
 
     printf("Edge lists for each vertex: \n");

@@ -181,7 +181,7 @@ void BC_computation(matrix_pcsr_t *g, float *bc_scores, bool directed) {
 
     for (int j = 0; j < g->nrows; j++) {
 
-        int source = j;
+        int s = j;
         auto *sigma = (unsigned long *) malloc(
                 g->nrows * sizeof(unsigned long));
         auto *distance = (int *) malloc(g->nrows * sizeof(int));
@@ -199,9 +199,9 @@ void BC_computation(matrix_pcsr_t *g, float *bc_scores, bool directed) {
         queue<int> Q;
         stack<int> S;
 
-        sigma[source] = 1;
-        distance[source] = 0;
-        Q.push(source);
+        sigma[s] = 1;
+        distance[s] = 0;
+        Q.push(s);
 
         while (!Q.empty()) {
 
@@ -251,7 +251,7 @@ void BC_computation(matrix_pcsr_t *g, float *bc_scores, bool directed) {
                 }
             }
 
-            if (w != source) {
+            if (w != s) {
                 bc_scores[w] += delta[w];
             }
         }

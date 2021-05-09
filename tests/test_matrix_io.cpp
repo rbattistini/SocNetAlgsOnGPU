@@ -199,7 +199,7 @@ TEST_CASE("Test graph loading using mmio with some corner cases") {
         fclose(tmp);
         tmp = fopen(gname, "r");
 
-        CHECK_UNARY_FALSE(read_matrix_market_pattern(tmp, &coo));
+        CHECK_UNARY_FALSE(read_mm_pattern(tmp, &coo));
         CHECK_NE(coo.nnz, 18);
 
         fclose(tmp);
@@ -220,7 +220,7 @@ TEST_CASE("Test graph loading using mmio with some corner cases") {
         fclose(tmp);
         tmp = fopen(gname, "r");
 
-        CHECK_UNARY(read_matrix_market_pattern(tmp, &coo));
+        CHECK_UNARY(read_mm_pattern(tmp, &coo));
 
         fclose(tmp);
     }
@@ -240,7 +240,7 @@ TEST_CASE("Test graph loading using mmio with some corner cases") {
         fclose(tmp);
         tmp = fopen(gname, "r");
 
-        CHECK_UNARY(read_matrix_market_pattern(tmp, &coo));
+        CHECK_UNARY(read_mm_pattern(tmp, &coo));
 
         fclose(tmp);
     }
@@ -261,7 +261,7 @@ TEST_CASE("Test graph loading using mmio with some corner cases") {
         fclose(tmp);
         tmp = fopen(gname, "r");
 
-        CHECK_UNARY(read_matrix_market_pattern(tmp, &coo));
+        CHECK_UNARY(read_mm_pattern(tmp, &coo));
 
         fclose(tmp);
     }
