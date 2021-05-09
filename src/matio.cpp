@@ -329,7 +329,7 @@ int read_mm(FILE *f, MM_typecode *matcode, int *nnz, const int *m, const int *n,
     return EXIT_SUCCESS;
 }
 
-int read_matrix_market_real(FILE *f, matrix_rcoo_t *m_coo) {
+int read_mm_real(FILE *f, matrix_rcoo_t *m_coo) {
 
     MM_typecode matcode;
     int nnz, m, n;
@@ -364,7 +364,7 @@ int read_matrix_market_real(FILE *f, matrix_rcoo_t *m_coo) {
     return 0;
 }
 
-int read_matrix_market_pattern(FILE *f, matrix_pcoo_t *m_coo) {
+int read_mm_pattern(FILE *f, matrix_pcoo_t *m_coo) {
 
     MM_typecode matcode;
     int nnz, m, n;
@@ -412,7 +412,7 @@ int read_matrix(const char *fname, matrix_pcoo_t *m_coo, gprops_t *gp) {
                 return EXIT_FAILURE;
             }
 
-            if (read_matrix_market_pattern(f, m_coo)) {
+            if (read_mm_pattern(f, m_coo)) {
                 fprintf(stderr, "Error reading matrix\n");
                 return EXIT_FAILURE;
             }
@@ -424,6 +424,76 @@ int read_matrix(const char *fname, matrix_pcoo_t *m_coo, gprops_t *gp) {
         fprintf(stderr, "Unsupported file type\n");
         return EXIT_FAILURE;
     }
+
+    return EXIT_SUCCESS;
+}
+
+int write_mm_pattern(FILE *f, matrix_pcoo_t *m_coo, bool directed) {
+
+    MM_typecode matcode;
+
+    /*
+     * Write the banner.
+     */
+    mm_initialize_typecode(&matcode);
+    mm_set_matrix(&matcode);
+    mm_set_coordinate(&matcode);
+    mm_set_pattern(&matcode);
+
+    if(directed)
+        mm_set_general(&matcode);
+    else
+        mm_set_symmetric(&matcode);
+
+    if(mm_write_banner(stdout, matcode))
+        return EXIT_FAILURE;
+
+    /*
+     * Write the header and the values.
+     */
+    if(mm_write_mtx_crd_size(f, m_coo->nrows, m_coo->nrows, m_coo->nnz))
+        return EXIT_FAILURE;
+
+    for (int i = 0; i < m_coo->nnz; i++)
+        if(fprintf(f, "%d %d\n", m_coo->rows[i] + 1, m_coo->cols[i] + 1) < 0) {
+            return EXIT_FAILURE;
+        }
+
+    return EXIT_SUCCESS;
+}
+
+int write_mm_real(FILE *f, matrix_rcoo_t *m_coo, bool directed) {
+
+    MM_typecode matcode;
+    int status;
+
+    /*
+     * Write the banner.
+     */
+    mm_initialize_typecode(&matcode);
+    mm_set_matrix(&matcode);
+    mm_set_coordinate(&matcode);
+    mm_set_real(&matcode);
+
+    if(directed)
+        mm_set_general(&matcode);
+    else
+        mm_set_symmetric(&matcode);
+
+    if(mm_write_banner(stdout, matcode))
+        return EXIT_FAILURE;
+
+    /*
+     * Write the header and the values.
+     */
+    if(mm_write_mtx_crd_size(f, m_coo->nrows, m_coo->nrows, m_coo->nnz))
+        return EXIT_FAILURE;
+
+    for (int i = 0; i < m_coo->nnz; i++)
+        if(fprintf(f, "%d %d %d\n", m_coo->rows[i] + 1, m_coo->cols[i] + 1,
+                m_coo->weights[i]) < 0) {
+            return EXIT_FAILURE;
+        }
 
     return EXIT_SUCCESS;
 }

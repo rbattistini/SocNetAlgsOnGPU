@@ -98,10 +98,14 @@ int query_gprops(const char *fname, gprops_t *gp);
  * @param m_coo
  * @return
  */
-int read_matrix_market_pattern(FILE *f, matrix_pcoo_t *m_coo);
+int read_mm_pattern(FILE *f, matrix_pcoo_t *m_coo);
 
-int read_matrix_market_real(FILE *f, matrix_rcoo_t *m_coo);
+int read_mm_real(FILE *f, matrix_rcoo_t *m_coo);
 
 int read_matrix(const char *fname, matrix_pcoo_t *m_coo, gprops_t *gp);
+
+int write_mm_pattern(FILE *f, matrix_pcoo_t *m_coo, bool directed);
+
+int write_mm_real(FILE *f, matrix_rcoo_t *m_coo, bool directed);
 
 #endif//MATIO_H
