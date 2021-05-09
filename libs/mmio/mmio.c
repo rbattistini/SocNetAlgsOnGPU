@@ -2,16 +2,18 @@
  * Matrix Market I/O library for ANSI C
  * See http://math.nist.gov/MatrixMarket for details.
  *
- * Last modified by Riccardo Battistini 06/05/21
+ * Last modified by Riccardo Battistini 09/05/21
  *
  */
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include "mmio.h"
 
 int mm_read_banner(FILE *f, MM_typecode *matcode) {
+
     char line[MM_MAX_LINE_LENGTH];
     char banner[MM_MAX_TOKEN_LENGTH];
     char mtx[MM_MAX_TOKEN_LENGTH];
@@ -84,31 +86,6 @@ int mm_read_banner(FILE *f, MM_typecode *matcode) {
     return 0;
 }
 
-int mm_read_mtx_crd_size(FILE *f, int *M, int *N, int *nz) {
-    char line[MM_MAX_LINE_LENGTH];
-    int num_items_read;
-
-    /* set return null parameter values, in case we exit with errors */
-    *M = *N = *nz = 0;
-
-    /* now continue scanning until you reach the end-of-comments */
-    do {
-        if (fgets(line, MM_MAX_LINE_LENGTH, f) == NULL)
-            return MM_PREMATURE_EOF;
-    } while (line[0] == '%');
-
-    /* line[] is either blank or has M,N, nz */
-    if (sscanf(line, "%d %d %d", M, N, nz) == 3)
-        return 0;
-    else
-        do {
-            num_items_read = fscanf(f, "%d %d %d", M, N, nz);
-            if (num_items_read == EOF) return MM_PREMATURE_EOF;
-        } while (num_items_read != 3);
-
-    return 0;
-}
-
 char *mm_typecode_to_str(const MM_typecode matcode) {
     char buffer[MM_MAX_LINE_LENGTH];
     const char *types[4];
@@ -153,4 +130,55 @@ char *mm_typecode_to_str(const MM_typecode matcode) {
     sprintf(buffer, "%s %s %s %s", types[0], types[1], types[2], types[3]);
     return strdup(buffer);
 
+}
+
+int mm_write_banner(FILE *f, MM_typecode matcode) {
+
+    char *str = mm_typecode_to_str(matcode);
+    int ret_code;
+
+    ret_code = fprintf(f, "%s %s\n", MatrixMarketBanner, str);
+    free(str);
+    if (ret_code < 0 )
+        return MM_COULD_NOT_WRITE_FILE;
+    else
+        return 0;
+}
+
+int mm_write_mtx_crd_size(FILE *f, int M, int N, int nz) {
+
+    if (fprintf(f, "%d %d %d\n", M, N, nz) < 0)
+        return MM_COULD_NOT_WRITE_FILE;
+    else
+        return 0;
+}
+
+int mm_read_mtx_crd_size(FILE *f, int *M, int *N, int *nz ) {
+
+    char line[MM_MAX_LINE_LENGTH];
+    int num_items_read;
+
+    /* set return null parameter values, in case we exit with errors */
+    *M = *N = *nz = 0;
+
+    /* now continue scanning until you reach the end-of-comments */
+    do
+    {
+        if (fgets(line,MM_MAX_LINE_LENGTH,f) == NULL)
+            return MM_PREMATURE_EOF;
+    }while (line[0] == '%');
+
+    /* line[] is either blank or has M,N, nz */
+    if (sscanf(line, "%d %d %d", M, N, nz) == 3)
+        return 0;
+
+    else
+        do
+        {
+            num_items_read = fscanf(f, "%d %d %d", M, N, nz);
+            if (num_items_read == EOF) return MM_PREMATURE_EOF;
+        }
+        while (num_items_read != 3);
+
+    return 0;
 }

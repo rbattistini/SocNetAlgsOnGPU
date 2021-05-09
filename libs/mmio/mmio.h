@@ -2,7 +2,7 @@
  * Matrix Market I/O library for ANSI C
  * See http://math.nist.gov/MatrixMarket for details.
  *
- * Last modified by Riccardo Battistini 06/05/21
+ * Last modified by Riccardo Battistini 09/05/21
  */
 
 #ifndef MM_IO_H
@@ -18,6 +18,9 @@ char *mm_typecode_to_str(const MM_typecode matcode);
 
 int mm_read_banner(FILE *f, MM_typecode *matcode);
 int mm_read_mtx_crd_size(FILE *f, int *M, int *N, int *nz);
+
+int mm_write_banner(FILE *f, MM_typecode matcode);
+int mm_write_mtx_crd_size(FILE *f, int M, int N, int nz);
 
 /********************* MM_typecode query functions ***************************/
 
