@@ -32,22 +32,24 @@
  *
  ****************************************************************************/
 
+#pragma once
 #ifndef DEVICE_PROPERTIES_CUH
 #define DEVICE_PROPERTIES_CUH
 
 #ifdef __CUDACC__
 
+#define LINE_LENGTH 79
 #include "errcheck.cuh"
 
 int get_runtime_version() {
     int driverVersion;
-    cudaSafeCall( cudaRuntimeGetVersion(&driverVersion) );
+    cudaSafeCall(cudaRuntimeGetVersion(&driverVersion));
     return driverVersion;
 }
 
 size_t get_global_mem_size() {
     size_t totalMem;
-    cudaSafeCall( cudaMemGetInfo(nullptr, &totalMem) );
+    cudaSafeCall(cudaMemGetInfo(nullptr, &totalMem));
     return totalMem;
 }
 
@@ -58,35 +60,35 @@ size_t get_global_mem_size() {
  */
 int get_compute_capability() {
     int devId, computeCap;
-    cudaSafeCall( cudaGetDevice(&devId) );
-    cudaSafeCall( cudaDeviceGetAttribute(&computeCap,
-                                         cudaDevAttrComputeCapabilityMajor, devId) );
+    cudaSafeCall(cudaGetDevice(&devId));
+    cudaSafeCall(cudaDeviceGetAttribute(&computeCap,
+                                        cudaDevAttrComputeCapabilityMajor, devId));
     return computeCap;
 }
 
 int get_max_threads_per_block() {
     int devId, threadsPerBlock;
-    cudaSafeCall( cudaGetDevice(&devId) );
-    cudaSafeCall( cudaDeviceGetAttribute(&threadsPerBlock,
-                                         cudaDevAttrMaxThreadsPerBlock, devId) );
+    cudaSafeCall(cudaGetDevice(&devId));
+    cudaSafeCall(cudaDeviceGetAttribute(&threadsPerBlock,
+                                        cudaDevAttrMaxThreadsPerBlock, devId));
     return threadsPerBlock;
 }
 
 int get_sm_count() {
     int devId, numProcs;
-    cudaSafeCall( cudaGetDevice(&devId) );
-    cudaSafeCall( cudaDeviceGetAttribute(&numProcs,
-                                         cudaDevAttrMultiProcessorCount, devId) );
+    cudaSafeCall(cudaGetDevice(&devId));
+    cudaSafeCall(cudaDeviceGetAttribute(&numProcs,
+                                        cudaDevAttrMultiProcessorCount, devId));
     return numProcs;
 }
 
 double get_mem_bandwidth() {
     int devId, clock_rate, mem_bus_width;
-    cudaSafeCall( cudaGetDevice(&devId) );
-    cudaSafeCall( cudaDeviceGetAttribute(&clock_rate,
-                                        cudaDevAttrClockRate, devId) );
-    cudaSafeCall( cudaDeviceGetAttribute(&mem_bus_width,
-                                         cudaDevAttrGlobalMemoryBusWidth, devId) );
+    cudaSafeCall(cudaGetDevice(&devId));
+    cudaSafeCall(cudaDeviceGetAttribute(&clock_rate,
+                                        cudaDevAttrClockRate, devId));
+    cudaSafeCall(cudaDeviceGetAttribute(&mem_bus_width,
+                                        cudaDevAttrGlobalMemoryBusWidth, devId));
 
     return (clock_rate * 1000.0) * (mem_bus_width / 8 * 2) / 1.0e9;
 }
@@ -97,10 +99,13 @@ void print_gpu_overview() {
     printf("Compute Capability: %d\n", get_compute_capability());
     printf("Memory bandwidth: %.2f GB/s\n", get_mem_bandwidth());
     printf("Global Memory size: %.2f GB\n",
-           get_global_mem_size() / (double)(1 << 30));
+           get_global_mem_size() / (double) (1 << 30));
     printf("Number of Streaming Multiprocessors: %d\n", get_sm_count());
+    for(int i = 0; i < LINE_LENGTH; i++)
+        printf("-");
+    printf("\n");
 }
 
 #endif
 
-#endif //DEVICE_PROPERTIES_CUH
+#endif//DEVICE_PROPERTIES_CUH

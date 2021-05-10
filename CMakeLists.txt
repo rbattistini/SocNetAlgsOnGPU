@@ -34,7 +34,15 @@ endforeach()
 
 #file(GLOB serial_srcs src/*.cpp src/*.h)
 
-add_executable(parallel src/betweenness.cu)
+add_executable(parallel src/betweenness.cu
+        include/device_props.cuh
+        include/errcheck.cuh
+        include/timing.cuh
+        include/gkernels.cuh src/gkernels.cu
+        include/utils.h src/utils.cpp
+        include/matio.h src/matio.cpp
+        include/matstorage.h src/matstorage.cpp)
+
 set_target_properties(
         parallel PROPERTIES CUDA_SEPARABLE_COMPILATION ON
         COMPILE_FLAGS -DCUDA_DEBUG COMPILE_FLAGS -DDEBUG)

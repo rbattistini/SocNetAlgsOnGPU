@@ -33,19 +33,20 @@
  *
  ****************************************************************************/
 
+#pragma once
 #ifndef CUDA_UTILS_H
 #define CUDA_UTILS_H
 
 #ifdef __CUDACC__
 
-#include <cassert>
 #include "errcheck.cuh"
+#include <cassert>
 
 // outputs size in Mb
 #define size_mb(size) ((size) / (1024 * 1024))
 
 // outputs bandwidth in GB/s
-#define bandwidth(bytes, microseconds) ((bytes) * 1e-6 / (microseconds))
+#define bandwidth(bytes, microseconds) ((bytes) *1e-6 / (microseconds))
 
 /*
  * from https://stackoverflow.com/questions/6959213/timing-a-cuda-application-using-events/6977536#6977536
@@ -54,24 +55,24 @@ class EventTimer {
 
 public:
     EventTimer() : mStarted(false), mStopped(false) {
-        cudaSafeCall( cudaEventCreate(&mStart) );
-        cudaSafeCall( cudaEventCreate(&mStop) );
+        cudaSafeCall(cudaEventCreate(&mStart));
+        cudaSafeCall(cudaEventCreate(&mStop));
     }
 
     ~EventTimer() {
-        cudaSafeCall( cudaEventDestroy(mStart) );
-        cudaSafeCall( cudaEventDestroy(mStop) );
+        cudaSafeCall(cudaEventDestroy(mStart));
+        cudaSafeCall(cudaEventDestroy(mStop));
     }
 
     void start(cudaStream_t s = 0) {
-        cudaSafeCall( cudaEventRecord(mStart, s) );
+        cudaSafeCall(cudaEventRecord(mStart, s));
         mStarted = true;
         mStopped = false;
     }
 
-    void stop(cudaStream_t s = 0)  {
+    void stop(cudaStream_t s = 0) {
         assert(mStarted);
-        cudaSafeCall( cudaEventRecord(mStop, s) );
+        cudaSafeCall(cudaEventRecord(mStop, s));
         mStarted = false;
         mStopped = true;
     }
@@ -81,9 +82,9 @@ public:
         if (!mStopped)
             return 0;
 
-        cudaSafeCall( cudaEventSynchronize(mStop) );
+        cudaSafeCall(cudaEventSynchronize(mStop));
         float elapsed = 0;
-        cudaSafeCall( cudaEventElapsedTime(&elapsed, mStart, mStop) );
+        cudaSafeCall(cudaEventElapsedTime(&elapsed, mStart, mStop));
         return elapsed;
     }
 
@@ -100,7 +101,6 @@ private:
  * The throughput is measured as ...
  */
 class ThroughputComputer {
-
 };
 
 /*
@@ -112,21 +112,22 @@ float cudaMemcpyProfiled(void *dst, const void *src, size_t count,
 
     float time;
     cudaEvent_t startEvent, stopEvent;
-    cudaSafeCall( cudaEventCreate(&startEvent) );
-    cudaSafeCall( cudaEventCreate(&stopEvent) );
+    cudaSafeCall(cudaEventCreate(&startEvent));
+    cudaSafeCall(cudaEventCreate(&stopEvent));
 
-    cudaSafeCall( cudaEventRecord(startEvent, 0) );
-    cudaSafeCall( cudaMemcpy(dst, src, count, kind) );
-    cudaSafeCall( cudaEventRecord(stopEvent, 0) );
-    cudaSafeCall( cudaEventSynchronize(stopEvent) );
+    cudaSafeCall(cudaEventRecord(startEvent, 0));
+    cudaSafeCall(cudaMemcpy(dst, src, count, kind));
+    cudaSafeCall(cudaEventRecord(stopEvent, 0));
+    cudaSafeCall(cudaEventSynchronize(stopEvent));
 
-    cudaSafeCall( cudaEventElapsedTime(&time, startEvent, stopEvent) );
+    cudaSafeCall(cudaEventElapsedTime(&time, startEvent, stopEvent));
 
 #ifdef CUDA_DEBUG
     printf("Transfer size (MB): %lu\n", size_mb(count));
     printf("Effective Bandwidth %s (GB/s): %f\n",
            (kind == cudaMemcpyHostToDevice) ? "Host to Device"
-                                            : "Device to Host", bandwidth(count, time));
+                                            : "Device to Host",
+           bandwidth(count, time));
 #endif
 
     return time;
@@ -134,4 +135,4 @@ float cudaMemcpyProfiled(void *dst, const void *src, size_t count,
 
 #endif
 
-#endif //CUDA_UTILS_H
+#endif//CUDA_UTILS_H

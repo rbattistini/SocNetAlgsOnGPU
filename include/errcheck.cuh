@@ -32,6 +32,7 @@
  *
  ****************************************************************************/
 
+#pragma once
 #ifndef ERRCHECK_CUH
 #define ERRCHECK_CUH
 
@@ -40,41 +41,39 @@
 /*
  * from https://gist.github.com/ashwin/2652488
  */
-#define cudaSafeCall( err ) __cudaSafeCall( err, __FILE__, __LINE__ )
-#define cudaCheckError()    __cudaCheckError( __FILE__, __LINE__ )
+#define cudaSafeCall(err) __cudaSafeCall(err, __FILE__, __LINE__)
+#define cudaCheckError() __cudaCheckError(__FILE__, __LINE__)
 
 /*
  * from https://berenger.eu/blog/cusparse-cccuda-sparse-matrix-examples-csr-bcsr-spmv-and-conversions/
  */
-#define cudaSparseCheck( test ) __cudaSparseCheckCore((test), __FILE__, __LINE__)
+#define cudaSparseCheck(test) __cudaSparseCheckCore((test), __FILE__, __LINE__)
 
-inline void __cudaSafeCall( cudaError err, const char *file, const int line )
-{
+inline void __cudaSafeCall(cudaError err, const char *file, const int line) {
 #ifdef CUDA_DEBUG
-    if ( cudaSuccess != err ) {
-        fprintf( stderr, "cudaSafeCall() failed at %s:%i : %s\n",
-                 file, line, cudaGetErrorString( err ) );
+    if (cudaSuccess != err) {
+        fprintf(stderr, "cudaSafeCall() failed at %s:%i : %s\n",
+                file, line, cudaGetErrorString(err));
         abort();
     }
 #endif
 }
 
-inline void __cudaCheckError( const char *file, const int line )
-{
+inline void __cudaCheckError(const char *file, const int line) {
 #ifdef CUDA_DEBUG
     cudaError err = cudaGetLastError();
-    if ( cudaSuccess != err ) {
-        fprintf( stderr, "cudaCheckError() failed at %s:%i : %s\n",
-                 file, line, cudaGetErrorString( err ) );
+    if (cudaSuccess != err) {
+        fprintf(stderr, "cudaCheckError() failed at %s:%i : %s\n",
+                file, line, cudaGetErrorString(err));
         abort();
     }
 
     /* More careful checking. However, this will affect performance.
        Comment away if needed. */
     err = cudaDeviceSynchronize();
-    if( cudaSuccess != err ) {
-        fprintf( stderr, "cudaCheckError() with sync failed at %s:%i : %s\n",
-                 file, line, cudaGetErrorString( err ) );
+    if (cudaSuccess != err) {
+        fprintf(stderr, "cudaCheckError() with sync failed at %s:%i : %s\n",
+                file, line, cudaGetErrorString(err));
         abort();
     }
 #endif
@@ -92,4 +91,4 @@ inline void __cudaCheckError( const char *file, const int line )
 //}
 #endif
 
-#endif //ERRCHECK_CUH
+#endif//ERRCHECK_CUH
