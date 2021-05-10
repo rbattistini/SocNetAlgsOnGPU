@@ -81,7 +81,7 @@ Nel corso del tirocinio sono state approfondite alcune misure di centralità imp
 
 In particolare sono stati consultati i primi studi relativi all'introduzione di questa metrica e quelli relativi a uno degli algoritmi sequenziali che per maggior tempo ha costituito lo stato dell'arte nel calcolo di questa metrica. La conoscenza acquisita e impiegata durante lo svolgimento del tirocinio è stata raccolta in <<Misure di centralità e betweenness>> e <<Algoritmo seriale di Brandes>>.
 
-Successivamente si è proceduto con l'implementazione di un programma che fosse in grado di calcolare la {BC} prima in modo seriale e in seguito accelerando la computazione con una GPU. Il processo di sviluppo è dettagliato in <<Algoritmo parallelo su GPU>>.
+Successivamente si è proceduto con l'implementazione di un programma che fosse in grado di calcolare la {BC} prima in modo seriale e in seguito accelerando la computazione con una GPU. Il processo di sviluppo è dettagliato in <<Tecniche di parallelizzazione su GPU>>.
 
 Prima di procedere con l'implementazione è stato necessario riflettere sulla struttura dati principale da impiegare per la rappresentazione della rete e sulla scelta del formato di memorizzazione su disco. In <<Rappresentazione di un grafo>> si spiegano le decisioni prese.
 
@@ -109,29 +109,6 @@ BC(v) \stackrel{\text { def }}{=} \sum_{s \neq v \neq t \in V} \frac{\sigma_{st}
 ++++
 
 Dove stem:[\sigma_{st}(v)] indica il numero di cammini minimi che passano da stem:[s] a stem:[t] e attraversano stem:[v] e stem:[\sigma_{st}] indica il numero di cammini minimi che passano per ogni coppia stem:[s, t \in V].
-
-Normalized Vertex {BC}:: La {BC} di un singolo vertice normalizzata può essere riscritta a partire da (<<eq-bc>>) in questo modo:
-
-[latexmath, id="eq-bc-norm"]
-++++
-BC \! ' \! (G) \stackrel{\text { def }}{=} \frac{BC(v)}{\max{ \ BC(v)}} = \frac{2 BC(v)}{(n - 1)(n - 2)} \quad 0 \le BC \! ' \! (v) \le 1
-++++
-
-Whole-network {BC}:: La {BC} come misura di tipo _whole-network_, ovvero riferita all'intera rete, è definita come la somma delle {BC} dei singoli vertici:
-
-[latexmath, id="eq-bc-whole", reftext={counter:refnum}]
-++++
-\begin{equation}
-BC(G) \stackrel{\text { def }}{=} \frac{\sum_{i = 1}^n \left[BC(v^*) - BC(v_i) \right]}{\max{\sum_{i = 1}^n \left[ BC(v^*) - BC(v_i) \right]}} = \frac{2 \sum_{i = 1}^n \left[BC(v^*) - BC(v_i) \right]}{(n - 1)^2(n - 2)}
-\end{equation}
-++++
-
-Normalized Whole-network {BC}:: La {BC} di un grafo normalizzata può essere riscritta a partire da (<<eq-bc-whole>>) nel seguente modo:
-
-[latexmath, id="eq-bc-whole-norm"]
-++++
-BC(G) \stackrel{\text { def }}{=} \frac{\sum_{i = 1}^n \left[BC\! ' \!(v^*) - BC\! ' \!(v_i) \right]}{(n - 1)}
-++++
 
 La {BC} si presta a diverse interpretazioni. Può esprimere la capacità di un nodo di controllare, distorcere, inibire o bloccare il flusso d'informazioni in una rete oppure può indicare quanto un nodo possa unire due o più gruppi di nodi e favorire lo scambio d'informazioni.
 
@@ -182,7 +159,7 @@ Nell'algoritmo di Brandes per il calcolo dei cammini minimi in un grafo non pesa
 
 Applicando il risultato di Brandes, si ha che tutte le misure di centralità che richiedono il calcolo dei cammini minimi possono essere computate simultaneamente. Esempi di misure di questo tipo sono la _closeness centrality_ cite:[sabidussi_centrality_1966] e la varianti della {BC} cite:[brandes_variants_2008], come la _load centrality_ e la _stress centrality_.
 
-== Algoritmo seriale SPVB
+=== Algoritmo seriale SPVB
 
 L'algoritmo SPVB, illustrato in <<alg-spvb>>, permette di sfruttare la struttura delle reti sociali per velocizzare significativamente l'algoritmo seriale di Brandes.
 
@@ -194,6 +171,8 @@ Dal punto di vista formale l'insieme dei nodi di grado unitario stem:[F] che pos
 
 Il calcolo della {BC} di un vertice stem:[v \in V] richiede la somma di coppie di vertici stem:[s, t \in V]. Queste somme possono essere divise in più sotto-somme che coinvolgono o meno tree-nodes e possono essere calcolate con diversi algoritmi.
 
+L'algoritmo SPVB, illustrato in <<alg-spvb>>, può essere eseguito su grafi disconnessi applicandolo a ogni componente connessa separatamente.
+
 <<<
 
 [source, pseudocode, id="alg-spvb"]
@@ -204,8 +183,8 @@ let G.V be the set of vertices of the graph G
 let G.n be the number of vertices in G
 let v.dg be the degree of a vertex v
 let v.bc be the betweneess centrality of a vertex v
-let p[] be an array # <1>
-for v in G.V do # <2>
+let p[] be an array
+for v in G.V do
     label v.bc as 0
     label p[v] as 0
 end
@@ -214,7 +193,7 @@ let G_i be the i-th graph
 let deg be a queue
 label i as 0
 label G_i as G
-for v in G.V do # <3>
+for v in G.V do
     if v.dg = 1 then
         deg.enqueue(v)
     end
@@ -236,14 +215,6 @@ if G_i.n > 1 then
     BC_Mod_Computation(G_i)
 end
 ----
-
-<1> Per un vertice di grado unitario il vettore `p` indica il numero di vertici del sotto-albero radicato in `v` (esclusa la radice). Per un qualsiasi altro vertice `u`, `p` registra la somma delle dimensioni dei sotto-alberi radicati nei figli di quel vertice che non stati eliminati nelle precedenti iterazioni;
-<2> Inizializzazione della {BC} di ogni vertice;
-<3> Inizializzazione dell'insieme di nodi di grado unitario in `G`;
-
-<<<
-
-L'algoritmo SPVB, illustrato in <<alg-spvb>>, può essere eseguito su grafi disconnessi applicandolo a ogni componente connessa separatamente.
 
 <<<
 
@@ -299,14 +270,6 @@ for v in G.V do
 end
 ----
 
-<<<
-
-<1> Inizializzazione della {BC} di ogni vertice;
-<2> Esamina i vicini di `v`;
-<3> Se `w` non è stato ancora scoperto;
-<4> Se è un cammino minimo verso `w` che attraversa `v`;
-<5> Lo stack `S` restituisce i vertici in ordine non crescente di distanza da `s`.
-
 === Rappresentazione di un grafo
 
 Un grafo generalmente è rappresentato in due modi: come collezione di liste di adiacenza e come una matrice di adiacenza.
@@ -340,11 +303,7 @@ typedef struct {
 <3> indice colonna per ogni elemento:
 <4> valore di ogni elemento. È omesso se si vuole rappresentare un grafo con pesi uniformi.
 
-Dato che i grafi che si incontrano nell'ambito dell'analisi delle reti sociali sono sparsi {wj}citenp:[barabasi2016network(13)], ovvero stem:[|E| \ll |V|^2], e di notevoli dimensioni (da centinaia di migliaia a milioni di vertici e in crescita) il costo stem:[\theta(n^2)] della tipologia di rappresentazione scelta in termini di occupazione di memoria non è sostenibile. Perciò si sfruttano le caratteristiche strutturali di queste reti rappresentandole come matrici sparse, ovvero come matrici in cui gli elementi nulli sono omessi. In questo modo è possibile ottenere un notevole risparmio in termini di occupazione di memoria in funzione del grado di sparsità della rete. Un esempio di matrice sparsa si ha in <<sparse-matrix>>.
-
-[[sparse-matrix]]
-.Rappresentazione di una matrice sparsa simmetrica ottenuta dal dataset `ca-GrQc`, costruito a partire dalla rete di collaborazioni delle pubblicazioni nel campo della Relatività Generale e della Cosmologia Quantica su arXiv dal 1993 al 2003. Il grafico è stato realizzato tramite la funzione `spy` in GNU Octave. Il grado di sparsità della matrice è superiore al 95%.
-image::../fig1.png[Esempio di matrice sparsa, align="center", pdfwidth="70%"]
+Dato che i grafi che si incontrano nell'ambito dell'analisi delle reti sociali sono sparsi {wj}citenp:[barabasi2016network(13)], ovvero stem:[|E| \ll |V|^2], e di notevoli dimensioni (da centinaia di migliaia a milioni di vertici e in crescita) il costo stem:[\theta(n^2)] della tipologia di rappresentazione scelta in termini di occupazione di memoria non è sostenibile. Perciò si sfruttano le caratteristiche strutturali di queste reti rappresentandole come matrici sparse, ovvero come matrici in cui gli elementi nulli sono omessi. In questo modo è possibile ottenere un notevole risparmio in termini di occupazione di memoria in funzione del grado di sparsità della rete.
 
 Esistono diversi metodi per rappresentare una matrice sparsa, ciascuno avente impatto sia sull'occupazione del disco che sulle prestazioni del programma a tempo di esecuzione. Alcuni dei formati di memorizzazione più noti sono _COOrdinate Format_ (COO) e _Compressed Sparse Row_ (CSR).
 
@@ -406,9 +365,81 @@ nnz \ < \ \frac{n (n - 1)}{2}
 
 I dataset impiegati per valutare l'algoritmo parallelo implementato in <<Studio di scalabilità e throughput>> sono stati memorizzati su disco con il formato COO e in memoria principale con il formato CSR. La scelta è motivata dal grado di sparsità superiore al 90% in tutte le reti considerate.
 
-=== Algoritmo parallelo su GPU
+=== Tecniche di parallelizzazione su GPU
 
-cite:[jia_chapter_2012]
+Una delle difficoltà del calcolo della {BC} su GPU è lo sbilanciamento del carico che provocano le reti scale-free, che rappresentano una delle tipologie più simili alle reti sociali reali cite:[sriram_evaluating_nodate].
+
+Per calcolare la {BC} su GPU si parallelizza l'algoritmo di Brandes. Si distinguono due fasi che si prestano a essere parallelizzate ciascuna in un kernel distinto:
+
+- calcolo dei cammini minimi per ciascun vertice tramite visite in ampiezza, detta anche fase di propagazione in avanti;
+- accumulazione delle dipendenze, detta anche fase di propagazione all'indietro.
+
+Sia il calcolo delle visite in ampiezza che l'accumulazione delle dipendenze possono essere eseguiti in parallelo distribuendo un gruppo di vertici a ogni SM. In questo modo si realizza un parallelismo a grana grossa.
+
+Inoltre in ciascuno SM l'attraversamento del grafo è strutturato per livelli di profondità e realizzato in sincrono. In altri termini a ogni iterazione si ha una frontiera di vertici attivi che devono essere processati. Quando è stata completata l'elaborazione dei vertici di una frontiera allora si può avanzare al livello successivo di profondità.
+
+Tutti i thread associati ai vertici della frontiera corrente lavorano concorrentemente nell'esecuzione di un'unica visita in ampiezza o nell'accumulazione delle dipendenze sincronizzata realizzando un parallelismo a grana fine. A ogni livello si impiega un kernel della GPU per effettuare la visita dei vertici di quel livello.
+
+Esistono diverse strategie per distribuire l'elaborazione dei vertici o degli archi di una frontiera tra i thread. Jia et al. cite:[jia_chapter_2012] hanno confrontato due delle strategie che si possono impiegare, ovvero gli approcci _vertex-parallel_ ed _edge-parallel_.
+
+Nel primo approccio si assegna un thread a ogni vertice del grafo. Nel <<alg-vtxp>> si osserva che ciascun thread ha un carico di lavoro che dipende dal numero di vicini del vertice a cui è assegnato. Ciò significa che in una stessa unità SIMD, un warp, ci saranno thread corrispondenti a vertici di grado basso che devono attendere thread assegnati a vertici di grado elevato, in entrambe le fasi dell'algoritmo. Perciò l'approccio _vertex_parallel_ non permette di effettuare una parallelizzazione efficiente dato che è soggetto a sbilanciamento del carico. In particolare non si presta a essere applicato nelle reti scale-free, dove si ha una forte variazione del grado di ciascun vertice.
+
+In alternativa si può assegnare un thread a ogni arco del grafo. Come si può vedere nel <<alg-edgp>>, i thread attivi sono solo quelli assegnati ad archi incidenti sulla frontiera. Con questo approccio si può saturare la GPU e bilanciare il carico di lavoro in quanto per ogni arco o si effettua un aggiornamento o non si eseguono operazioni. Il principale limite sta nel notevole consumo di memoria.
+
+Per applicazioni nel campo delle reti sociali è stato dimostrato che l'approccio _edge-parallel_ è il più adatto in quanto ha un throughput maggiore rispetto all'approccio _vertex_parallel_ e ha una più bassa divergenza dei thread.
+
+[source, pseudocode, id="alg-vtxp"]
+.Pseudocodice della tecnica vertex-parallel (calcolo visita in ampiezza)
+----
+for v in G.V on wavefront in parallel do
+    for w in G.adjacentVertices(v) do
+        if w.d = -1 then
+            label w.d as w.d + 1
+        end
+        if w.d = d + 1 then
+            label w.σ as w.σ + v.σ
+        end
+    end
+end
+----
+
+[source, pseudocode, id="alg-edgp"]
+.Pseudocodice della tecnica edge-parallel (calcolo visita in ampiezza)
+----
+for e in G.E incident to wavefront in parallel do
+    if w.d = -1 then
+        label w.d as w.d + 1
+    end
+    if w.d = d + 1 then
+        label w.σ as w.σ + v.σ
+    end
+end
+----
+
+McLaughlin e Bader cite:[mclaughlin_scalable_2014] introducono una terza strategia, un approccio _work-efficient_, che mitiga i problemi riscontrati con le tecniche precedenti.
+
+Nell'approccio cooperativo si assegnano i thread ai vertici che si trovano nella lista di adiacenza di ciascun vertice della frontiera una alla volta. In questo modo si ha un carico di lavoro bilanciato se la lunghezza media della lista di adiacenza di ciascun vertice è maggiore della dimensione di un warp.
+
+[source, pseudocode, id="alg-wkef"]
+.Pseudocodice della tecnica work-efficient
+----
+while True do
+    for v in G.V do in parallel
+        for w in G.adjacentVertices(v)
+
+        end
+    end
+end
+----
+
+'''
+
+In seguito si applica una tecnica di ottimizzazione, in modo analogo a quanto visto nella SPVB e già applicata nel campo delle GPU cite:[sariyuce_betweenness_2013], che realizza una compressione del grafo rimuovendo iterativamente i vertici di grado unitario.
+
+Il funzionamento si basa ...
+
+L'efficacia è dovuta alla possibilità di sfruttare una proprietà strutturale
+propria delle reti sociali per cui ... (preferential-attachment)
 
 === Studio di scalabilità e throughput
 
