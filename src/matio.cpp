@@ -44,7 +44,8 @@ inline int max(int a, int b) {
  * Check if a filename has a given extension.
  * Thanks to: https://stackoverflow.com/questions/4849986/how-can-i-check-the-file-extensions-in-c
  */
-static int has_extension(const char *name, const char *extension, size_t length) {
+static int has_extension(const char *name, const char *extension,
+                         size_t length) {
     const char *ldot = strrchr(name, '.');
     if (ldot != nullptr) {
         if (length == 0)
@@ -87,7 +88,8 @@ int query_gprops(const char *fname, gprops_t *gp) {
     /*
      * Only matrices of reals or pattern are supported.
      */
-    if (!((mm_is_pattern(matcode) || mm_is_real(matcode)) && mm_is_matrix(matcode))) {
+    if (!((mm_is_pattern(matcode) || mm_is_real(matcode)) &&
+          mm_is_matrix(matcode))) {
         fprintf(stderr, "This application does not support\n"
                         "Market Matrix type: %s\n",
                 mm_typecode_to_str(matcode));
@@ -440,22 +442,22 @@ int write_mm_pattern(FILE *f, matrix_pcoo_t *m_coo, bool directed) {
     mm_set_coordinate(&matcode);
     mm_set_pattern(&matcode);
 
-    if(directed)
+    if (directed)
         mm_set_general(&matcode);
     else
         mm_set_symmetric(&matcode);
 
-    if(mm_write_banner(stdout, matcode))
+    if (mm_write_banner(stdout, matcode))
         return EXIT_FAILURE;
 
     /*
      * Write the header and the values.
      */
-    if(mm_write_mtx_crd_size(f, m_coo->nrows, m_coo->nrows, m_coo->nnz))
+    if (mm_write_mtx_crd_size(f, m_coo->nrows, m_coo->nrows, m_coo->nnz))
         return EXIT_FAILURE;
 
     for (int i = 0; i < m_coo->nnz; i++)
-        if(fprintf(f, "%d %d\n", m_coo->rows[i] + 1, m_coo->cols[i] + 1) < 0) {
+        if (fprintf(f, "%d %d\n", m_coo->rows[i] + 1, m_coo->cols[i] + 1) < 0) {
             return EXIT_FAILURE;
         }
 
@@ -475,23 +477,23 @@ int write_mm_real(FILE *f, matrix_rcoo_t *m_coo, bool directed) {
     mm_set_coordinate(&matcode);
     mm_set_real(&matcode);
 
-    if(directed)
+    if (directed)
         mm_set_general(&matcode);
     else
         mm_set_symmetric(&matcode);
 
-    if(mm_write_banner(stdout, matcode))
+    if (mm_write_banner(stdout, matcode))
         return EXIT_FAILURE;
 
     /*
      * Write the header and the values.
      */
-    if(mm_write_mtx_crd_size(f, m_coo->nrows, m_coo->nrows, m_coo->nnz))
+    if (mm_write_mtx_crd_size(f, m_coo->nrows, m_coo->nrows, m_coo->nnz))
         return EXIT_FAILURE;
 
     for (int i = 0; i < m_coo->nnz; i++)
-        if(fprintf(f, "%d %d %d\n", m_coo->rows[i] + 1, m_coo->cols[i] + 1,
-                m_coo->weights[i]) < 0) {
+        if (fprintf(f, "%d %d %d\n", m_coo->rows[i] + 1, m_coo->cols[i] + 1,
+                    m_coo->weights[i]) < 0) {
             return EXIT_FAILURE;
         }
 

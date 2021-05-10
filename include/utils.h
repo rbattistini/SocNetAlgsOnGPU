@@ -55,6 +55,8 @@ int close_stream(FILE *stream);
 
 void print_array(const int *arr, int n);
 
+void print_array(const float *arr, int n);
+
 void print_edge_list(const int *row_offsets, const int *cols, int nrows);
 
 void bucket_sort(const int *arr, int n);
