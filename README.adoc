@@ -1,8 +1,9 @@
 = Social Network Analysis Algorithms on GPU
-:repo-name: SocNetAlgsOnGPU
 
 ifdef::env-github[]
 :note-caption: :information_source:
+:tip-caption: :bulb:
+:warning-caption: :warning:
 endif::[]
 
 A command-line GPU-accelerated application for computing Betweenness Centrality of sparse
@@ -38,8 +39,8 @@ First clone this repo and enter it:
 
 [source,shell]
 ----
-git clone https://github.com/Da3dalu2/{repo-name}.git
-cd {repo-name}
+git clone https://github.com/Da3dalu2/SocNetAlgsOnGPU.git
+cd SocNetAlgsOnGPU
 ----
 
 To build this project with CMake:
@@ -75,7 +76,7 @@ All dataset-related code is under the `dataset` subdirectory. Only link:https://
 
 A helper script, `dataset/convert_snap_to_mm` for converting graphs from the SNAP graph library to the Matrix-market format is given.
 
-A script for generating random graphs is also given, `dataset/graph_gen`. Three type of graphs are supported.
+A script for generating random graphs is also given, `dataset/graph_gen`.
 
 Currently, only undirected and unweighted graphs are supported. To convert a directed graph to an undirected one, just change the `general` property of the Matrix-market file banner to `symmetric`.
 
