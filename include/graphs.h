@@ -72,4 +72,6 @@ void compute_degrees_undirected(matrix_pcoo_t *g, int *degree);
 void compute_degrees_directed(matrix_pcoo_t *g, int *in_degree,
                               int *out_degree);
 
+void free_ccs(components_t *ccs);
+
 #endif//GRAPHS_H

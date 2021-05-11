@@ -2,71 +2,48 @@ cmake_minimum_required(VERSION 3.9 FATAL_ERROR)
 project(SocNetAlgsOnGPU C CXX CUDA)
 
 if(NOT DEFINED CMAKE_CUDA_STANDARD)
+    set(CMAKE_CUDA_STANDARD_REQUIRED ON)
     set(CMAKE_CUDA_STANDARD 11)
     set(CMAKE_CUDA_STANDARD_REQUIRED True)
 endif()
 
 if(NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
     set(CMAKE_CXX_STANDARD 11)
     set(CMAKE_CXX_STANDARD_REQUIRED True)
 endif()
 
 find_package(OpenMP REQUIRED)
 
+add_library(mmio STATIC lib/mmio/mmio.c lib/mmio/mmio.h)
+
 # from https://developer.nvidia.com/blog/building-cuda-applications-cmake/
-
-add_library(mmio STATIC libs/mmio/mmio.c libs/mmio/mmio.h)
-target_compile_features(mmio PUBLIC cxx_std_11)
 set_target_properties(mmio PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-include_directories(libs/mmio)
 
-include_directories(libs/snap-core)
-include_directories(libs/glib-core)
-include_directories(libs/doctest)
+include_directories(lib/mmio)
+include_directories(lib/snap-core)
+include_directories(lib/glib-core)
+include_directories(lib/doctest)
 include_directories(include)
 
-file(GLOB samples samples/*.cu)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-foreach(sample ${samples})
-    GET_FILENAME_COMPONENT(samplename ${sample} NAME_WLE)
-    add_executable(${samplename} ${sample})
-endforeach()
+#include(cmake/code-coverage.cmake)
+#include(cmake/sanitizers.cmake)
+#include(cmake/tools.cmake)
 
-#file(GLOB serial_srcs src/*.cpp src/*.h)
+add_subdirectory(src)
+add_subdirectory(test)
 
-add_executable(parallel src/betweenness.cu
-        include/device_props.cuh
-        include/errcheck.cuh
-        include/timing.cuh
-        include/gkernels.cuh src/gkernels.cu
-        include/utils.h src/utils.cpp
-        include/matio.h src/matio.cpp
-        include/matstorage.h src/matstorage.cpp)
+#set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -Wpedantic -Wextra -DDEBUG")
+#set(CMAKE_C_FLAGS_RELEASE "-O2 -DBENCHMARK")
 
-set_target_properties(
-        parallel PROPERTIES CUDA_SEPARABLE_COMPILATION ON
-        COMPILE_FLAGS -DCUDA_DEBUG COMPILE_FLAGS -DDEBUG)
-target_link_libraries(parallel PRIVATE mmio)
+# overwrote on purpose
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wpedantic -Wextra")
+set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 
-add_executable(serial src/main.cpp
-        include/utils.h src/utils.cpp
-        include/matio.h src/matio.cpp
-        include/matstorage.h src/matstorage.cpp
-        include/spvb.h src/spvb.cpp
-        src/graphs.cpp include/graphs.h)
+#message("-- CMAKE_C_FLAGS_DEBUG is ${CMAKE_C_FLAGS_DEBUG}")
+#message("-- CMAKE_C_FLAGS_RELEASE is ${CMAKE_C_FLAGS_RELEASE}")
 
-target_link_libraries(serial PRIVATE mmio)
-
-add_executable(graph_gen datasets/graph_gen.cpp
-        include/utils.h src/utils.cpp
-        include/matio.h src/matio.cpp
-        include/matstorage.h src/matstorage.cpp)
-
-target_link_libraries(graph_gen PRIVATE mmio)
-
-if(OpenMP_CXX_FOUND)
-    target_link_libraries(graph_gen PUBLIC OpenMP::OpenMP_CXX libsnap.a)
-    target_link_libraries(serial PUBLIC OpenMP::OpenMP_CXX libsnap.a)
-endif()
-
-add_subdirectory(tests)
+message("-- CMAKE_CXX_FLAGS_DEBUG is ${CMAKE_CXX_FLAGS_DEBUG}")
+message("-- CMAKE_CXX_FLAGS_RELEASE is ${CMAKE_CXX_FLAGS_RELEASE}")

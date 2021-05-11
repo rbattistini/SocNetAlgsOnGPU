@@ -37,14 +37,14 @@
 //#define BENCHMARK
 // TODO bandwidth measure to be tested
 
-#include <cstdio>
-#include <cstdlib>
-#include "matio.h"
-#include "matstorage.h"
 #include "device_props.cuh"
-#include "timing.cuh"
 #include "errcheck.cuh"
 #include "gkernels.cuh"
+#include "matio.h"
+#include "matstorage.h"
+#include "timing.cuh"
+#include <cstdio>
+#include <cstdlib>
 
 int main(int argc, char *argv[]) {
 
@@ -71,10 +71,10 @@ int main(int argc, char *argv[]) {
     /*
      * Coarse-grained parallelism.
      */
-    const unsigned int threadsPerBlock = get_max_threads_per_block();
-    const unsigned int blocksPerGrid = get_sm_count();
-//    dim3 block = {threadsPerBlock, 1, 1};
-//    dim3 grid = {blocksPerGrid, 1, 1};
+    const unsigned int threads_per_block = get_max_threads_per_block();
+    const unsigned int blocks_per_grid = get_sm_count();
+    dim3 block = {threads_per_block, 1, 1};
+    dim3 grid = {blocks_per_grid, 1, 1};
 
     /*
      * Load Matrix Market matrix stored in .mm format as a COO matrix.
@@ -94,57 +94,57 @@ int main(int argc, char *argv[]) {
      * Allocate the matrix in CSR on the device.
      */
     size_t nnz = m_csr.row_offsets[m_csr.nrows];
-    cudaSafeCall( cudaMalloc((void**)&d_row_offsets,
-                             (m_csr.nrows + 1) * sizeof(int)) );
-    cudaSafeCall( cudaMalloc((void**)&d_cols, nnz * sizeof(int)) );
-    cudaSafeCall( cudaMalloc((void**)&d_dist, m_csr.nrows * sizeof(int)) );
-    cudaSafeCall( cudaMalloc((void**)&d_sigma, m_csr.nrows * sizeof(int)) );
-    cudaSafeCall( cudaMalloc((void**)&d_delta, m_csr.nrows * sizeof(float)) );
-    cudaSafeCall( cudaMalloc((void**)&d_bc, m_csr.nrows * sizeof(float)) );
+    cudaSafeCall(cudaMalloc((void **) &d_row_offsets,
+                            (m_csr.nrows + 1) * sizeof(int)));
+    cudaSafeCall(cudaMalloc((void **) &d_cols, nnz * sizeof(int)));
+    cudaSafeCall(cudaMalloc((void **) &d_dist, m_csr.nrows * sizeof(int)));
+    cudaSafeCall(cudaMalloc((void **) &d_sigma, m_csr.nrows * sizeof(int)));
+    cudaSafeCall(cudaMalloc((void **) &d_delta, m_csr.nrows * sizeof(float)));
+    cudaSafeCall(cudaMalloc((void **) &d_bc, m_csr.nrows * sizeof(float)));
 
     /*
      * Allocate memory for the bc scores on the host.
      */
-    bc_gpu = (float*) malloc(m_csr.nrows * sizeof(float));
+    bc_gpu = (float *) malloc(m_csr.nrows * sizeof(float));
 
     /*
      * Compute bc.
      */
     chrono.start();
-    for(int i = 0; i < m_csr.nrows; i++) {
+    for (int i = 0; i < m_csr.nrows; i++) {
 
         int s = i;
-        vtx_par_bfs<<<1, threadsPerBlock>>>(s,
-                                                        d_dist,
-                                                        d_sigma,
-                                                        m_csr.nrows,
-                                                        nnz,
-                                                        d_row_offsets,
-                                                        d_cols);
+        vtx_par_bfs<<<grid, block>>>(s,
+                                     d_dist,
+                                     d_sigma,
+                                     m_csr.nrows,
+                                     nnz,
+                                     d_row_offsets,
+                                     d_cols);
 
         cudaCheckError();
 
-        vtx_par_dep_acc<<<1, threadsPerBlock>>>(s,
-                                                            d_dist,
-                                                            d_sigma,
-                                                            d_delta,
-                                                            d_bc,
-                                                            m_csr.nrows,
-                                                            nnz,
-                                                            d_row_offsets,
-                                                            d_cols);
+        vtx_par_dep_acc<<<grid, block>>>(s,
+                                         d_dist,
+                                         d_sigma,
+                                         d_delta,
+                                         d_bc,
+                                         m_csr.nrows,
+                                         nnz,
+                                         d_row_offsets,
+                                         d_cols);
 
         cudaCheckError();
     }
 
-    cudaSafeCall( cudaMemcpy(d_bc, bc_gpu, m_csr.nrows * sizeof(float),
-                             cudaMemcpyDeviceToHost));
+    cudaSafeCall(cudaMemcpy(d_bc, bc_gpu, m_csr.nrows * sizeof(float),
+                            cudaMemcpyDeviceToHost));
     chrono.stop();
 
     /*
      * Report time elapsed and throughput.
      */
-//    printf("Time elapsed: %.2f\n", chrono.elapsed());
+    //    printf("Time elapsed: %.2f\n", chrono.elapsed());
     print_array(bc_gpu, m_csr.nrows);
 
 #ifdef BENCHMARK
@@ -166,12 +166,12 @@ int main(int argc, char *argv[]) {
      */
     free_matrix_pcoo(&m_coo);
     free_matrix_pcsr(&m_csr);
-    cudaSafeCall( cudaFree(d_row_offsets) );
-    cudaSafeCall( cudaFree(d_cols) );
-    cudaSafeCall( cudaFree(d_bc) );
-    cudaSafeCall( cudaFree(d_delta) );
-    cudaSafeCall( cudaFree(d_sigma) );
-    cudaSafeCall( cudaFree(d_dist) );
+    cudaSafeCall(cudaFree(d_row_offsets));
+    cudaSafeCall(cudaFree(d_cols));
+    cudaSafeCall(cudaFree(d_bc));
+    cudaSafeCall(cudaFree(d_delta));
+    cudaSafeCall(cudaFree(d_sigma));
+    cudaSafeCall(cudaFree(d_dist));
 
     close_stream(stdin);
     close_stream(stdout);

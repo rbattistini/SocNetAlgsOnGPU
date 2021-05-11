@@ -62,102 +62,70 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    //    print_matrix_coo(&m_coo);
-    //    print_gprops(&gp);
-
     /*
-     * Load the matrix in COO as an undirected graph in SNAP.
-     * This way enhanced algorithm can run efficiently.
-     */
-    //    matrix_pcoo_t subgraph_coo;
-    //    matrix_pcsr_t subgraph_csr;
-    degree = (int *) malloc(m_coo.nrows * sizeof(int));
-    assert(degree);
-    compute_degrees_undirected(&m_coo, degree);
-
-    /*
-     * Get connected components of undirected graph.
+     * Get largest connected component of the undirected graph.
      */
     pcoo_to_pcsr(&m_coo, &m_csr);
-    //    print_matrix_csr(&m_csr);
 
-    //    print_matrix_csr(&m_csr);
-    //
-    //    components_t cc_array;
-    //    int cc_count = get_cc(&m_csr, &cc_array);
-    //    gp.is_connected = (cc_count == 1);
-    //    printf("cc: %d\n", cc_count);
+    matrix_pcsr_t g;
+    components_t cc_array;
+    int cc_count = get_cc(&m_csr, &cc_array);
+    gp.is_connected = (cc_count == 1);
 
+    print_gprops(&gp);
 
-    //    PUNGraph g = TUNGraph::New();
-    //    for(int i = 0; i < m_coo.nrows; i++) {
-    //        g->AddNode(i);
-    //    }
-    //
-    //    for(int i = 0; i < m_coo.nnz; i++) {
-    //        g->AddEdge(m_coo.rows[i], m_coo.cols[i]);
-    //    }
-    //
-    /*
-     * Extract ccs and induced subgraphs.
-     */
-    //    TCnComV cc_array;
-    //    TSnap::GetWccs(g, cc_array);
-    //
-    //    PUNGraph subg = TSnap::GetSubGraph(g, TIntV::GetV(cc_array[0]));
+    if (!gp.is_connected) {
+        int max_idx = 0, cmax = 0;
+        for (int i = 0; i < cc_count; i++) {
+            if (cc_array.cc_size[i] > cmax) {
+                max_idx = i;
+                cmax = cc_array.cc_size[i];
+            }
+        }
+
+        extract_und_subgraph(cc_array.array,
+                             cc_array.cc_size[max_idx],
+                             &m_csr,
+                             &g);
+    } else {
+        g = m_csr;
+    }
 
     /*
-     * Convert the subgraphs obtained in COO, then in CSR.
+     * Load the matrix of the subgraph in CSR as an undirected graph in SNAP.
+     *
+     * TODO handle conversion from CSR to Snap graph
      */
-
-    // traverse the nodes
-    //    int i = 0;
-    //    degree = (int*) malloc(m_coo.nrows * sizeof(*degree));
-    //    assert(degree);
-    //
-    //    for(TUNGraph::TNodeI NI = g->BegNI(); NI < g->EndNI(); NI++) {
-    //        degree[i] = NI.GetDeg();
-    //        i++;
+    //    PUNGraph snap_g = TUNGraph::New();
+    //    for(int i = 0; i < m_csr.nrows; i++) {
+    //        snap_g->AddNode(i);
     //    }
     //
-    //    // traverse the edges
-    //    i = 0;
-    //    subgraph_coo.nnz = m_coo.nrows;
-    //    subgraph_coo.nrows = m_coo.nrows;
-    //
-    //    for(TUNGraph::TEdgeI EI = g->BegEI(); EI < g->EndEI(); EI++) {
-    //        subgraph_coo.rows[i] = EI.GetSrcNId();
-    //        subgraph_coo.cols[i] = EI.GetDstNId();
-    //        printf("edge (%d, %d)\n", EI.GetSrcNId(), EI.GetDstNId());
-    //        i++;
+    //    for(int i = 0; i < m_csr.row_offsets[m_csr.nrows]; i++) {
+    //        snap_g->AddEdge(m_csr.rows[i], m_csr.cols[i]);
     //    }
-
-    //    pcoo_to_pcsr(&subgraph_coo, &subgraph_csr);
-    //    print_matrix_coo(&m_coo);
-    //    print_matrix_csr(&m_csr);
-    //    print_edge_list(m_csr.row_offsets, m_csr.cols, m_csr.nrows);
 
     /*
      * Compute BC using CSR.
      */
     bc_scores = (float *) malloc(m_coo.nrows * sizeof(*bc_scores));
     assert(bc_scores);
+
     BC_computation(&m_csr, bc_scores, gp.is_directed);
-    FILE *fout = fopen(argv[2], "w");
+
     print_bc_scores(&m_csr, bc_scores, stdout);
-    fclose(fout);
 
     /*
-     * Compute BC with enhanced algorithm, using TUNGraph.
+     * Compute BC with SPVB, using TUNGraph.
      */
     //    bc_scores_mod = (float*) malloc(m_coo.nrows * sizeof(*bc_scores));
     //    partial_bc_scores = (float*) malloc(m_coo.nrows * sizeof(*bc_scores));
     //    assert(bc_scores_mod);
     //    assert(partial_bc_scores);
-    //    spvb(g, degree, bc_scores_mod, partial_bc_scores, gp.is_directed);
-    //    FILE *fout = fopen(argv[2], "w");
-    //    print_bc_scores(m_csr, bc_scores, stdout);
-    //    fclose(fout);
+    //
+    //    spvb(snap_g, bc_scores_mod, partial_bc_scores, gp.is_directed);
+    //
+    //    print_bc_scores(&m_csr, bc_scores_mod, stdout);
 
     /*
      * Cleanup.
@@ -165,11 +133,11 @@ int main(int argc, char *argv[]) {
     free_matrix_pcoo(&m_coo);
     free_matrix_pcsr(&m_csr);
     free(bc_scores);
-    free(degree);
+    //    free(bc_scores_mod);
+    //    free(partial_bc_scores);
+    free_matrix_pcsr(&g);
+    free_ccs(&cc_array);
 
-    /*
-     * Closing standard streams with error checking.
-     */
     close_stream(stdin);
     close_stream(stdout);
     close_stream(stderr);

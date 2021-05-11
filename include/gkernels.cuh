@@ -37,14 +37,17 @@
 #define SOCNETALGSONGPU_GKERNELS_CUH
 
 /**
+ * Kernel that performs the graph compression optimization technique by
+ * removing iteratively the degree-1 vertices and storing their contribution to
+ * the bc score of the other vertices in bc and in p.
  *
- * @param deg
- * @param nrows
- * @param row_offsets
- * @param cols
- * @param bc
- * @param p
- * @param keep_on
+ * @param deg stores the degree of each vertex
+ * @param nrows number of vertices of the graph
+ * @param row_offsets csr-specific array that stores rows offsets
+ * @param cols csr-specific array that stores column indexes
+ * @param bc stores the bc score of each vertex
+ * @param p stores the partial bc score of each vertex
+ * @param keep_on whether there are other degree-1 vertices to be removed or not
  */
 __global__ void del1deg(int *deg,
                         int nrows,
@@ -55,14 +58,17 @@ __global__ void del1deg(int *deg,
                         bool *keep_on);
 
 /**
+ * Implements the shortest path calculation within a thread block using the
+ * vertex-parallel approach. For scale-free networks (i.e. social networks)
+ * this approach is not a good fit due to the work imbalance it suffers.
  *
- * @param s
- * @param d
- * @param sigma
- * @param nrows
- * @param nnz
- * @param row_offsets
- * @param cols
+ * @param s the source vertex from which the bfs starts
+ * @param d stores the distance of each vertex from the root s
+ * @param sigma stores the number of shortest paths crossing each vertex
+ * @param nrows number of vertices of the graph
+ * @param nnz number of edges of the graph
+ * @param row_offsets csr-specific array that stores rows offsets
+ * @param cols csr-specific array that stores column indexes
  */
 __global__ void vtx_par_bfs(int s,
                             int *d,
@@ -94,4 +100,4 @@ __global__ void vtx_par_dep_acc(int s,
                                 const int *row_offsets,
                                 const int *cols);
 
-#endif //SOCNETALGSONGPU_GKERNELS_CUH
+#endif//SOCNETALGSONGPU_GKERNELS_CUH

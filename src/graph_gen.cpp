@@ -2,7 +2,7 @@
  *
  * graph_gen.cpp - Graph generation
  *
- * Script to generate synthetic undirected and unweighted graphs datasets
+ * Script to generate synthetic undirected and unweighted graphs dataset
  * using the SNAP Library. Based on examples available in the SNAP documentation.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
@@ -35,16 +35,16 @@
  *
  ****************************************************************************/
 
-#include <iostream>
-#include <cstdlib>
-#include <Snap.h>
 #include "matio.h"
 #include "mmio.h"
+#include <Snap.h>
+#include <cstdlib>
+#include <iostream>
 
 enum GraphType {
-    Random     = 1, // Erdős-Rényi random graph
-    SmallWorld = 2, // Watts-Strogatz Small World graph
-    ScaleFree  = 3  // Barabási-Albert Scale Free graph
+    Random = 1,    // Erdős-Rényi random graph
+    SmallWorld = 2,// Watts-Strogatz Small World graph
+    ScaleFree = 3  // Barabási-Albert Scale Free graph
 };
 
 using namespace TSnap;
@@ -67,7 +67,7 @@ int binCoeff(int n, int k) {
     int C[k + 1];
     memset(C, 0, sizeof(C));
 
-    C[0] = 1; // nC0 is 1
+    C[0] = 1;// nC0 is 1
 
     for (int i = 1; i <= n; i++) {
         // Compute next row of pascal triangle using
@@ -78,7 +78,7 @@ int binCoeff(int n, int k) {
     return C[k];
 }
 
-int write_snap_to_mtx(FILE *f, const PUNGraph& g) {
+int write_snap_to_mtx(FILE *f, const PUNGraph &g) {
 
     /*
      * Write the banner.
@@ -90,7 +90,7 @@ int write_snap_to_mtx(FILE *f, const PUNGraph& g) {
     mm_set_pattern(&matcode);
     mm_set_symmetric(&matcode);
 
-    if(mm_write_banner(f, matcode)) {
+    if (mm_write_banner(f, matcode)) {
         fprintf(stderr, "Error writing mm banner");
         return EXIT_FAILURE;
     }
@@ -98,7 +98,7 @@ int write_snap_to_mtx(FILE *f, const PUNGraph& g) {
     /*
      * Write the header and the values.
      */
-    if(mm_write_mtx_crd_size(f, g->GetNodes(), g->GetNodes(), g->GetEdges())) {
+    if (mm_write_mtx_crd_size(f, g->GetNodes(), g->GetNodes(), g->GetEdges())) {
         fprintf(stderr, "Error writing header");
         return EXIT_FAILURE;
     }
@@ -110,7 +110,7 @@ int write_snap_to_mtx(FILE *f, const PUNGraph& g) {
         }
     }
 
-    return  EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
 
 /**
@@ -121,7 +121,7 @@ int write_snap_to_mtx(FILE *f, const PUNGraph& g) {
  * @param s pointer to the name of the graph
  * @param G pointer to the object representing the graph
  */
-template <class PGraph>
+template<class PGraph>
 void PrintGStats(const char *s, PGraph G) {
     printf("statistics of undirected, unweighted graph in %s: \n"
            "nodes:\t\t %d\n"
@@ -133,16 +133,17 @@ void PrintGStats(const char *s, PGraph G) {
            IsConnected(G) ? "yes" : "no");
 }
 
-int main( int argc, char *argv[] ) {
+int main(int argc, char *argv[]) {
 
     int v, gtype;
-    char* fname;
-    TInt::Rnd.PutSeed(0); // random number generator
+    char *fname;
+    TInt::Rnd.PutSeed(0);// random number generator
     PUNGraph g;
 
     if (argc != 4) {
-        std::cerr << "Usage: " << argv[0]<< " [filename] [graph_type] "
-                                            "[number_vertices]" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " [filename] [graph_type] "
+                                             "[number_vertices]"
+                  << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -150,9 +151,10 @@ int main( int argc, char *argv[] ) {
     gtype = (int) strtol(argv[2], nullptr, 10);
     v = (int) strtol(argv[3], nullptr, 10);
 
-    if(v < min_vertices || v > max_vertices) {
+    if (v < min_vertices || v > max_vertices) {
         std::cerr << "A graph must have at least 20 nodes and no more "
-                     "than 1000 nodes" << std::endl;
+                     "than 1000 nodes"
+                  << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -184,7 +186,8 @@ int main( int argc, char *argv[] ) {
             std::cerr << "Graph types accepted are: \n"
                          "[1]: Random graph \n"
                          "[2]: Small World graph \n"
-                         "[3]: Scale Free graph"<< std::endl;
+                         "[3]: Scale Free graph"
+                      << std::endl;
             return EXIT_FAILURE;
     }
 
@@ -198,7 +201,7 @@ int main( int argc, char *argv[] ) {
      */
     FILE *f = fopen(fname, "w");
 
-    if(write_snap_to_mtx(f, g))
+    if (write_snap_to_mtx(f, g))
         return EXIT_FAILURE;
 
     fclose(f);

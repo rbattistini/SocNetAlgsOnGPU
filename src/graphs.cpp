@@ -72,8 +72,8 @@ void extract_und_subgraph(const int *vertices, int nvertices, matrix_pcsr_t *g,
         }
     }
 
-//    print_array()
-//    printf("c: %d\n", c);
+    //    print_array()
+    //    printf("c: %d\n", c);
     rows = (int *) malloc(c * sizeof(*rows));
     cols = (int *) malloc(c * sizeof(*cols));
 
@@ -96,7 +96,7 @@ void extract_und_subgraph(const int *vertices, int nvertices, matrix_pcsr_t *g,
     subgraph.rows = rows;
     subgraph.cols = cols;
 
-//    print_matrix_coo(&subgraph);
+    //    print_matrix_coo(&subgraph);
 
     pcoo_to_pcsr(&subgraph, m);
     free_matrix_pcoo(&subgraph);
@@ -174,6 +174,123 @@ int get_cc(matrix_pcsr_t *g, components_t *ccs) {
     return cc_count;
 }
 
+void compute_bfs(matrix_pcsr_t *g, queue<int> Q, stack<int> S,
+                 unsigned long *sigma, int *d) {
+
+    while (!Q.empty()) {
+
+        int v = Q.front();
+        Q.pop();
+        S.push(v);
+
+        for (int k = g->row_offsets[v]; k < g->row_offsets[v + 1]; k++) {
+
+            int w = g->cols[k];
+
+            /*
+             * If the vertex was not discovered, discover it and add to
+             * the queue of new vertices to visit. Update its d from
+             * v.
+             */
+            if (d[w] == INT_MAX) {
+                Q.push(w);
+                d[w] = d[v] + 1;
+            }
+
+            /*
+             * If the vertex is "safe" give him all the power v has
+             * in terms of shortest paths crossing it.
+             */
+            if (d[w] == (d[v] + 1)) {
+                sigma[w] += sigma[v];
+            }
+        }
+    }
+}
+
+void compute_dep_acc(matrix_pcsr_t *g, stack<int> S,
+                     const unsigned long *sigma, const int *d, float *delta,
+                     float *bc, int s) {
+    while (!S.empty()) {
+
+        int w = S.top();
+        S.pop();
+
+        for (int i = g->row_offsets[w]; i < g->row_offsets[w + 1]; i++) {
+            int v = g->cols[i];
+            if (d[v] == (d[w] - 1)) {
+                delta[v] +=
+                        ((float) sigma[v] / (float) sigma[w]) *
+                        (1.0f + delta[w]);
+            }
+        }
+
+        if (w != s) {
+            bc[w] += delta[w];
+        }
+    }
+}
+
+void BC_dec_comp(matrix_pcsr_t *g, float *bc_scores, bool directed) {
+
+    for (int i = 0; i < g->nrows; i++)
+        bc_scores[i] = 0.0;
+
+    for (int j = 0; j < g->nrows; j++) {
+
+        /*
+         * Workspace setup.
+         */
+        int s = j;
+        auto *sigma = (unsigned long *) malloc(
+                g->nrows * sizeof(unsigned long));
+        auto *d = (int *) malloc(g->nrows * sizeof(int));
+        auto *delta = (float *) malloc(g->nrows * sizeof(float));
+        assert(sigma);
+        assert(d);
+        assert(delta);
+
+        for (int i = 0; i < g->nrows; i++) {
+            sigma[i] = 0;
+            delta[i] = 0.0f;
+            d[i] = INT_MAX;
+        }
+
+        queue<int> Q;
+        stack<int> S;
+
+        sigma[s] = 1;
+        d[s] = 0;
+        Q.push(s);
+
+        /*
+         *  First forward propagation phase.
+         */
+        compute_bfs(g, Q, S, sigma, d);
+
+        /*
+         * Second backward propagation phase.
+         */
+        compute_dep_acc(g, S, sigma, d, delta, bc_scores, j);
+
+        /*
+         * Cleanup.
+         */
+        free(sigma);
+        free(d);
+        free(delta);
+    }
+
+    /*
+     * Scores are duplicated if the graph is undirected because each edge is
+     * counted two times.
+     */
+    if (!directed) {
+        for (int k = 0; k < g->nrows; k++)
+            bc_scores[k] /= 2;
+    }
+}
+
 void BC_computation(matrix_pcsr_t *g, float *bc_scores, bool directed) {
 
     for (int i = 0; i < g->nrows; i++)
@@ -184,23 +301,23 @@ void BC_computation(matrix_pcsr_t *g, float *bc_scores, bool directed) {
         int s = j;
         auto *sigma = (unsigned long *) malloc(
                 g->nrows * sizeof(unsigned long));
-        auto *distance = (int *) malloc(g->nrows * sizeof(int));
+        auto *d = (int *) malloc(g->nrows * sizeof(int));
         auto *delta = (float *) malloc(g->nrows * sizeof(float));
         assert(sigma);
-        assert(distance);
+        assert(d);
         assert(delta);
 
         for (int i = 0; i < g->nrows; i++) {
             sigma[i] = 0;
             delta[i] = 0.0f;
-            distance[i] = INT_MAX;
+            d[i] = INT_MAX;
         }
 
         queue<int> Q;
         stack<int> S;
 
         sigma[s] = 1;
-        distance[s] = 0;
+        d[s] = 0;
         Q.push(s);
 
         while (!Q.empty()) {
@@ -218,19 +335,19 @@ void BC_computation(matrix_pcsr_t *g, float *bc_scores, bool directed) {
 
                 /*
                  * If the vertex was not discovered, discover it and add to
-                 * the queue of new vertices to visit. Update its distance from
+                 * the queue of new vertices to visit. Update its d from
                  * v.
                  */
-                if (distance[w] == INT_MAX) {
+                if (d[w] == INT_MAX) {
                     Q.push(w);
-                    distance[w] = distance[v] + 1;
+                    d[w] = d[v] + 1;
                 }
 
                 /*
                  * If the vertex is "safe" give him all the power v has
                  * in terms of shortest paths crossing it.
                  */
-                if (distance[w] == (distance[v] + 1)) {
+                if (d[w] == (d[v] + 1)) {
                     sigma[w] += sigma[v];
                 }
             }
@@ -245,7 +362,7 @@ void BC_computation(matrix_pcsr_t *g, float *bc_scores, bool directed) {
 
             for (int i = g->row_offsets[w]; i < g->row_offsets[w + 1]; i++) {
                 int v = g->cols[i];
-                if (distance[v] == (distance[w] - 1)) {
+                if (d[v] == (d[w] - 1)) {
                     delta[v] +=
                             (sigma[v] / (float) sigma[w]) * (1.0f + delta[w]);
                 }
@@ -257,7 +374,7 @@ void BC_computation(matrix_pcsr_t *g, float *bc_scores, bool directed) {
         }
 
         free(sigma);
-        free(distance);
+        free(d);
         free(delta);
     }
 
@@ -339,4 +456,9 @@ void compute_degrees_directed(matrix_pcoo_t *g, int *in_degree,
     for (int n = 0; n < nnz; n++) {
         in_degree[cols[n]]++;
     }
+}
+
+void free_ccs(components_t *ccs) {
+    free(ccs->cc_size);
+    free(ccs->array);
 }

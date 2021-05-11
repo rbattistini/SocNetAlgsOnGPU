@@ -1,5 +1,5 @@
 ## Taken from: https://github.com/gunrock/gunrock/blob/dynamic-graph/dataset/large/ufl.mk
-# common make file fragment for ufl graph datasets
+# common make file fragment for ufl graph dataset
 # just define GRAPH_NAME prior to including this fragment
 
 GRAPH_TAR  = $(GRAPH_NAME).tar.gz

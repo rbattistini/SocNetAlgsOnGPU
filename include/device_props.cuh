@@ -40,6 +40,7 @@
 
 #define LINE_LENGTH 79
 #include "errcheck.cuh"
+#include <cstdio>
 
 int get_runtime_version() {
     int driverVersion;
@@ -101,7 +102,7 @@ void print_gpu_overview() {
     printf("Global Memory size: %.2f GB\n",
            get_global_mem_size() / (double) (1 << 30));
     printf("Number of Streaming Multiprocessors: %d\n", get_sm_count());
-    for(int i = 0; i < LINE_LENGTH; i++)
+    for (int i = 0; i < LINE_LENGTH; i++)
         printf("-");
     printf("\n");
 }

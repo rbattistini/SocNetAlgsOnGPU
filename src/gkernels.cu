@@ -82,6 +82,9 @@ __global__ void vtx_par_bfs(int s,
                             const int *row_offsets,
                             const int *cols) {
 
+    __shared__ int current_depth;
+    __shared__ bool done;
+
     int tid = (int) threadIdx.x;
 
     /*
@@ -96,14 +99,12 @@ __global__ void vtx_par_bfs(int s,
             sigma[v] = 0;
         }
     }
-    __shared__ int current_depth;
-    __shared__ bool done;
 
     if (tid == 0) {
         done = false;
         current_depth = 0;
     }
-    __syncthreads();
+    __syncthreads(); // wait for all threads to complete the initial config
 
     /*
      * Compute the number of shortest paths (sigma) and the distance from s
@@ -226,5 +227,4 @@ __global__ void vtx_par_dep_acc(int s,
         if (tid == 0)
             current_depth++;
     }
-
 }

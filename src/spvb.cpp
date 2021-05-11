@@ -38,7 +38,7 @@
 using std::queue;
 using std::stack;
 
-int spvb(const PUNGraph& g_i, float *bc_scores, float *p, bool directed) {
+int spvb(const PUNGraph &g_i, float *bc_scores, float *p, bool directed) {
 
     int nit = 0, tree_nodes = 0;
     int nvertices = g_i->GetNodes();
@@ -53,7 +53,7 @@ int spvb(const PUNGraph& g_i, float *bc_scores, float *p, bool directed) {
      * Initialize first set of 1-degree vertices.
      */
     for (TUNGraph::TNodeI NI = g_i->BegNI(); NI < g_i->EndNI(); NI++) {
-        if(NI.GetDeg() == 1) {
+        if (NI.GetDeg() == 1) {
             S.push(NI.GetId());
             tree_nodes++;
         }
@@ -83,7 +83,7 @@ int spvb(const PUNGraph& g_i, float *bc_scores, float *p, bool directed) {
 
     } while (!S.empty());
 
-//    printf("Nit: %d\n", nit);
+    //    printf("Nit: %d\n", nit);
 
     /*
      * Call the BC of Brandes procedure on the new graph g_i.
@@ -99,7 +99,7 @@ int spvb(const PUNGraph& g_i, float *bc_scores, float *p, bool directed) {
     return tree_nodes;
 }
 
-void BC_computation(const PUNGraph& g, float *bc_scores, bool directed) {
+void BC_computation(const PUNGraph &g, float *bc_scores, bool directed) {
 
     int nvertices = g->GetNodes();
 
@@ -197,7 +197,7 @@ void BC_computation(const PUNGraph& g, float *bc_scores, bool directed) {
     }
 }
 
-void BC_mod_computation(const PUNGraph& g, const float *p, float *bc_scores) {
+void BC_mod_computation(const PUNGraph &g, const float *p, float *bc_scores) {
 
     int nvertices = g->GetNodes();
     for (TUNGraph::TNodeI NI = g->BegNI(); NI < g->EndNI(); NI++) {

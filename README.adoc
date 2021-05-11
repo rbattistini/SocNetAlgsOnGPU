@@ -5,7 +5,7 @@ ifdef::env-github[]
 :note-caption: :information_source:
 endif::[]
 
-A command-line application for computing Betweenness Centrality of sparse
+A command-line GPU-accelerated application for computing Betweenness Centrality of sparse
 graphs that represent social networks.
 
 == Installation
@@ -14,21 +14,22 @@ graphs that represent social networks.
 
 These are the dependencies needed to build the project:
 
-- A compiler for C and {cpp} must be installed;
+- GCC must be installed;
 - link:https://developer.nvidia.com/cuda-downloads[CUDA Toolkit 11+] must be installed;
-- link:https://cmake.org/download/[CMake 3.9+] to build the project on MacOS or Windows.
+- link:https://cmake.org/download/[CMake 3.9+] to build the project.
 
 There also some optional dependencies:
 
-- To launch the benchmarks with the script given, link:scripts/perf_eval.sh[perf-eval,sh], a Unix Shell must be available;
-- link:https://www.ruby-lang.org/en/downloads/[Ruby] and some gems listed in the link:{docdir}/scripts/Gemfile[Gemfile] to generate the documentation;
-- link:https://www.python.org/downloads/[Python 3.8+] to execute the script that
-processes the result of the benchmarking.
+- To launch the benchmarks with the script given, link:script/perf_eval.sh[perf-eval,sh], a Unix Shell must be available;
+- The link:https://www.boost.org/users/history/version_1_75_0.html[Boost Graph Library] is used for the CPU reference implementation of the Betweenness Centrality algorithm and for the random graph generation;
+- link:https://www.python.org/downloads/[Python 3] to execute the script that
+processes the result of the benchmarking;
+- link:https://www.ruby-lang.org/en/downloads/[Ruby] and some gems listed in the link:{docdir}/script/Gemfile[Gemfile] to generate the report;
+- `clang-format` for formatting the source code and `clang-tidy` for static code analysis;
 
 [WARNING]
 ====
-During the development of the project only GCC has been tested so other C and {cpp}
-compilers like CLang have not been tested.
+During the development of the project only GCC 10.3.0 on Ubuntu 18.04 has been tested.
 ====
 
 === Compilation
@@ -41,45 +42,47 @@ git clone https://github.com/Da3dalu2/{repo-name}.git
 cd {repo-name}
 ----
 
-This project can be built with a Makefile or CMake.
-
-To build with Make issue this command in the root of the project:
+To build this project with CMake:
 
 [source,shell]
 ----
-make
+mkdir build
+cmake -Bbuild -DCMAKE_BUILD_TYPE=Release
 ----
+
+Binary source file are available in `build/src` directory.
+
+Binary test files are available in `build/test` directory. All tests can be run by typing `make check` or `ctest` in the build directory. Alternatively they can be run one at a time.
+
+[TIP]
+====
+To run all tests in parallel just issue the `ctest -j4` or `make test ARGS=-j4` in the `build/test` directory.
+====
+
+Detailed test log from `ctest` can be found in `/build/Testing/Temporary/LastTest.log`, alternatively tests can be run with the verbose option enabled, i.e. `ctest -v`.
+
+If the symbol `BENCHMARK` is defined the betweenness centrality will be computed also by the multi-threaded algorithm of the BGL, and the result will be compared to the one of the GPU.
 
 [NOTE]
 ====
-There are different targets available, they are all listed in the
-link:Makefile[Makefile]
+There are two build types available, Release and Debug. Release builds
+with optimization flags enabled (`-O2`) and Debug uses both debug symbols (`-g`) for ease of use of GBD and Valgrind and `-Wall -Werror -Wpedantic`.
 ====
 
-To build with CMake:
-
-[source,shell]
-----
-mkdir build
-cmake -Bbuild -DCMAKE_BUILD_TYPE=Default
-----
-
-No Debug or Release profiles have been defined so Default is the only one
-available.
-
-To compile a single .cu or .cpp source file follow the instructions given in the
-header of the file.
-
-[source,shell]
-----
-mkdir build
-# use the following command to build if you are in project root
-cmake -Bbuild -DCMAKE_BUILD_TYPE=Default
-
-# or use the following command if you are in build directory
-# cmake ../ -DCMAKE_BUILD_TYPE=Default
-----
-
 === Generating Datasets
+
+All dataset-related code is under the `dataset` subdirectory. Only link:https://math.nist.gov/MatrixMarket/formats.html[Matrix-market] coordinate-formatted graph format is supported.
+
+A helper script, `dataset/convert_snap_to_mm` for converting graphs from the SNAP graph library to the Matrix-market format is given.
+
+A script for generating random graphs is also given, `dataset/graph_gen`. Three type of graphs are supported.
+
+Currently, only undirected and unweighted graphs are supported. To convert a directed graph to an undirected one, just change the `general` property of the Matrix-market file banner to `symmetric`.
+
+To download them just type `make` in the `dataset` subdirectory. To only download one specific dataset step into its subdirectory and type `make` there.
+
+== Hardware
+
+
 
 == Performance Analysis

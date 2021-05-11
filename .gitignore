@@ -1,9 +1,9 @@
-libs/snap-core/
-libs/glib-core/
+lib/snap-core/
+lib/glib-core/
 cmake-build-*/
 .idea/
-docs/.asciidoctor
-docs/images
+doc/.asciidoctor
+doc/images
 samples/*
 *.mtx
 *.lock
