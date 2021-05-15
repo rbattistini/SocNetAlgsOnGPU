@@ -105,8 +105,6 @@ int transpose(matrix_pcsr_t *A, matrix_pcsr_t *B) {
     }
     row_offsets[ncols] = nnz;
 
-    print_array(row_offsets, ncols - 1);
-
     /*
      * Copy cols array of A in cols of B
      */
@@ -122,7 +120,7 @@ int transpose(matrix_pcsr_t *A, matrix_pcsr_t *B) {
     for(int i = 0, last = 0; i <= ncols; i++){
         int temp  = row_offsets[i];
         row_offsets[i] = last;
-        last    = temp;
+        last = temp;
     }
 
     B->nrows = ncols;

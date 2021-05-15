@@ -120,10 +120,10 @@ TEST_CASE("Test spgemm on two pattern matrices") {
     /*
      * Matrix R (4 x 7)
      */
-    int r_row_offsets[] = {0, 1, 2, 3, 4};
-    int r_cols[] = {0, 1, 2, 4};
+    int r_row_offsets[] = /* {0, 1, 2, 3, 4} */ {0, 1, 2, 3};
+    int r_cols[] = /* {0, 1, 2, 4} */ {3, 5, 6};
 
-    R.nrows = 4;
+    R.nrows = 3;
     R.ncols = 7;
     R.cols = r_cols;
     R.row_offsets = r_row_offsets;
@@ -150,8 +150,8 @@ TEST_CASE("Test spgemm on two pattern matrices") {
     REQUIRE_EQ(B.nrows, R.nrows);
     REQUIRE_EQ(B.ncols, A.ncols);
 
-    int expected_row_offsets[] = {0, 1, 4, 5, 6};
-    int expected_cols[] = {1, 0, 2, 4, 1, 1};
+    int expected_row_offsets[] = /* {0, 1, 4, 5, 6} */ {0, 2, 4, 6};
+    int expected_cols[] = /* {1, 0, 2, 4, 1, 1} */ {5, 6, 3, 6, 3, 5};
 
     for (int i = 0; i < B.nrows; i++) {
         CHECK_EQ(B.row_offsets[i], expected_row_offsets[i]);

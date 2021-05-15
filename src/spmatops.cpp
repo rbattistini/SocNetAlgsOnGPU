@@ -149,7 +149,7 @@ int spgemm(matrix_pcsr_t *A, matrix_pcsr_t *B, matrix_pcsr_t *C) {
             for (int v = b_row_offsets[t]; v < b_row_offsets[t + 1]; v++) {
                 int j = b_cols[v];
 
-                if (flag[j] != i) {
+                if (flag[j] < c_nnz) {
                     flag[j] = c_nnz;
                     c_cols[c_nnz] = j;
                     c_nnz++;
@@ -184,10 +184,15 @@ int spref(matrix_pcsr_t *R,
     spgemm(R, A, &B);
     spgemm(&B, Q, C);
 
+    free_matrix(&B);
+
     return EXIT_SUCCESS;
 }
 
-int get_R_matrix(matrix_pcsr_t *R, const int* vertices, int nvertices, int nrows) {
+int get_R_matrix(matrix_pcsr_t *R,
+                 const int* vertices,
+                 int nvertices,
+                 int nrows) {
 
     if(vertices == nullptr || nvertices <= 0 || nrows <= 0) {
         fprintf(stderr, "Input values not valid");
@@ -195,7 +200,7 @@ int get_R_matrix(matrix_pcsr_t *R, const int* vertices, int nvertices, int nrows
     }
 
     int *rows =
-            (int*) malloc(nvertices * sizeof(*rows));
+            (int*) malloc(nrows * sizeof(*rows));
     assert(rows);
     int *cols =
             (int*) malloc(nvertices * sizeof(*cols));
@@ -207,7 +212,7 @@ int get_R_matrix(matrix_pcsr_t *R, const int* vertices, int nvertices, int nrows
     }
 
     int *row_offsets =
-            (int*) malloc((nvertices + 1) * sizeof(*row_offsets));
+            (int*) calloc((nvertices + 1), sizeof(*row_offsets));
 
     /*
      * Compute number of non-zero entries per column of R.

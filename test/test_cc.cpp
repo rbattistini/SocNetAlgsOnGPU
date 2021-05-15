@@ -1,8 +1,8 @@
 /****************************************************************************
+ * @file test_cc.cpp
+ * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * test_cc.cpp
- *
- * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
+ * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -32,11 +32,10 @@
  *
  ****************************************************************************/
 
-#include <cstdlib>
 #include "graphs.h"
 #include "tests.h"
 
-static matrix_pcsr_t csr;
+static matrix_pcsr_t A;
 static gprops_t gprops;
 
 TEST_CASE(
@@ -47,13 +46,13 @@ TEST_CASE(
     int source_row_offsets[] = {0, 1, 4, 5, 7, 8, 10, 12};
     int source_cols[] = {1, 0, 2, 4, 1, 5, 6, 1, 3, 6, 3, 5};
 
-    csr.nrows = 7;
-    csr.cols = source_cols;
-    csr.row_offsets = source_row_offsets;
+    A.nrows = 7;
+    A.cols = source_cols;
+    A.row_offsets = source_row_offsets;
 
-    components_t cc_list;
-    int cc_count = get_cc(&csr, &cc_list);
-    gprops.is_connected = (cc_count == 1);
+    components_t ccs;
+    get_cc(&A, &ccs);
+    gprops.is_connected = (ccs.cc_count == 1);
 
     /*
      * Ensure the graph is not connected.
@@ -63,22 +62,22 @@ TEST_CASE(
     /*
      * Ensure the graph has two connected components.
      */
-    CHECK_EQ(cc_count, 2);
+    CHECK_EQ(ccs.cc_count, 2);
 
     /*
      * Ensure that the first cc is composed by vertices: 0 1 4 2.
      */
     int cc[] = {0, 1, 4, 2};
-    for (int i = 0; i < cc_list.cc_size[0]; i++) {
-        CHECK_EQ(cc_list.array[i], cc[i]);
+    for (int i = 0; i < ccs.cc_size[0]; i++) {
+        CHECK_EQ(ccs.array[i], cc[i]);
     }
 
     /*
      * Ensure that the second cc is composed by vertices:  3 5 6.
      */
     int cc2[] = {3, 5, 6};
-    for (int i = cc_list.cc_size[0] + 1; i < cc_list.cc_size[1]; i++) {
-        CHECK_EQ(cc_list.array[i], cc2[i]);
+    for (int i = ccs.cc_size[0] + 1; i < ccs.cc_size[1]; i++) {
+        CHECK_EQ(ccs.array[i], cc2[i]);
     }
 }
 
@@ -91,13 +90,13 @@ TEST_CASE(
     int source_row_offsets[] = {0, 4, 6, 9, 10, 12, 14, 15, 17, 18};
     int source_cols[] = {1, 3, 4, 5, 0, 2, 1, 6, 7, 0, 0, 5, 0, 4, 2, 2, 8, 7};
 
-    csr.nrows = 9;
-    csr.cols = source_cols;
-    csr.row_offsets = source_row_offsets;
+    A.nrows = 9;
+    A.cols = source_cols;
+    A.row_offsets = source_row_offsets;
 
-    components_t cc_list;
-    int cc_count = get_cc(&csr, &cc_list);
-    gprops.is_connected = (cc_count == 1);
+    components_t ccs;
+    get_cc(&A, &ccs);
+    gprops.is_connected = (ccs.cc_count == 1);
 
     /*
      * The graph is connected.
@@ -107,15 +106,15 @@ TEST_CASE(
     /*
      * The graph has one connected component.
      */
-    CHECK_EQ(cc_count, 1);
+    CHECK_EQ(ccs.cc_count, 1);
 
-    std::sort(cc_list.array, cc_list.array + csr.nrows);
+    std::sort(ccs.array, ccs.array + A.nrows);
 
     /*
      * The cc is composed by all vertices [0-8].
      */
-    for (int i = 0; i < cc_list.cc_size[0]; i++) {
-        CHECK_EQ(cc_list.array[i], i);
+    for (int i = 0; i < ccs.cc_size[0]; i++) {
+        CHECK_EQ(ccs.array[i], i);
     }
 }
 
@@ -124,14 +123,15 @@ TEST_CASE("Test subgraph extraction from undirected graph given vertices ids") {
     /*
      * Workspace setup for this test.
      */
-    matrix_pcsr_t subgraph;
+    matrix_pcsr_t R, Q, C;
     components_t ccs;
-    int nccs = 2, nvertices = 7, size;
+    int nvertices = 7, size;
     int *vertices;
     int ccs_array[] = {0, 1, 4, 2, 3, 6, 5};
 
+    ccs.cc_count = 2;
     ccs.array = (int *) malloc(sizeof(*ccs.array) * nvertices);
-    ccs.cc_size = (int *) malloc(sizeof(*ccs.cc_size) * nccs);
+    ccs.cc_size = (int *) malloc(sizeof(*ccs.cc_size) * ccs.cc_count);
 
     for (int i = 0; i < nvertices; i++)
         ccs.array[i] = ccs_array[i];
@@ -142,9 +142,10 @@ TEST_CASE("Test subgraph extraction from undirected graph given vertices ids") {
     int source_row_offsets[] = {0, 1, 4, 5, 7, 8, 10, 12};
     int source_cols[] = {1, 0, 2, 4, 1, 5, 6, 1, 3, 6, 3, 5};
 
-    csr.nrows = nvertices;
-    csr.cols = source_cols;
-    csr.row_offsets = source_row_offsets;
+    A.nrows = nvertices;
+    A.ncols = nvertices;
+    A.cols = source_cols;
+    A.row_offsets = source_row_offsets;
 
     /*
      * Ensure that the first cc is composed by vertices: 0 1 4 2
@@ -162,25 +163,26 @@ TEST_CASE("Test subgraph extraction from undirected graph given vertices ids") {
         vertices[i] = ccs.array[i];
     }
 
-    extract_und_subgraph(vertices, size, &csr, &subgraph);
+    std::sort(vertices, vertices + size);
+    extract_subgraph(vertices, size, &A, &C);
 
-    int nrows = subgraph.nrows;
+    int nrows = C.nrows;
     int expected_row_offsets[] = {0, 1, 4, 5, 6};
-    int ncols = 6;
-    int expected_cols[] = {1, 0, 3, 2, 1, 1};
+    int nnz = C.row_offsets[C.nrows];
+    int expected_cols[] = {1, 0, 2, 3, 1, 1};
 
     REQUIRE_EQ(nrows, 4);
 
-    for (int i = 0; i < ncols; i++) {
-        CHECK_EQ(subgraph.cols[i], expected_cols[i]);
+    for (int i = 0; i < nnz; i++) {
+        CHECK_EQ(C.cols[i], expected_cols[i]);
     }
 
     for (int i = 0; i < nrows; i++) {
-        CHECK_EQ(subgraph.row_offsets[i], expected_row_offsets[i]);
+        CHECK_EQ(C.row_offsets[i], expected_row_offsets[i]);
     }
 
     free(vertices);
-    free_matrix_pcsr(&subgraph);
+    free_matrix(&C);
 
     /*
      * Ensure that the second cc is composed by vertices:  3 5 6
@@ -200,23 +202,152 @@ TEST_CASE("Test subgraph extraction from undirected graph given vertices ids") {
         vertices[j] = ccs.array[i];
     }
 
-    extract_und_subgraph(vertices, size, &csr, &subgraph);
+    std::sort(vertices, vertices + size);
+    extract_subgraph(vertices, size, &A, &C);
 
-    nrows = subgraph.nrows;
+    nrows = C.nrows;
     int expected_row_offsets2[] = {0, 2, 4, 6};
-    ncols = 6;
-    int expected_cols2[] = {2, 1, 0, 2, 0, 1};
+    nnz = C.row_offsets[C.nrows];
+    int expected_cols2[] = {1, 2, 0, 2, 0, 1};
+
+    print_matrix(&C);
 
     REQUIRE_EQ(nrows, size);
 
-    for (int i = 0; i < ncols; i++) {
-        CHECK_EQ(subgraph.cols[i], expected_cols2[i]);
+    for (int i = 0; i < nnz; i++) {
+        CHECK_EQ(C.cols[i], expected_cols2[i]);
     }
 
     for (int i = 0; i < nrows; i++) {
-        CHECK_EQ(subgraph.row_offsets[i], expected_row_offsets2[i]);
+        CHECK_EQ(C.row_offsets[i], expected_row_offsets2[i]);
     }
 
     free(vertices);
-    free_matrix_pcsr(&subgraph);
+    free_matrix(&C);
+}
+
+TEST_CASE("Test largest connected component extraction of undirected unweighted graph") {
+
+    SUBCASE("Test extraction of the largest cc when it is the first") {
+        /*
+         * Workspace setup for this test.
+         */
+        matrix_pcsr_t subgraph;
+        components_t ccs;
+        int nvertices = 7;
+        int ccs_array[] = {0, 1, 4, 2, 3, 6, 5};
+
+        ccs.cc_count = 2;
+        ccs.array = (int *) malloc(sizeof(*ccs.array) * nvertices);
+        ccs.cc_size = (int *) malloc(sizeof(*ccs.cc_size) * ccs.cc_count);
+
+        ccs.cc_size[0] = 4;
+        ccs.cc_size[1] = 3;
+
+        for (int i = 0; i < nvertices; i++)
+            ccs.array[i] = ccs_array[i];
+
+        int source_row_offsets[] = {0, 1, 4, 5, 7, 8, 10, 12};
+        int source_cols[] = {1, 0, 2, 4, 1, 5, 6, 1, 3, 6, 3, 5};
+
+        A.nrows = nvertices;
+        A.ncols = nvertices;
+        A.row_offsets = source_row_offsets;
+        A.cols = source_cols;
+
+        /*
+         * Ensure the cc extracted is the largest and is composed by
+         * vertices 0 1 4 2.
+         *
+         * in CSR this means:
+         *
+         * nrows = 4
+         * R = [ 0 1 4 5 6 ]
+         * C = [ 1 0 2 3 1 1 ]
+         */
+        get_largest_cc(&A, &subgraph, &ccs);
+
+        print_matrix(&subgraph);
+
+        int nrows = subgraph.nrows;
+        int expected_row_offsets[] = {0, 1, 4, 5, 6};
+        int ncols = subgraph.ncols;
+        int expected_cols[] = {1, 0, 2, 3, 1, 1};
+
+        REQUIRE_EQ(nrows, 4);
+        REQUIRE_EQ(ncols, 4);
+
+        for (int i = 0; i < ncols; i++) {
+            CHECK_EQ(subgraph.cols[i], expected_cols[i]);
+        }
+
+        for (int i = 0; i < nrows; i++) {
+            CHECK_EQ(subgraph.row_offsets[i], expected_row_offsets[i]);
+        }
+
+        free_matrix(&subgraph);
+    }
+
+    SUBCASE("Test connection of the largest cc when it is not the first") {
+
+        /*
+         * Workspace setup for this test.
+         */
+        matrix_pcsr_t subgraph;
+        components_t ccs;
+        int nvertices = 15;
+        int ccs_array[] =
+                {0, 1, 4, 2, 3, 6, 5, 7, 8, 9, 11, 10, 12, 13, 14};
+
+        ccs.cc_count = 4;
+        ccs.array = (int *) malloc(sizeof(*ccs.array) * nvertices);
+        ccs.cc_size = (int *) malloc(sizeof(*ccs.cc_size) * ccs.cc_count);
+
+        ccs.cc_size[0] = 4;
+        ccs.cc_size[1] = 3;
+        ccs.cc_size[2] = 5;
+        ccs.cc_size[3] = 3;
+
+        for (int i = 0; i < nvertices; i++)
+            ccs.array[i] = ccs_array[i];
+
+        int source_row_offsets[] =
+                {0, 1, 4, 5, 7, 8, 10, 12, 13, 15, 18, 19, 20, 21, 23, 24 };
+        int source_cols[] =
+                {1, 0, 2, 4, 1, 5, 6, 1, 3, 6, 3, 5, 8, 7, 9, 8, 10, 11, 9, 9, 13, 12, 14, 13};
+
+        A.nrows = nvertices;
+        A.ncols = nvertices;
+        A.cols = source_cols;
+        A.row_offsets = source_row_offsets;
+
+        /*
+         * Ensure the cc extracted is the largest and is composed by
+         * vertices 7 8 9 10 11.
+         *
+         * in CSR this means:
+         *
+         * nrows = 5
+         * R = [ 0 1 3 6 7 8 ]
+         * C = [ 1 0 2 1 4 3 2 2 ]
+         */
+        get_largest_cc(&A, &subgraph, &ccs);
+
+        int nrows = subgraph.nrows;
+        int expected_row_offsets[] = {0, 1, 3, 6, 7, 8};
+        int ncols = subgraph.ncols;
+        int expected_cols[] = {1, 0, 2, 1, 3, 4, 2, 2};
+
+        REQUIRE_EQ(nrows, 5);
+
+        for (int i = 0; i < ncols; i++) {
+            CHECK_EQ(subgraph.cols[i], expected_cols[i]);
+        }
+
+        for (int i = 0; i < nrows; i++) {
+            CHECK_EQ(subgraph.row_offsets[i], expected_row_offsets[i]);
+        }
+
+        free_matrix(&subgraph);
+    }
 }
