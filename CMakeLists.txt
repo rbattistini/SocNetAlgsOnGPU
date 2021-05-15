@@ -14,6 +14,7 @@ if(NOT DEFINED CMAKE_CXX_STANDARD)
 endif()
 
 find_package(OpenMP REQUIRED)
+find_package(Boost REQUIRED COMPONENTS regex graph)
 
 add_library(mmio STATIC lib/mmio/mmio.c lib/mmio/mmio.h)
 
@@ -32,8 +33,13 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 #include(cmake/sanitizers.cmake)
 #include(cmake/tools.cmake)
 
+set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+
 add_subdirectory(src)
 add_subdirectory(test)
+add_subdirectory(dataset)
 
 #set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -Wpedantic -Wextra -DDEBUG")
 #set(CMAKE_C_FLAGS_RELEASE "-O2 -DBENCHMARK")

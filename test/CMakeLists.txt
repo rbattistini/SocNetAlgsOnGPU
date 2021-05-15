@@ -1,5 +1,6 @@
 add_executable(test_cc test_cc.cpp
         ../src/utils.cpp
+        ../src/spmatops.cpp
         ../src/matstorage.cpp
         ../src/graphs.cpp)
 
@@ -23,3 +24,8 @@ add_executable(test_matrix_io test_matrix_io.cpp
         ../src/matio.cpp)
 
 target_link_libraries(test_matrix_io PRIVATE mmio)
+
+add_executable(test_spmatops test_spmatops.cpp
+        ../src/utils.cpp
+        ../src/spmatops.cpp
+        ../src/matstorage.cpp)
