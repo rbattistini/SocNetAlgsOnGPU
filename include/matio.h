@@ -1,9 +1,11 @@
 /****************************************************************************
+ * @file matio.h
+ * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * matio.h - Functions for reading and writing external matrix storage file
- * formats (COO or edge list)
+ * Functions for reading and writing external matrix storage file
+ * formats (COO or edge list).
  *
- * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
+ * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -33,14 +35,6 @@
  *
  * ---------------------------------------------------------------------------
  *
- * Note that only two types of files are supported and each with its own
- * restrictions.
- *
- * The only type of graph supported is the undirected and with uniform weights
- * one. Connectedness and the presence of loops are not checked.
- *
- * TODO handle unconnected graphs by extraction of largest SCC
- *
  * TODO allow directed -> undirected transformation on demand
  *
  * TODO handle duplicated entries
@@ -61,10 +55,8 @@
 #include "graphs.h"
 #include "matstorage.h"
 #include <climits>
-#include <cstdbool>
-#include <cstdio>
-#include <cstdlib>
 #include <cstring>
+
 extern "C" {
 #include "mmio.h"
 }
@@ -98,9 +90,9 @@ int query_gprops(const char *fname, gprops_t *gp);
  * @param m_coo
  * @return
  */
-int read_mm_pattern(FILE *f, matrix_pcoo_t *m_coo);
+int read_mm_pattern(FILE *f, matrix_pcoo_t *m_coo, bool has_self_loops);
 
-int read_mm_real(FILE *f, matrix_rcoo_t *m_coo);
+int read_mm_real(FILE *f, matrix_rcoo_t *m_coo, bool has_self_loops);
 
 int read_matrix(const char *fname, matrix_pcoo_t *m_coo, gprops_t *gp);
 

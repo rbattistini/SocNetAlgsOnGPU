@@ -1,8 +1,10 @@
 /****************************************************************************
+ * @file device_props.h
+ * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * device_props.h - Utility functions for NVIDIA GPUs device properties querying
+ * Utility functions for NVIDIA GPUs device properties querying
  *
- * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
+ * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -57,7 +59,7 @@ size_t get_global_mem_size() {
 /*
  * Fast property querying.
  *
- * from https://gist.github.com/teju85/9521e2224f0c31f71a93b593ff64e8da
+ * Taken from https://gist.github.com/teju85/9521e2224f0c31f71a93b593ff64e8da
  */
 int get_compute_capability() {
     int devId, computeCap;

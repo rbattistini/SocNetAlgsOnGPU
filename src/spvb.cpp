@@ -1,9 +1,11 @@
 /****************************************************************************
+ * @file spvb.cpp
+ * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * spvb.cpp - Modified version of serial algorithm of Brandes for computing
+ * Modified version of serial algorithm of Brandes for computing
  * betweenness centrality optimized for social networks.
  *
- * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
+ * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -97,104 +99,6 @@ int spvb(const PUNGraph &g_i, float *bc_scores, float *p, bool directed) {
     }
 
     return tree_nodes;
-}
-
-void BC_computation(const PUNGraph &g, float *bc_scores, bool directed) {
-
-    int nvertices = g->GetNodes();
-
-    for (int i = 0; i < g->GetNodes(); i++)
-        bc_scores[i] = 0;
-
-    for (int j = 0; j < g->GetNodes(); j++) {
-
-        int s = j;
-        auto *sigma = (unsigned long *) malloc(nvertices * sizeof(unsigned long));
-        auto *distance = (int *) malloc(nvertices * sizeof(int));
-        auto *delta = (float *) malloc(nvertices * sizeof(float));
-        assert(sigma);
-        assert(distance);
-        assert(delta);
-
-        for (int i = 0; i < nvertices; i++) {
-            sigma[i] = 0;
-            delta[i] = 0.0f;
-            distance[i] = INT_MAX;
-        }
-
-        queue<int> Q;
-        stack<int> S;
-
-        sigma[s] = 1;
-        distance[s] = 0;
-        Q.push(s);
-
-        while (!Q.empty()) {
-
-            int v = Q.front();
-            Q.pop();
-            // update for the backward propagation phase
-            S.push(v);
-
-            const TUNGraph::TNodeI &NI = g->GetNI(v);
-            for (int e = 0; e < NI.GetOutDeg(); e++) {
-
-                int w = NI.GetOutNId(e);
-
-                /*
-                 * If the vertex was not discovered, discover it and add to
-                 * the queue of new vertices to visit. Update its distance from
-                 * v.
-                 */
-                if (distance[w] == INT_MAX) {
-                    Q.push(w);
-                    distance[w] = distance[v] + 1;
-                }
-
-                /*
-                 * If the vertex is "safe" give him all the power v has
-                 * in terms of shortest paths crossing it.
-                 */
-                if (distance[w] == (distance[v] + 1)) {
-                    sigma[w] += sigma[v];
-                }
-            }
-        }
-
-        while (!S.empty()) {
-
-            int w = S.top();
-            S.pop();
-
-            const TUNGraph::TNodeI &NI = g->GetNI(w);
-            for (int e = 0; e < NI.GetOutDeg(); e++) {
-
-                int v = NI.GetOutNId(e);
-
-                if (distance[v] == (distance[w] - 1)) {
-                    delta[v] += (sigma[v] / (float) sigma[w]) *
-                                (1.0f + delta[w]);
-                }
-            }
-
-            if (w != s) {
-                bc_scores[w] += delta[w];
-            }
-        }
-
-        free(sigma);
-        free(distance);
-        free(delta);
-    }
-
-    /*
-     * Scores are duplicated if the graph is undirected because each edge is
-     * counted two times.
-     */
-    if (!directed) {
-        for (int k = 0; k < nvertices; k++)
-            bc_scores[k] /= 2;
-    }
 }
 
 void BC_mod_computation(const PUNGraph &g, const float *p, float *bc_scores) {

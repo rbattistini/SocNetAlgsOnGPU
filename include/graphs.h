@@ -1,8 +1,10 @@
 /****************************************************************************
+ * @file graphs.h
+ * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * graphs.h - Algorithms for graph manipulation
+ * Algorithms for graphs manipulation.
  *
- * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
+ * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,6 +32,10 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
+ * --------------------------------------------------------------------------
+ *
+ * TODO: Compute bc score of the network
+ *
  ****************************************************************************/
 
 #pragma once
@@ -37,41 +43,51 @@
 #define GRAPHS_H
 
 #include "matstorage.h"
+#include "spmatops.h"
 #include "utils.h"
 #include <climits>
-#include <cstdio>
 #include <queue>
-#include <vector>
+#include <stack>
 
 typedef struct gprops_t {
     bool is_directed;
     bool is_weighted;
     bool is_connected;
+    bool has_self_loops;
 } gprops_t;
 
 typedef struct components_t {
-    int *array;  // vertices ids of each cc
-    int *cc_size;// size of each cc
+    int *array;     // vertices ids of each cc
+    int *cc_size;   // size of the i-th cc at index i
+    int cc_count;
 } components_t;
 
 void print_gprops(gprops_t *gp);
 
-void BC_computation(matrix_pcsr_t *g, float *bc_scores, bool directed);
+void BFS_visit(matrix_pcsr_t *g, int *d, int s);
 
-void print_bc_scores(matrix_pcsr_t *g, const float *bc_scores, FILE *fout);
+int* DFS_visit(matrix_pcsr_t *g, bool *visited, int s, int *cc_size);
 
-void extract_und_subgraph(const int *vertices, int nvertices, matrix_pcsr_t *g,
-                          matrix_pcsr_t *m);
+/**
+ * Get the largest cc and extract a subgraph from it.
+ *
+ * @param A
+ * @param C
+ * @param ccs
+ */
+void get_largest_cc(matrix_pcsr_t *A,
+                    matrix_pcsr_t *C,
+                    components_t *ccs);
 
-int *DFS_visit(matrix_pcsr_t *g, bool *visited, int s, int *cc_size);
+void get_cc(matrix_pcsr_t *g, components_t *ccs);
 
-int get_cc(matrix_pcsr_t *g, components_t *ccs);
-
-void compute_degrees_undirected(matrix_pcoo_t *g, int *degree);
-
-void compute_degrees_directed(matrix_pcoo_t *g, int *in_degree,
-                              int *out_degree);
+int get_diameter(matrix_pcsr_t *g);
 
 void free_ccs(components_t *ccs);
+
+void extract_subgraph(const int *vertices,
+                      const int nvertices,
+                      matrix_pcsr_t *A,
+                      matrix_pcsr_t *C);
 
 #endif//GRAPHS_H

@@ -1,8 +1,8 @@
 /****************************************************************************
+ * @file test_mod_bc.cpp
+ * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * test_mod_bc.cpp
- *
- * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
+ * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:

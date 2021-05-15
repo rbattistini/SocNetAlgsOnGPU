@@ -7,14 +7,14 @@
 # make doc		compila un pdf con asciidoc
 # make cldocs	rimuove il pdf generato
 
-SCRIPT_DIR := ../scripts
-DATA_DIR   := ../datasets
+SCRIPT_DIR := ../script
+DATA_DIR   := ../dataset
 IMG_DIR    := ./images
-DOCS       := clgraphs graphs cldocs docs
+DOCS       := clgraphs graphs cldoc doc
 
 .PHONY: $(DOCS)
 
-docs: ./*.adoc clgraphs
+doc: ./*.adoc clgraphs
 	asciidoctor-pdf -r asciidoctor-diagram -r asciidoctor-bibtex \
  -r asciidoctor-mathematical ./*.adoc \
  -a pdf-themesdir=. -a pdf-theme=custom \
@@ -23,7 +23,7 @@ docs: ./*.adoc clgraphs
 graphs: $(SCRIPT_DIR)/*.plot $(DATA_DIR)/*.dat
 	gnuplot $(SCRIPT_DIR)/*.plot
 
-cldocs: clgraphs
+cldoc: clgraphs
 	rm - f ./*.pdf ./.asciidoc/*
 
 clgraphs:

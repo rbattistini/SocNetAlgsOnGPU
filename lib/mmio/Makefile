@@ -1,4 +1,4 @@
-## from: https://www.oreilly.com/library/view/c-cookbook/0596007612/ch01s17.html
+## Taken from: https://www.oreilly.com/library/view/c-cookbook/0596007612/ch01s17.html
 # Specify extensions of files to delete when cleaning
 CLEANEXTS   = o a
 

@@ -1,8 +1,10 @@
 /****************************************************************************
+ * @file gkernels.cu
+ * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * gkernels.cu - Kernels for computing Betweenness centrality on a Nvidia GPU
+ * Kernels for computing Betweenness centrality on a Nvidia GPUs.
  *
- * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
+ * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -33,6 +35,8 @@
  ****************************************************************************/
 
 #include "gkernels.cuh"
+
+#define NULL nullptr
 
 /*
  * Each CUDA thread block processes its own set of roots and the threads
@@ -104,15 +108,17 @@ __global__ void vtx_par_bfs(int s,
         done = false;
         current_depth = 0;
     }
-    __syncthreads(); // wait for all threads to complete the initial config
+    // wait for all threads to complete the initial configuration
+    __syncthreads();
 
     /*
      * Compute the number of shortest paths (sigma) and the distance from s
      * (the root) to each vertex.
      */
     while (!done) {
-        __syncthreads();
         done = true;
+
+        // wait for all threads to see if all vertices have been discovered
         __syncthreads();
 
         /*
@@ -145,10 +151,14 @@ __global__ void vtx_par_bfs(int s,
                 }
             }
         }
+        // wait for all threads to compute vertices of the current frontier
         __syncthreads();
 
         if (tid == 0)
             current_depth++;
+
+        // wait for all threads to see the updated current depth
+        __syncthreads();
     }
 }
 

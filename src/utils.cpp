@@ -1,9 +1,11 @@
 /****************************************************************************
+ * @file utils.cpp
+ * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * utils.h - basic serial prefix Sum and reduce operators and functions for
- * printing some types of arrays related to internal memory storage of graphs
+ * Basic functions for printing some types of arrays and matrices related to
+ * the internal memory storage of graphs and other commonly used utilities.
  *
- * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
+ * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -37,6 +39,7 @@
 
 int *stlvector_to_array_int(const std::vector<int> &v, int n) {
     auto array = (int *) malloc(sizeof(int) * n);
+    assert(!v.empty());
 
     for (int i = 0; i < n; i++) {
         array[i] = v[i];
@@ -45,23 +48,35 @@ int *stlvector_to_array_int(const std::vector<int> &v, int n) {
     return array;
 }
 
-/**
- * Initialize an array.
- *
- * @param arr pointer to the array to be initialized
- * @param n length of the array to be initialized
- * @param v value used to initialize the array
- */
 void fill(int *arr, int n, int v) {
+    assert(arr && n);
     for (int i = 0; i < n; i++)
         arr[i] = v;
 }
 
+void fill(bool *arr, int n, int v) {
+    assert(arr && n);
+    for (int i = 0; i < n; i++)
+        arr[i] = v;
+}
+
+int get_max_idx(const int *arr, int n) {
+    assert(arr && n);
+    int max_idx = 0;
+    int max_value = arr[0];
+
+    for (int i = 1; i < n; ++i) {
+        if (arr[i] > max_value ) {
+            max_value = arr[i];
+            max_idx = i;
+        }
+
+    }
+    return max_idx;
+}
+
 /*
- * Properly close a stream with error checking.
- *
- * Taken from:
- * https://stackoverflow.com/questions/4972994/how-to-close-stdout-and-stderr-in-c
+ * Taken from: https://git.savannah.gnu.org/cgit/gnulib.git/tree/lib/close-stream.c
  */
 int close_stream(FILE *stream) {
 
@@ -88,6 +103,7 @@ int close_stream(FILE *stream) {
 }
 
 void print_array(const int *arr, int n) {
+    assert(arr && n);
     printf("[ ");
 
     for (int i = 0; i < n + 1; i++)
@@ -97,6 +113,7 @@ void print_array(const int *arr, int n) {
 }
 
 void print_array(const float *arr, int n) {
+    assert(arr && n);
     printf("[ ");
 
     for (int i = 0; i < n + 1; i++)
@@ -106,6 +123,8 @@ void print_array(const float *arr, int n) {
 }
 
 void print_edge_list(const int *row_offsets, const int *cols, int nrows) {
+    assert(row_offsets && (nrows + 1));
+    assert(cols && row_offsets[nrows + 1]);
 
     printf("Edge lists for each vertex: \n");
 

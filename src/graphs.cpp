@@ -1,8 +1,10 @@
 /****************************************************************************
+ * @file graphs.h
+ * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * graphs.cpp - Algorithms for graph manipulation
+ * Algorithms for graphs manipulation.
  *
- * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
+ * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,19 +32,10 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * --------------------------------------------------------------------------
- *
- * TODO compute_network_bc_score
- *
  ****************************************************************************/
 
-#include "graphs.h"
-#include "utils.h"
 #include <algorithm>
-#include <cassert>
-#include <cstdio>
-#include <stack>
-#include <vector>
+#include "graphs.h"
 
 using std::queue;
 using std::stack;
@@ -51,55 +44,6 @@ void print_gprops(gprops_t *gp) {
     printf("Directed: %s\n", (gp->is_directed == 1) ? "yes" : "no");
     printf("Weighted: %s\n", (gp->is_weighted == 1) ? "yes" : "no");
     printf("Connected: %s\n", (gp->is_connected == 1) ? "yes" : "no");
-}
-
-void extract_und_subgraph(const int *vertices, int nvertices, matrix_pcsr_t *g,
-                          matrix_pcsr_t *m) {
-
-    int c = 0, *rows, *cols;
-    std::vector<int> vcols, vrows;
-    matrix_pcoo_t subgraph;
-
-    /*
-     * Store neighbours of each vertex in the cc in vrows and vcols.
-     */
-    for (int i = 0; i < nvertices; i++) {
-        int vi = vertices[i];
-        for (int j = g->row_offsets[vi]; j < g->row_offsets[vi + 1]; j++) {
-            vrows.push_back(vi);
-            vcols.push_back(g->cols[j]);
-            c++;
-        }
-    }
-
-    //    print_array()
-    //    printf("c: %d\n", c);
-    rows = (int *) malloc(c * sizeof(*rows));
-    cols = (int *) malloc(c * sizeof(*cols));
-
-    /*
-     * Compute row and column indexes for the new submatrix.
-     */
-    for (int i = 0; i < c; i++) {
-        for (int j = 0; j < nvertices; j++) {
-            if (vertices[j] == vcols[i]) {
-                cols[i] = j;
-            }
-            if (vertices[j] == vrows[i]) {
-                rows[i] = j;
-            }
-        }
-    }
-
-    subgraph.nnz = c;
-    subgraph.nrows = nvertices;
-    subgraph.rows = rows;
-    subgraph.cols = cols;
-
-    //    print_matrix_coo(&subgraph);
-
-    pcoo_to_pcsr(&subgraph, m);
-    free_matrix_pcoo(&subgraph);
 }
 
 int *DFS_visit(matrix_pcsr_t *g, bool *visited, int s, int *cc_size) {
@@ -141,7 +85,7 @@ int *DFS_visit(matrix_pcsr_t *g, bool *visited, int s, int *cc_size) {
     return cc_array;
 }
 
-int get_cc(matrix_pcsr_t *g, components_t *ccs) {
+void get_cc(matrix_pcsr_t *g, components_t *ccs) {
 
     auto visited = (bool *) malloc(g->nrows * sizeof(bool));
     assert(visited);
@@ -165,23 +109,23 @@ int get_cc(matrix_pcsr_t *g, components_t *ccs) {
         }
     }
 
-
     int *tmp_ccs_array = stlvector_to_array_int(ccs_array, ccs_array.size());
     ccs->array = tmp_ccs_array;
     int *tmp_ccs_size = stlvector_to_array_int(ccs_size, ccs_size.size());
     ccs->cc_size = tmp_ccs_size;
-
-    return cc_count;
+    ccs->cc_count = cc_count;
 }
 
-void compute_bfs(matrix_pcsr_t *g, queue<int> Q, stack<int> S,
-                 unsigned long *sigma, int *d) {
+void BFS_visit(matrix_pcsr_t *g, int *d, int s) {
+
+    queue<int> Q;
+    d[s] = 0;
+    Q.push(s);
 
     while (!Q.empty()) {
 
         int v = Q.front();
         Q.pop();
-        S.push(v);
 
         for (int k = g->row_offsets[v]; k < g->row_offsets[v + 1]; k++) {
 
@@ -189,273 +133,87 @@ void compute_bfs(matrix_pcsr_t *g, queue<int> Q, stack<int> S,
 
             /*
              * If the vertex was not discovered, discover it and add to
-             * the queue of new vertices to visit. Update its d from
+             * the queue of new vertices to visit. Update its distance from
              * v.
              */
             if (d[w] == INT_MAX) {
                 Q.push(w);
                 d[w] = d[v] + 1;
             }
-
-            /*
-             * If the vertex is "safe" give him all the power v has
-             * in terms of shortest paths crossing it.
-             */
-            if (d[w] == (d[v] + 1)) {
-                sigma[w] += sigma[v];
-            }
         }
     }
 }
 
-void compute_dep_acc(matrix_pcsr_t *g, stack<int> S,
-                     const unsigned long *sigma, const int *d, float *delta,
-                     float *bc, int s) {
-    while (!S.empty()) {
+void extract_subgraph(const int *vertices,
+                      const int nvertices,
+                      matrix_pcsr_t *A,
+                      matrix_pcsr_t *C) {
 
-        int w = S.top();
-        S.pop();
+    matrix_pcsr_t R, Q;
 
-        for (int i = g->row_offsets[w]; i < g->row_offsets[w + 1]; i++) {
-            int v = g->cols[i];
-            if (d[v] == (d[w] - 1)) {
-                delta[v] +=
-                        ((float) sigma[v] / (float) sigma[w]) *
-                        (1.0f + delta[w]);
-            }
-        }
+    get_R_matrix(&R, vertices, nvertices, A->nrows);
+    transpose(&R, &Q);
+    spref(&R, A, &Q, C);
 
-        if (w != s) {
-            bc[w] += delta[w];
-        }
-    }
+    free_matrix(&R);
+    free_matrix(&Q);
 }
 
-void BC_dec_comp(matrix_pcsr_t *g, float *bc_scores, bool directed) {
+void get_largest_cc(matrix_pcsr_t *A, matrix_pcsr_t *C, components_t *ccs) {
 
-    for (int i = 0; i < g->nrows; i++)
-        bc_scores[i] = 0.0;
+    int max_idx = get_max_idx(ccs->cc_size, ccs->cc_count);
+    int largest_cc_size = ccs->cc_size[max_idx];
 
-    for (int j = 0; j < g->nrows; j++) {
+    int *largest_cc_vertices =
+            (int *) malloc(largest_cc_size * sizeof(*largest_cc_vertices));
+    assert(largest_cc_vertices);
 
-        /*
-         * Workspace setup.
-         */
-        int s = j;
-        auto *sigma = (unsigned long *) malloc(
-                g->nrows * sizeof(unsigned long));
-        auto *d = (int *) malloc(g->nrows * sizeof(int));
-        auto *delta = (float *) malloc(g->nrows * sizeof(float));
-        assert(sigma);
-        assert(d);
-        assert(delta);
+    int start, end;
 
-        for (int i = 0; i < g->nrows; i++) {
-            sigma[i] = 0;
-            delta[i] = 0.0f;
-            d[i] = INT_MAX;
-        }
-
-        queue<int> Q;
-        stack<int> S;
-
-        sigma[s] = 1;
-        d[s] = 0;
-        Q.push(s);
-
-        /*
-         *  First forward propagation phase.
-         */
-        compute_bfs(g, Q, S, sigma, d);
-
-        /*
-         * Second backward propagation phase.
-         */
-        compute_dep_acc(g, S, sigma, d, delta, bc_scores, j);
-
-        /*
-         * Cleanup.
-         */
-        free(sigma);
-        free(d);
-        free(delta);
-    }
-
-    /*
-     * Scores are duplicated if the graph is undirected because each edge is
-     * counted two times.
-     */
-    if (!directed) {
-        for (int k = 0; k < g->nrows; k++)
-            bc_scores[k] /= 2;
-    }
-}
-
-void BC_computation(matrix_pcsr_t *g, float *bc_scores, bool directed) {
-
-    for (int i = 0; i < g->nrows; i++)
-        bc_scores[i] = 0;
-
-    for (int j = 0; j < g->nrows; j++) {
-
-        int s = j;
-        auto *sigma = (unsigned long *) malloc(
-                g->nrows * sizeof(unsigned long));
-        auto *d = (int *) malloc(g->nrows * sizeof(int));
-        auto *delta = (float *) malloc(g->nrows * sizeof(float));
-        assert(sigma);
-        assert(d);
-        assert(delta);
-
-        for (int i = 0; i < g->nrows; i++) {
-            sigma[i] = 0;
-            delta[i] = 0.0f;
-            d[i] = INT_MAX;
-        }
-
-        queue<int> Q;
-        stack<int> S;
-
-        sigma[s] = 1;
-        d[s] = 0;
-        Q.push(s);
-
-        while (!Q.empty()) {
-
-            int v = Q.front();
-            Q.pop();
-            // update for the backward propagation phase
-            S.push(v);
-
-            //            printf("%d | ", v);
-            for (int k = g->row_offsets[v]; k < g->row_offsets[v + 1]; k++) {
-
-                int w = g->cols[k];
-                //                printf("%d ", w);
-
-                /*
-                 * If the vertex was not discovered, discover it and add to
-                 * the queue of new vertices to visit. Update its d from
-                 * v.
-                 */
-                if (d[w] == INT_MAX) {
-                    Q.push(w);
-                    d[w] = d[v] + 1;
-                }
-
-                /*
-                 * If the vertex is "safe" give him all the power v has
-                 * in terms of shortest paths crossing it.
-                 */
-                if (d[w] == (d[v] + 1)) {
-                    sigma[w] += sigma[v];
-                }
-            }
-
-            //            printf("\n");
-        }
-
-        while (!S.empty()) {
-
-            int w = S.top();
-            S.pop();
-
-            for (int i = g->row_offsets[w]; i < g->row_offsets[w + 1]; i++) {
-                int v = g->cols[i];
-                if (d[v] == (d[w] - 1)) {
-                    delta[v] +=
-                            (sigma[v] / (float) sigma[w]) * (1.0f + delta[w]);
-                }
-            }
-
-            if (w != s) {
-                bc_scores[w] += delta[w];
-            }
-        }
-
-        free(sigma);
-        free(d);
-        free(delta);
-    }
-
-    /*
-     * Scores are duplicated if the graph is undirected because each edge is
-     * counted two times.
-     */
-    if (!directed) {
-        for (int k = 0; k < g->nrows; k++)
-            bc_scores[k] /= 2;
-    }
-}
-
-void print_bc_scores(matrix_pcsr_t *g, const float *bc_scores, FILE *fout) {
-
-    unsigned int nvertices = g->nrows;
-    unsigned int nedges = g->row_offsets[nvertices];
-
-    if (fout != nullptr) {
-        fprintf(fout, "Number of vertices: %d\n", nvertices);
-        fprintf(fout, "Number of edges: %d\n", nedges);
-
-        for (size_t i = 0; i < nvertices; i++) {
-            fprintf(fout, "%.2f\n", bc_scores[i]);
-        }
+    if(max_idx == 0) {
+        start = 0;
+        end = largest_cc_size;
     } else {
-        fprintf(stderr, "Failed to create output file\n");
+        int csum = 0;
+        for(int i = 0; i < max_idx; i++)
+            csum += ccs->cc_size[i];
+        start = csum;
+        end = start + ccs->cc_size[max_idx];
     }
+
+    for (int i = start, j = 0; i < end; j++, i++)
+        largest_cc_vertices[j] = ccs->array[i];
+
+    std::sort(largest_cc_vertices, largest_cc_vertices + largest_cc_size);
+    extract_subgraph(largest_cc_vertices, largest_cc_size, A, C);
+    free(largest_cc_vertices);
 }
 
-void compute_degrees_undirected(matrix_pcoo_t *g, int *degree) {
+int get_diameter(matrix_pcsr_t *g) {
 
-    if (!check_matrix_pcoo_init(g)) {
-        fprintf(stderr, "The graph is not initialized");
-        return;
+    int diameter, max_diameter = 0;
+    auto *d = (int *) malloc(g->nrows * sizeof(int));
+    assert(d);
+//    int cnt = 0;
+    for(int i = 0; i < g->nrows; i++) {
+
+        fill(d, g->nrows, INT_MAX);
+        BFS_visit(g, d, i);
+        diameter = d[get_max_idx(d, g->nrows)];
+
+        if(max_diameter < diameter) {
+            max_diameter = diameter;
+        }
+
+//        if(cnt <= 5) {
+//            print_array(d, g->nrows - 1);
+//            cnt++;
+//        }
+
     }
 
-    int *rows = g->rows; // row indices of A
-    int nnz = g->nnz;    // number of nnz in A
-    int nrows = g->nrows;// number of rows in A
-
-    fill(degree, nrows, 0);
-
-    /*
-     * Compute number of non-zero entries per row of A.
-     */
-    for (int n = 0; n < nnz; n++) {
-        degree[rows[n]]++;
-    }
-}
-
-void compute_degrees_directed(matrix_pcoo_t *g, int *in_degree,
-                              int *out_degree) {
-
-    if (g->rows == nullptr) {
-        fprintf(stderr, "The graph is not initialized");
-        return;
-    }
-
-    int *rows = g->rows;  // row indices of A
-    int nnz = g->nnz;     // number of nnz in A
-    int length = g->nrows;// number of rows and columns in A
-    int *cols = g->cols;  // column indices of A
-
-    //    offsets = (int *) malloc((length + 1) * sizeof(*offsets));
-    fill(in_degree, length, 0);
-    fill(out_degree, length, 0);
-
-    /*
-     * Compute number of non-zero entries per column of A.
-     */
-    for (int n = 0; n < nnz; n++) {
-        out_degree[rows[n]]++;
-    }
-
-    /*
-     * Compute number of non-zero entries per row of A.
-     */
-    for (int n = 0; n < nnz; n++) {
-        in_degree[cols[n]]++;
-    }
+    free(d);
+    return max_diameter;
 }
 
 void free_ccs(components_t *ccs) {

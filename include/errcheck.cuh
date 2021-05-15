@@ -1,8 +1,10 @@
 /****************************************************************************
+ * @file errcheck.cuh
+ * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * errcheck.cuh - Utility functions for NVIDIA GPUs error checking
+ * Utility functions for NVIDIA GPUs error checking
  *
- * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
+ * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -36,18 +38,17 @@
 #ifndef ERRCHECK_CUH
 #define ERRCHECK_CUH
 
+#include <cusparse_v2.h>
+#include <cassert>
+#include <cstdio>
+
 #ifdef __CUDACC__
 
 /*
- * from https://gist.github.com/ashwin/2652488
+ * Taken from https://gist.github.com/ashwin/2652488
  */
 #define cudaSafeCall(err) __cudaSafeCall(err, __FILE__, __LINE__)
 #define cudaCheckError() __cudaCheckError(__FILE__, __LINE__)
-
-/*
- * from https://berenger.eu/blog/cusparse-cccuda-sparse-matrix-examples-csr-bcsr-spmv-and-conversions/
- */
-#define cudaSparseCheck(test) __cudaSparseCheckCore((test), __FILE__, __LINE__)
 
 inline void __cudaSafeCall(cudaError err, const char *file, const int line) {
 #ifdef CUDA_DEBUG
@@ -79,16 +80,65 @@ inline void __cudaCheckError(const char *file, const int line) {
 #endif
 }
 
-//inline void __cuSparseCheckErr(cusparseStatus_t code,
-//                               const char *file, int line) {
-//#ifdef CUDA_DEBUG
-//    if (code != CUSPARSE_STATUS_SUCCESS) {
-//        fprintf(stderr,"Cuda Error %d : %s %s %d\n",
-//                code, cusparseGetErrorString(code), file, line);
-//        abort();
-//    }
-//#endif
-//}
+/*
+ * Taken from https://github.com/OrangeOwlSolutions/CUDA-Utilities/blob/95f38b30bbb017d89a8147688cccb042387f81bf/Utilities.cu#L215
+ */
+static const char *_cusparseGetErrorEnum(cusparseStatus_t error)
+{
+    switch (error)
+    {
+
+        case CUSPARSE_STATUS_SUCCESS:
+            return "CUSPARSE_STATUS_SUCCESS";
+
+        case CUSPARSE_STATUS_NOT_INITIALIZED:
+            return "CUSPARSE_STATUS_NOT_INITIALIZED";
+
+        case CUSPARSE_STATUS_ALLOC_FAILED:
+            return "CUSPARSE_STATUS_ALLOC_FAILED";
+
+        case CUSPARSE_STATUS_INVALID_VALUE:
+            return "CUSPARSE_STATUS_INVALID_VALUE";
+
+        case CUSPARSE_STATUS_ARCH_MISMATCH:
+            return "CUSPARSE_STATUS_ARCH_MISMATCH";
+
+        case CUSPARSE_STATUS_MAPPING_ERROR:
+            return "CUSPARSE_STATUS_MAPPING_ERROR";
+
+        case CUSPARSE_STATUS_EXECUTION_FAILED:
+            return "CUSPARSE_STATUS_EXECUTION_FAILED";
+
+        case CUSPARSE_STATUS_INTERNAL_ERROR:
+            return "CUSPARSE_STATUS_INTERNAL_ERROR";
+
+        case CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED:
+            return "CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED";
+
+        case CUSPARSE_STATUS_ZERO_PIVOT:
+            return "CUSPARSE_STATUS_ZERO_PIVOT";
+
+        case CUSPARSE_STATUS_NOT_SUPPORTED:
+            return "CUSPARSE_STATUS_NOT_SUPPORTED";
+
+        case CUSPARSE_STATUS_INSUFFICIENT_RESOURCES:
+            return "CUSPARSE_STATUS_INSUFFICIENT_RESOURCES";
+    }
+
+    return "<unknown>";
+}
+
+inline void __cusparseSafeCall(cusparseStatus_t err, const char *file, const int line)
+{
+    if (CUSPARSE_STATUS_SUCCESS != err) {
+        fprintf(stderr, "CUSPARSE error in file '%s', line %d, error %s\nterminating!\n", __FILE__, __LINE__, \
+			_cusparseGetErrorEnum(err)); \
+			assert(0); \
+	}
+}
+
+#define cusparseSafeCall(err) __cusparseSafeCall((err), __FILE__, __LINE__)
+
 #endif
 
 #endif//ERRCHECK_CUH

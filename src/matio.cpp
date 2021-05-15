@@ -1,9 +1,10 @@
 /****************************************************************************
+ * @file matio.cpp
+ * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * matio.cpp - Functions for reading and writing external matrix storage file
- * formats (COO or edge list)
+ * Functions for reading and writing Matrix Market files.
  *
- * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
+ * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,19 +31,14 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  ****************************************************************************/
 
 #include "matio.h"
-#include <cassert>
-
-inline int max(int a, int b) {
-    return a > b ? a : b;
-}
 
 /*
  * Check if a filename has a given extension.
- * Thanks to: https://stackoverflow.com/questions/4849986/how-can-i-check-the-file-extensions-in-c
+ *
+ * Taken from: https://stackoverflow.com/questions/4849986/how-can-i-check-the-file-extensions-in-c
  */
 static int has_extension(const char *name, const char *extension,
                          size_t length) {
@@ -57,7 +53,8 @@ static int has_extension(const char *name, const char *extension,
 
 /*
  * Read one line of the file, return TRUE if successful, FALSE if EOF.
- * Thanks to: https://github.com/DrTimothyAldenDavis/SuiteSparse/blob/master/CHOLMOD/Check/cholmod_read.c
+ *
+ * Taken from: https://github.com/DrTimothyAldenDavis/SuiteSparse/blob/master/CHOLMOD/Check/cholmod_read.c
  */
 static int get_line(FILE *f, char *buf) {
     buf[0] = '\0';
@@ -119,11 +116,6 @@ int query_gprops(const char *fname, gprops_t *gp) {
         return EXIT_FAILURE;
     }
 
-    if (m != n) {
-        fprintf(stderr, "An adjacency matrix must be square\n");
-        return EXIT_FAILURE;
-    }
-
     int j = 0;
 
     get_line(f, buf);
@@ -176,16 +168,11 @@ int read_header(FILE *f, MM_typecode *matcode, int *m, int *n, int *nnz) {
         return EXIT_FAILURE;
     }
 
-    if (*m != *n) {
-        fprintf(stderr, "An adjacency matrix must be square\n");
-        return EXIT_FAILURE;
-    }
-
     return EXIT_SUCCESS;
 }
 
 int read_mm(FILE *f, MM_typecode *matcode, int *nnz, const int *m, const int *n,
-            int *rows, int *cols, int *weights) {
+            int *rows, int *cols, int *weights, bool has_self_loops) {
     int rmax = 0, cmax = 0, i = 0, nitems;
     bool one_based = true;
     char buf[BUFFER_SIZE];
@@ -215,10 +202,7 @@ int read_mm(FILE *f, MM_typecode *matcode, int *nnz, const int *m, const int *n,
                 tmp_row > INT_MAX || tmp_col > INT_MAX)
                 return EXIT_FAILURE;
 
-            /*
-             * Discard self-loops.
-             */
-            if (tmp_col != tmp_row) {
+            if (has_self_loops || tmp_col != tmp_row) {
                 if (mm_is_symmetric(*matcode)) {
                     cols[i] = tmp_col;
                     rows[i] = tmp_row;
@@ -265,10 +249,7 @@ int read_mm(FILE *f, MM_typecode *matcode, int *nnz, const int *m, const int *n,
                 tmp_row > INT_MAX || tmp_col > INT_MAX || tmp_wgh > INT_MAX)
                 return EXIT_FAILURE;
 
-            /*
-             * Discard self-loops.
-             */
-            if (tmp_col != tmp_row) {
+            if (has_self_loops && tmp_col != tmp_row) {
                 if (mm_is_symmetric(*matcode)) {
                     cols[i] = tmp_col;
                     rows[i] = tmp_row;
@@ -295,7 +276,7 @@ int read_mm(FILE *f, MM_typecode *matcode, int *nnz, const int *m, const int *n,
         }
     }
 
-    if (one_based ? (rmax > *n || cmax > *m) : (rmax >= *n || cmax >= *m)) {
+    if (one_based ? (rmax > *m || cmax > *n) : (rmax >= *m || cmax >= *n)) {
         fprintf(stderr, "Indices out of range\n");
         return EXIT_FAILURE;
     }
@@ -328,10 +309,20 @@ int read_mm(FILE *f, MM_typecode *matcode, int *nnz, const int *m, const int *n,
         }
     }
 
+/*
+ * Convert to one-based representation.
+ */
+//    if (!one_based) {
+//        for (i = 0; i < *nnz; i++) {
+//            cols[i]++;
+//            rows[i]++;
+//        }
+//    }
+
     return EXIT_SUCCESS;
 }
 
-int read_mm_real(FILE *f, matrix_rcoo_t *m_coo) {
+int read_mm_real(FILE *f, matrix_rcoo_t *m_coo, bool has_self_loops) {
 
     MM_typecode matcode;
     int nnz, m, n;
@@ -353,7 +344,8 @@ int read_mm_real(FILE *f, matrix_rcoo_t *m_coo) {
     assert(cols);
     assert(weights);
 
-    if (read_mm(f, &matcode, &nnz, &m, &n, rows, cols, weights)) {
+    if (read_mm(f, &matcode, &nnz, &m, &n, rows, cols, weights,
+                has_self_loops)) {
         return EXIT_FAILURE;
     }
 
@@ -366,7 +358,7 @@ int read_mm_real(FILE *f, matrix_rcoo_t *m_coo) {
     return 0;
 }
 
-int read_mm_pattern(FILE *f, matrix_pcoo_t *m_coo) {
+int read_mm_pattern(FILE *f, matrix_pcoo_t *m_coo, bool has_self_loops) {
 
     MM_typecode matcode;
     int nnz, m, n;
@@ -386,12 +378,14 @@ int read_mm_pattern(FILE *f, matrix_pcoo_t *m_coo) {
     assert(rows);
     assert(cols);
 
-    if (read_mm(f, &matcode, &nnz, &m, &n, rows, cols, weights)) {
+    if (read_mm(f, &matcode, &nnz, &m, &n, rows, cols, weights,
+                has_self_loops)) {
         return EXIT_FAILURE;
     }
 
     m_coo->nnz = nnz;
-    m_coo->nrows = n;
+    m_coo->nrows = m;
+    m_coo->ncols = n;
     m_coo->rows = rows;
     m_coo->cols = cols;
 
@@ -414,7 +408,7 @@ int read_matrix(const char *fname, matrix_pcoo_t *m_coo, gprops_t *gp) {
                 return EXIT_FAILURE;
             }
 
-            if (read_mm_pattern(f, m_coo)) {
+            if (read_mm_pattern(f, m_coo, gp->has_self_loops)) {
                 fprintf(stderr, "Error reading matrix\n");
                 return EXIT_FAILURE;
             }

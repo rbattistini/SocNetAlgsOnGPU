@@ -1,9 +1,10 @@
 /****************************************************************************
+ * @file timing.cuh
+ * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * timing.cuh - Utility functions for NVIDIA GPUs profiling using the CUDA
- * Event API
+ * Utility functions for NVIDIA GPUs profiling using the CUDA Event API
  *
- * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
+ * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -49,7 +50,7 @@
 #define bandwidth(bytes, microseconds) ((bytes) *1e-6 / (microseconds))
 
 /*
- * from https://stackoverflow.com/questions/6959213/timing-a-cuda-application-using-events/6977536#6977536
+ * Taken from https://stackoverflow.com/questions/6959213/timing-a-cuda-application-using-events/6977536#6977536
  */
 class EventTimer {
 
@@ -98,17 +99,19 @@ private:
 };
 
 /*
- * The throughput is measured as ...
+ * The throughput is measured as TEPS, i.e. Traversed Edges Per Second
  */
 class ThroughputComputer {
 };
 
 /*
  * Only for profiling and eventually debugging memory transfers from device to
- * host and from host to device. |nvperf| profiles them too.
+ * host and from host to device. nvperf profiles them too.
  */
-float cudaMemcpyProfiled(void *dst, const void *src, size_t count,
-                         cudaMemcpyKind kind) {
+float cudaMemcpyPf(void *dst,
+                   const void *src,
+                   size_t count,
+                   cudaMemcpyKind kind) {
 
     float time;
     cudaEvent_t startEvent, stopEvent;

@@ -1,9 +1,11 @@
 /****************************************************************************
+ * @file utils.h
+ * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * utils.h - basic serial prefix Sum and reduce operators and functions for
- * printing some types of arrays related to internal memory storage of graphs
+ * Basic functions for printing some types of arrays and matrices related to
+ * the internal memory storage of graphs and other commonly used utilities.
  *
- * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
+ * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -44,13 +46,34 @@
 #include <stdio_ext.h>
 #include <vector>
 
-#define IDX(i, j, n) ((i) * (n) + (j))
-#define array_length(x) (sizeof(x) / sizeof((x)[0]))
+inline int max(int a, int b) {
+    return a > b ? a : b;
+}
+
+inline int min(int a, int b) {
+    return a < b ? a : b;
+}
 
 int *stlvector_to_array_int(const std::vector<int> &v, int n);
 
+/**
+ * Initialize an array.
+ *
+ * @param arr pointer to the array to be initialized
+ * @param n length of the array to be initialized
+ * @param v value used to initialize the array
+ */
 void fill(int *arr, int n, int v);
 
+void fill(bool *arr, int n, int v);
+
+int get_max_idx(const int *arr, int n);
+
+/**
+ * Properly close a stream with error checking.
+ *
+ * Taken from: https://stackoverflow.com/questions/4972994/how-to-close-stdout-and-stderr-in-c
+ */
 int close_stream(FILE *stream);
 
 void print_array(const int *arr, int n);
@@ -58,7 +81,5 @@ void print_array(const int *arr, int n);
 void print_array(const float *arr, int n);
 
 void print_edge_list(const int *row_offsets, const int *cols, int nrows);
-
-void bucket_sort(const int *arr, int n);
 
 #endif//SOCNETALGSONGPU_UTILS_H

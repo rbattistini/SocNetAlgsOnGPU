@@ -1,8 +1,8 @@
 /****************************************************************************
+ * @file test_serial_bc.cpp
+ * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * test_serial_bc.cpp
- *
- * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
+ * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -32,9 +32,9 @@
  *
  ****************************************************************************/
 
-#include <cstdlib>
-#include "graphs.h"
 #include "tests.h"
+#include "bc.h"
+#include "graphs.h"
 
 static matrix_pcsr_t csr;
 static gprops_t gprops;

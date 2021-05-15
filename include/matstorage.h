@@ -1,9 +1,15 @@
 /****************************************************************************
+ * @file matstorage.h
+ * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * matstorage.h - Functions for converting between different internal storage
- * matrix representations
+ * Functions to convert from the COOrdinate format to the Compressed Sparse
+ * Rows. In addition it provides a way of representing adjacency matrices
+ * with structures of arrays.
  *
- * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
+ * Thanks to:
+ * - https://github.com/scipy/
+ *
+ * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -33,14 +39,6 @@
  *
  * --------------------------------------------------------------------------
  *
- * This header file provides functions to convert from the COOrdinate format
- * to the Compressed Sparse Rows. In addition it provides a way of representing
- * adjacency matrices with structures of arrays.
- *
- * The conversion function is based on the one found in the scipy source
- * code, specifically from
- * https://github.com/scipy/scipy/blob/f2ef65dc7f00672496d7de6154744fee55ef95e9/scipy/sparse/sparsetools/coo.h#L33
- *
  * TODO: Remove duplicated edges
  *
  ****************************************************************************/
@@ -49,76 +47,81 @@
 #ifndef MATSTORAGE_H
 #define MATSTORAGE_H
 
-#include <cstdlib>
+#include "utils.h"
 
 typedef struct matrix_pcoo_t {
-    int nrows;// = ncols since adj matrix is a square matrix
+    int nrows;
+    int ncols;
     int nnz;
-    int *rows;// row index for each non-zero value
-    int *cols;// column index for each non-zero value
+    int *rows;  // row index for each non-zero value
+    int *cols;  // column index for each non-zero value
 } matrix_pcoo_t;
 
-typedef struct matrix_rcoo_t {
-    int nrows;// = ncols since adj matrix is a square matrix
-    int nnz;
-    int *rows;   // row index for each non-zero value
-    int *cols;   // column index for each non-zero value
-    int *weights;// value of each entry
+typedef struct matrix_rcoo_t : matrix_pcoo_t {
+    int *weights;   // value of each entry
 } matrix_rcoo_t;
 
 typedef struct matrix_pcsr_t {
     int nrows;
-    //    int nnz;  // found at row_offsets[nrows]
-    int *row_offsets;// offset in columns
-    int *cols;       // column index for each non-zero value
+    int ncols;
+    int *row_offsets;   // offset in columns
+    int *cols;          // column index for each non-zero value
 } matrix_pcsr_t;
 
-typedef struct matrix_rcsr_t {
-    int nrows;
-    int *row_offsets;// offset in columns
-    int *cols;       // column index for each non-zero value
+typedef struct matrix_rcsr_t : matrix_pcsr_t {
     int *weights;    // value of each entry
 } matrix_rcsr_t;
 
 void check_bc(matrix_pcsr_t g, const float *bc_cpu, const float *bc_gpu);
 
-int check_matrix_pcoo_init(matrix_pcoo_t *matrix);
+int check_matrix_init(matrix_pcoo_t *matrix);
+
+int check_matrix_init(matrix_pcsr_t *matrix);
+
+int check_matrix_init(matrix_rcoo_t *matrix);
+
+int check_matrix_init(matrix_rcsr_t *matrix);
 
 /**
- * Convert a matrix A, stored in COO format, to a matrix B, stored in the CSR
- * format.
+ * Computes A = B, where A is a pattern matrix in COOrdinate format and B is
+ * a pattern matrix in CSR format.
  *
- * At the end (row_offsets, cols) forms a CSR representation,
- * with possible duplicates if they were present in the COO format.
- * This means that duplicate entries in the COO matrix are not merged.
+ * @note Duplicate entries in the COO matrix are not merged.
+ * @note Row and column indices are not assumed to be ordered.
+ * @note Row_offsets and cols fields *must not* be preallocated.
+ * @note As long as the average number of non-zeroes per row is > 1, this
+ * format saves space relative to COO.
  *
- * Row and column indices *are not* assumed to be ordered.
- *
- * The conversion algorithm has linear complexity.
- * Specifically O(nnz(A) + max(nrows, ncols)).
- *
- * As long as the average number of non-zeroes per row is > 1,
- * this format saves space relative to COO.
- *
- * @param nrows_dense
- * @param m_coo
- * @param m_csr structure representing the matrix in the new format.
- * Row_offsets and cols fields *must not* be preallocated.
+ * @param A sparse pattern matrix in COO format
+ * @param B sparse pattern matrix in CSR format
+ * @return 0 if successful, 1 otherwise
  */
-void pcoo_to_pcsr(matrix_pcoo_t *m_coo, matrix_pcsr_t *m_csr);
+int coo_to_csr(matrix_pcoo_t *A, matrix_pcsr_t *B);
 
-void rcoo_to_rcsr(matrix_pcoo_t *m_coo, matrix_pcsr_t *m_csr);
+/**
+ * Computes A^T, in which A is an m x n CSR format sparse pattern A.
+ *
+ * @note Assumes that A is not stored to exploit symmetry.
+ *
+ * @note Transposition of a CSR A is the equivalent of converting the
+ * A to the CSC format.
+ *
+ * @param A sparse pattern A A, can be symmetric or unsymmetric
+ * @param B  the transpose of A
+ * @return 0 if successful, 1 otherwise
+ */
+int transpose(matrix_pcsr_t *A, matrix_pcsr_t *B);
 
-void print_matrix_coo(matrix_pcoo_t *matrix);
+void print_matrix(matrix_pcoo_t *matrix);
 
-void print_matrix_csr(matrix_pcsr_t *matrix);
+void print_matrix(matrix_pcsr_t *matrix);
 
-void free_matrix_pcoo(matrix_pcoo_t *matrix);
+void free_matrix(matrix_pcoo_t *matrix);
 
-void free_matrix_pcsr(matrix_pcsr_t *matrix);
+void free_matrix(matrix_pcsr_t *matrix);
 
-void free_matrix_rcoo(matrix_rcoo_t *matrix);
+void free_matrix(matrix_rcoo_t *matrix);
 
-void free_matrix_rcsr(matrix_rcsr_t *matrix);
+void free_matrix(matrix_rcsr_t *matrix);
 
 #endif// MATSTORAGE_H

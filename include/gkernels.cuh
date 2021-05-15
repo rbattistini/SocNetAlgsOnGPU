@@ -1,8 +1,10 @@
 /****************************************************************************
+ * @file gkernels.cuh
+ * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * gkernels.cuh - Kernels for computing Betweenness centrality on a Nvidia GPU
+ * Kernels for computing Betweenness centrality on a Nvidia GPUs.
  *
- * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
+ * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -43,8 +45,8 @@
  *
  * @param deg stores the degree of each vertex
  * @param nrows number of vertices of the graph
- * @param row_offsets csr-specific array that stores rows offsets
- * @param cols csr-specific array that stores column indexes
+ * @param row_offsets A-specific array that stores rows offsets
+ * @param cols A-specific array that stores column indexes
  * @param bc stores the bc score of each vertex
  * @param p stores the partial bc score of each vertex
  * @param keep_on whether there are other degree-1 vertices to be removed or not
@@ -67,8 +69,8 @@ __global__ void del1deg(int *deg,
  * @param sigma stores the number of shortest paths crossing each vertex
  * @param nrows number of vertices of the graph
  * @param nnz number of edges of the graph
- * @param row_offsets csr-specific array that stores rows offsets
- * @param cols csr-specific array that stores column indexes
+ * @param row_offsets A-specific array that stores rows offsets
+ * @param cols A-specific array that stores column indexes
  */
 __global__ void vtx_par_bfs(int s,
                             int *d,

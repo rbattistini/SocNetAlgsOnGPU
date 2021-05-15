@@ -1,8 +1,8 @@
 /****************************************************************************
+ * @file test_matrix_io.cpp
+ * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * test_matrix_io.cpp
- *
- * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
+ * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -89,6 +89,8 @@ static void write_random_char_to_file(FILE *f, int nit) {
 }
 
 TEST_CASE("Test graph loading with properties querying") {
+
+    gprops.has_self_loops = false;
 
     SUBCASE("undirected unweighted graph") {
         const char* gname = "und_unw_test.mtx";
@@ -199,7 +201,7 @@ TEST_CASE("Test graph loading using mmio with some corner cases") {
         fclose(tmp);
         tmp = fopen(gname, "r");
 
-        CHECK_UNARY_FALSE(read_mm_pattern(tmp, &coo));
+        CHECK_UNARY_FALSE(read_mm_pattern(tmp, &coo, gprops.has_self_loops));
         CHECK_NE(coo.nnz, 18);
 
         fclose(tmp);
@@ -220,7 +222,7 @@ TEST_CASE("Test graph loading using mmio with some corner cases") {
         fclose(tmp);
         tmp = fopen(gname, "r");
 
-        CHECK_UNARY(read_mm_pattern(tmp, &coo));
+        CHECK_UNARY(read_mm_pattern(tmp, &coo, gprops.has_self_loops));
 
         fclose(tmp);
     }
@@ -240,7 +242,7 @@ TEST_CASE("Test graph loading using mmio with some corner cases") {
         fclose(tmp);
         tmp = fopen(gname, "r");
 
-        CHECK_UNARY(read_mm_pattern(tmp, &coo));
+        CHECK_UNARY(read_mm_pattern(tmp, &coo, gprops.has_self_loops));
 
         fclose(tmp);
     }
@@ -261,38 +263,8 @@ TEST_CASE("Test graph loading using mmio with some corner cases") {
         fclose(tmp);
         tmp = fopen(gname, "r");
 
-        CHECK_UNARY(read_mm_pattern(tmp, &coo));
+        CHECK_UNARY(read_mm_pattern(tmp, &coo, gprops.has_self_loops));
 
         fclose(tmp);
-    }
-}
-
-TEST_CASE("Test sparse matrix storage format conversion from COO to CSR") {
-
-    /*
-     * Workspace setup for this test.
-     */
-    int rows[] = {1, 0, 3, 0, 4, 0, 5, 0, 2, 1, 6, 2, 7, 2, 5, 4, 8, 7};
-    int cols[] = {0, 1, 0, 3, 0, 4, 0, 5, 1, 2, 2, 6, 2, 7, 4, 5, 7, 8};
-
-    coo.nnz = 18;
-    coo.nrows = 9;
-    coo.rows = rows;
-    coo.cols = cols;
-
-    pcoo_to_pcsr(&coo, &csr);
-
-    int expected_row_offsets[] = {0, 4, 6, 9, 10, 12, 14, 15, 17, 18};
-    int expected_cols[] =
-            {1, 3, 4, 5, 0, 2, 1, 6, 7, 0, 0, 5, 0, 4, 2, 2, 8, 7};
-
-    CHECK_EQ(csr.nrows, 9);
-
-    for (int i = 0; i < coo.nrows; i++) {
-        CHECK_EQ(csr.row_offsets[i], expected_row_offsets[i]);
-    }
-
-    for (int i = 0; i < coo.nnz; i++) {
-        CHECK_EQ(csr.cols[i], expected_cols[i]);
     }
 }
