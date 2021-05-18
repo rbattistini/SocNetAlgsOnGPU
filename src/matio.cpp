@@ -2,7 +2,7 @@
  * @file matio.cpp
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Functions for reading and writing Matrix Market files.
+ * @brief Functions for reading and writing Matrix Market files.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -43,7 +43,7 @@
 static int has_extension(const char *name, const char *extension,
                          size_t length) {
     const char *ldot = strrchr(name, '.');
-    if (ldot != nullptr) {
+    if (ldot != 0) {
         if (length == 0)
             length = strlen(extension);
         return strncmp(ldot + 1, extension, length) == 0;
@@ -53,14 +53,12 @@ static int has_extension(const char *name, const char *extension,
 
 /*
  * Read one line of the file, return TRUE if successful, FALSE if EOF.
- *
- * Taken from: https://github.com/DrTimothyAldenDavis/SuiteSparse/blob/master/CHOLMOD/Check/cholmod_read.c
  */
 static int get_line(FILE *f, char *buf) {
     buf[0] = '\0';
     buf[1] = '\0';
     buf[BUFFER_SIZE] = '\0';
-    return (fgets(buf, BUFFER_SIZE, f) != nullptr);
+    return (fgets(buf, BUFFER_SIZE, f) != 0);
 }
 
 int query_gprops(const char *fname, gprops_t *gp) {
@@ -72,13 +70,13 @@ int query_gprops(const char *fname, gprops_t *gp) {
 
     f = fopen(fname, "r");
 
-    if (f == nullptr) {
-        fprintf(stderr, "Could not open %s\n", fname);
+    if (f == 0) {
+        ZF_LOGF("Could not open %s", fname);
         return EXIT_FAILURE;
     }
 
     if (mm_read_banner(f, &matcode) != 0) {
-        printf("Could not process Matrix Market banner\n");
+        ZF_LOGF("Could not process Matrix Market banner");
         return EXIT_FAILURE;
     }
 
@@ -87,8 +85,7 @@ int query_gprops(const char *fname, gprops_t *gp) {
      */
     if (!((mm_is_pattern(matcode) || mm_is_real(matcode)) &&
           mm_is_matrix(matcode))) {
-        fprintf(stderr, "This application does not support\n"
-                        "Market Matrix type: %s\n",
+        ZF_LOGF("This application does not support Market Matrix type: %s",
                 mm_typecode_to_str(matcode));
         return EXIT_FAILURE;
     }
@@ -106,13 +103,12 @@ int query_gprops(const char *fname, gprops_t *gp) {
      * Get the shape of the sparse matrix and the number of non zero elements.
      */
     if (mm_read_mtx_crd_size(f, &m, &n, &nnz) != 0) {
-        fprintf(stderr, "Could not read shape and nnz elements of the sparse"
-                        "matrix\n");
+        ZF_LOGF("Could not read shape and nnz elements of the matrix");
         return EXIT_FAILURE;
     }
 
     if (m == 0 || n == 0 || nnz == 0) {
-        fprintf(stderr, "An empty matrix was given\n");
+        ZF_LOGF("An empty matrix was given");
         return EXIT_FAILURE;
     }
 
@@ -135,9 +131,14 @@ int query_gprops(const char *fname, gprops_t *gp) {
         sscanf(buf, "%d %d\n", &tmp_row, &tmp_col);
         gp->is_weighted = true;
     } else {
-        fprintf(stderr, "Only two or three entries per row are supported\n");
-        fprintf(stderr, "Pattern must have two entries per row\n");
-        fprintf(stderr, "Real must have three entries per row\n");
+        int sup_entr = 0;
+        if(mm_is_pattern(matcode))
+            sup_entr = 2;
+        else if(mm_is_real(matcode))
+            sup_entr = 3;
+
+        ZF_LOGF("%d entries given but only %d entries per row are supported",
+                nitems, sup_entr);
         return EXIT_FAILURE;
     }
 
@@ -150,7 +151,7 @@ int query_gprops(const char *fname, gprops_t *gp) {
 int read_header(FILE *f, MM_typecode *matcode, int *m, int *n, int *nnz) {
 
     if (mm_read_banner(f, matcode) != 0) {
-        printf("Could not process Matrix Market banner\n");
+        ZF_LOGF("Could not process Matrix Market banner");
         return EXIT_FAILURE;
     }
 
@@ -158,13 +159,12 @@ int read_header(FILE *f, MM_typecode *matcode, int *m, int *n, int *nnz) {
      * Get the shape of the sparse matrix and the number of non zero elements.
      */
     if (mm_read_mtx_crd_size(f, m, n, nnz) != 0) {
-        fprintf(stderr, "Could not read shape and nnz elements of the sparse"
-                        "matrix\n");
+        ZF_LOGF("Could not read shape and nnz elements of the matrix");
         return EXIT_FAILURE;
     }
 
     if (*m == 0 || *n == 0 || *nnz == 0) {
-        fprintf(stderr, "An empty matrix was given\n");
+        ZF_LOGF("An empty matrix was given");
         return EXIT_FAILURE;
     }
 
@@ -177,7 +177,7 @@ int read_mm(FILE *f, MM_typecode *matcode, int *nnz, const int *m, const int *n,
     bool one_based = true;
     char buf[BUFFER_SIZE];
 
-    if (weights == nullptr) {
+    if (weights == 0) {
         for (int cnt = 0; cnt < *nnz; cnt++) {
             int tmp_row, tmp_col;
 
@@ -195,12 +195,17 @@ int read_mm(FILE *f, MM_typecode *matcode, int *nnz, const int *m, const int *n,
             /*
              * Check number of entries and their value.
              */
-            if (nitems != 2)
+            if (nitems != 2) {
+                ZF_LOGF("%d entries given but only 2 entries per row are "
+                        "supported on pattern matrices\n", nitems);
                 return EXIT_FAILURE;
+            }
 
             if (tmp_row < 0 || tmp_col < 0 ||
-                tmp_row > INT_MAX || tmp_col > INT_MAX)
+                tmp_row > INT_MAX || tmp_col > INT_MAX) {
+                ZF_LOGF("Indices out of range");
                 return EXIT_FAILURE;
+            }
 
             if (has_self_loops || tmp_col != tmp_row) {
                 if (mm_is_symmetric(*matcode)) {
@@ -242,12 +247,17 @@ int read_mm(FILE *f, MM_typecode *matcode, int *nnz, const int *m, const int *n,
             /*
              * Check number of entries and their value.
              */
-            if (nitems != 3)
+            if (nitems != 3) {
+                ZF_LOGF("%d entries given but only 3 entries per row are "
+                        "supported on real matrices\n", nitems);
                 return EXIT_FAILURE;
+            }
 
             if (tmp_row < 0 || tmp_col < 0 || tmp_wgh < 0 ||
-                tmp_row > INT_MAX || tmp_col > INT_MAX || tmp_wgh > INT_MAX)
+                tmp_row > INT_MAX || tmp_col > INT_MAX || tmp_wgh > INT_MAX) {
+                ZF_LOGF("Indices out of range");
                 return EXIT_FAILURE;
+            }
 
             if (has_self_loops && tmp_col != tmp_row) {
                 if (mm_is_symmetric(*matcode)) {
@@ -277,7 +287,7 @@ int read_mm(FILE *f, MM_typecode *matcode, int *nnz, const int *m, const int *n,
     }
 
     if (one_based ? (rmax > *m || cmax > *n) : (rmax >= *m || cmax >= *n)) {
-        fprintf(stderr, "Indices out of range\n");
+        ZF_LOGF("Indices out of range");
         return EXIT_FAILURE;
     }
 
@@ -292,7 +302,7 @@ int read_mm(FILE *f, MM_typecode *matcode, int *nnz, const int *m, const int *n,
         rows = (int *) realloc(rows, (*nnz) * sizeof(int));
         cols = (int *) realloc(cols, (*nnz) * sizeof(int));
 
-        if (weights != nullptr) {
+        if (weights != 0) {
             weights = (int *) realloc(weights, (*nnz) * sizeof(int));
         }
     } else {
@@ -308,16 +318,6 @@ int read_mm(FILE *f, MM_typecode *matcode, int *nnz, const int *m, const int *n,
             rows[i]--;
         }
     }
-
-/*
- * Convert to one-based representation.
- */
-//    if (!one_based) {
-//        for (i = 0; i < *nnz; i++) {
-//            cols[i]++;
-//            rows[i]++;
-//        }
-//    }
 
     return EXIT_SUCCESS;
 }
@@ -362,7 +362,7 @@ int read_mm_pattern(FILE *f, matrix_pcoo_t *m_coo, bool has_self_loops) {
 
     MM_typecode matcode;
     int nnz, m, n;
-    int *rows, *cols, *weights = nullptr;
+    int *rows, *cols, *weights = 0;
 
     if (read_header(f, &matcode, &m, &n, &nnz)) {
         return EXIT_FAILURE;
@@ -398,18 +398,19 @@ int read_matrix(const char *fname, matrix_pcoo_t *m_coo, gprops_t *gp) {
         has_extension(fname, "mm", strlen(fname))) {
 
         if (gp->is_weighted) {
-            //            fprintf(stderr, "Weighted graph is not supported\n");
+            ZF_LOGF("Weighted graph is not supported");
+            return EXIT_FAILURE;
         } else {
             FILE *f;
             f = fopen(fname, "r");
 
-            if (f == nullptr) {
-                fprintf(stderr, "Could not open %s\n", fname);
+            if (f == 0) {
+                ZF_LOGF("Could not open %s", fname);
                 return EXIT_FAILURE;
             }
 
             if (read_mm_pattern(f, m_coo, gp->has_self_loops)) {
-                fprintf(stderr, "Error reading matrix\n");
+                ZF_LOGF("Error reading matrix");
                 return EXIT_FAILURE;
             }
 
@@ -417,7 +418,7 @@ int read_matrix(const char *fname, matrix_pcoo_t *m_coo, gprops_t *gp) {
         }
 
     } else {
-        fprintf(stderr, "Unsupported file type\n");
+        ZF_LOGF("Unsupported file type");
         return EXIT_FAILURE;
     }
 

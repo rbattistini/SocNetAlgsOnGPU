@@ -2,7 +2,7 @@
  * @file betweenness.cu
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Parallel algorithm for computing betweenness centrality on the GPU.
+ * @brief Parallel algorithm for computing betweenness centrality on the GPU.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -67,18 +67,16 @@ int main(int argc, char *argv[]) {
     EventTimer chrono;
 
     if (argc != 3) {
-        fprintf(stderr, "Usage: %s [input_filename] [output_filename]",
-                argv[0]);
+        ZF_LOGF("Usage: %s [input_filename] [output_filename]", argv[0]);
         return EXIT_FAILURE;
     }
 
-    if (get_compute_capability() != 6) {
-        fprintf(stderr, "This program is meant to be executed only if compute"
-                        " capability is 6.x\n");
-        return EXIT_FAILURE;
-    } else {
-        print_gpu_overview();
+    if (get_compute_capability() < 6) {
+        ZF_LOGW("This program has been tested only with devices "
+                "with compute capability at least 6.x\n");
     }
+
+    print_gpu_overview();
 
     /*
      * Coarse-grained parallelism.
@@ -118,17 +116,17 @@ int main(int argc, char *argv[]) {
      */
     size_t nnz = m_csr.row_offsets[m_csr.nrows];
     cudaSafeCall(cudaMalloc((void **) &d_row_offsets,
-                            (m_csr.nrows + 1) * sizeof(*d_row_offsets)));
+    (m_csr.nrows + 1) * sizeof(*d_row_offsets)));
     cudaSafeCall(cudaMalloc((void **) &d_cols,
                             nnz * sizeof(*d_cols)));
     cudaSafeCall(cudaMalloc((void **) &d_dist,
                             m_csr.nrows * sizeof(*d_dist)));
-    cudaSafeCall(cudaMalloc((void **) &d_bc,
-                            m_csr.nrows * sizeof(*d_bc)));
     cudaSafeCall(cudaMalloc((void **) &d_sigma,
                             m_csr.nrows * sizeof(*d_sigma)));
     cudaSafeCall(cudaMalloc((void **) &d_delta,
                             m_csr.nrows * sizeof(*d_delta)));
+    cudaSafeCall(cudaMalloc((void **) &d_bc,
+                            m_csr.nrows * sizeof(*d_bc)));
 
 
     /*
@@ -173,8 +171,8 @@ int main(int argc, char *argv[]) {
     /*
      * Report time elapsed and throughput.
      */
-//    chrono.report();
-    print_array(bc_gpu, m_csr.nrows);
+//    chrono.log();
+//    print_array(bc_gpu, m_csr.nrows);
 
 #ifdef BENCHMARK
     /*
@@ -193,7 +191,7 @@ int main(int argc, char *argv[]) {
         bc_cpu[i] = centrality_map[i];
     }
 
-//    chrono.report();
+//    chrono.log();
 
     /*
      * Check whether BC was computed correctly.
@@ -219,5 +217,6 @@ int main(int argc, char *argv[]) {
     close_stream(stdout);
     close_stream(stderr);
 
+    cudaSafeCall(cudaDeviceReset());
     return EXIT_SUCCESS;
 }

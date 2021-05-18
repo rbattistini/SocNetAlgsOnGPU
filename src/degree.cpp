@@ -2,7 +2,7 @@
  * @file degree.cpp
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Functions to compute the degree of the vertices of an undirected and
+ * @brief Functions to compute the degree of the vertices of an undirected and
  * unweighted graph stored as a sparse pattern matrix in CSR format.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
@@ -39,7 +39,7 @@
 void compute_degrees_undirected(matrix_pcsr_t *g, int *degree) {
 
     if (!check_matrix_init(g)) {
-        fprintf(stderr, "The graph is not initialized");
+        ZF_LOGF("The graph is not initialized");
         return;
     }
 
@@ -60,7 +60,7 @@ void compute_degrees_undirected(matrix_pcsr_t *g, int *degree) {
 void compute_degrees_undirected(matrix_pcoo_t *g, int *degree) {
 
     if (!check_matrix_init(g)) {
-        fprintf(stderr, "The graph is not initialized");
+        ZF_LOGF("The graph is not initialized");
         return;
     }
 
@@ -81,8 +81,8 @@ void compute_degrees_undirected(matrix_pcoo_t *g, int *degree) {
 void compute_degrees_directed(matrix_pcoo_t *g, int *in_degree,
                               int *out_degree) {
 
-    if (g->rows == nullptr) {
-        fprintf(stderr, "The graph is not initialized");
+    if (g->rows == 0) {
+        ZF_LOGF("The graph is not initialized");
         return;
     }
 

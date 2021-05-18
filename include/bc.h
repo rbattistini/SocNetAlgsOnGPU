@@ -1,8 +1,8 @@
 /****************************************************************************
- * @file bc.cpp
+ * @file bc.h
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Functions to compute the betweenness centrality of the vertices of an
+ * @brief Functions to compute the betweenness centrality of the vertices of an
  * undirected and unweighted graph stored as a sparse pattern matrix in CSR
  * format.
  *
@@ -40,7 +40,8 @@
 #define SOCNETALGSONGPU_BC_H
 
 #include "matstorage.h"
-#include "utils.h"
+#include "common.h"
+#include <climits>
 #include <queue>
 #include <stack>
 #include <vector>
@@ -64,8 +65,12 @@ void compute_bfs(matrix_pcsr_t *g,
 
 void BC_dec_comp(matrix_pcsr_t *g, float *bc_scores, bool directed);
 
-void BC_computation(matrix_pcsr_t *g, float *bc_scores, bool directed);
+void get_vertex_betweenness(matrix_pcsr_t *g, float *bc_scores, bool directed);
 
-void print_bc_scores(matrix_pcsr_t *g, const float *bc_scores, FILE *fout);
+void print_bc_scores(matrix_pcsr_t *g, const float *bc_scores, FILE *f);
+
+void get_closeness() {
+    // TODO
+}
 
 #endif //SOCNETALGSONGPU_BC_H

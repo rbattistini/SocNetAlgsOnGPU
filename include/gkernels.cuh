@@ -2,7 +2,7 @@
  * @file gkernels.cuh
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Kernels for computing Betweenness centrality on a Nvidia GPUs.
+ * @brief Kernels for computing Betweenness centrality on a Nvidia GPUs.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -38,10 +38,12 @@
 #ifndef SOCNETALGSONGPU_GKERNELS_CUH
 #define SOCNETALGSONGPU_GKERNELS_CUH
 
+#ifdef __CUDACC__
+
 /**
- * Kernel that performs the graph compression optimization technique by
+ * @brief Performs a graph compression optimization technique by
  * removing iteratively the degree-1 vertices and storing their contribution to
- * the bc score of the other vertices in bc and in p.
+ * the bc score of the other vertices in arrays bc and p.
  *
  * @param deg stores the degree of each vertex
  * @param nrows number of vertices of the graph
@@ -57,11 +59,19 @@ __global__ void del1deg(int *deg,
                         int *cols,
                         float *bc,
                         float *p,
-                        bool *keep_on);
+                        int *ntree_nodes);
+
+__global__ void light_del1deg(int *deg,
+                              int nrows,
+                              const int *row_offsets,
+                              const int *cols,
+                              float *bc,
+                              float *p,
+                              int *ntree_nodes);
 
 /**
- * Implements the shortest path calculation within a thread block using the
- * vertex-parallel approach. For scale-free networks (i.e. social networks)
+ * @brief Implements the shortest path calculation within a thread block using
+ * the vertex-parallel approach. For scale-free networks (i.e. social networks)
  * this approach is not a good fit due to the work imbalance it suffers.
  *
  * @param s the source vertex from which the bfs starts
@@ -101,5 +111,6 @@ __global__ void vtx_par_dep_acc(int s,
                                 int nnz,
                                 const int *row_offsets,
                                 const int *cols);
+#endif
 
 #endif//SOCNETALGSONGPU_GKERNELS_CUH

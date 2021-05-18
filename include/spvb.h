@@ -2,7 +2,7 @@
  * @file spvb.h
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Modified version of serial algorithm of Brandes for computing
+ * @brief Modified version of serial algorithm of Brandes for computing
  * betweenness centrality optimized for social networks.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
@@ -41,7 +41,7 @@
 
 #include "Snap.h"
 #include "matstorage.h"
-#include "utils.h"
+#include "common.h"
 #include <climits>
 #include <queue>
 #include <stack>

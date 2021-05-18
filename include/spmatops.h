@@ -2,11 +2,8 @@
  * @file spmatops.h
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Functions for handling sparse matrix-matrix multiplication, sparse matrix
- * indexing and subgraph extraction.
- *
- * Thanks to:
- * - https://github.com/DrTimothyAldenDavis/SuiteSparse/blob/master/CHOLMOD/MatrixOps/cholmod_ssmult.c
+ * @brief Functions for handling sparse matrix-matrix multiplication and
+ * generalized indexing into a sparse matrix.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -43,10 +40,10 @@
 #define SPMATOPS_H
 
 #include "matstorage.h"
-#include "utils.h"
+#include "common.h"
 
 /**
- * Implements the Gustavson’s row-wise sparse general matrix-matrix
+ * @brief Implements the Gustavson’s row-wise sparse general matrix-matrix
  * multiplication algorithm.
  *
  * @cite gustavson_two_1978
@@ -54,8 +51,8 @@
  * Executes C = A * B.
  *
  * @note The operation is performed only on patterns. It works with sorted or
- * unsorted matrices and symmetric or unsymmetric ones. It is not optimized and
- * does not exploit the symmetry of a matrix.
+ * unsorted matrices and symmetric or unsymmetric ones. It is slightly
+ * optimized and does not exploit the symmetry of a matrix.
  *
  * @param A p x q sparse pattern matrix in CSR format
  * @param B q x r sparse pattern matrix in CSR format
@@ -67,7 +64,7 @@ int spgemm(matrix_pcsr_t *A,
            matrix_pcsr_t *C);
 
 /**
- * Implements the SpRef function with SpGEMM as the main subroutine as
+ * @brief Implements the SpRef function with SpGEMM as the main subroutine as
  * described by Buluç and Gilbert.
  *
  * @cite buluc_parallel_2012

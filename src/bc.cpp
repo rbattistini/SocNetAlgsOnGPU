@@ -2,7 +2,7 @@
  * @file bc.cpp
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Functions to compute the betweenness centrality of the vertices of an
+ * @brief Functions to compute the betweenness centrality of the vertices of an
  * undirected and unweighted graph stored as a sparse pattern matrix in CSR
  * format.
  *
@@ -161,7 +161,7 @@ void BC_dec_comp(matrix_pcsr_t *g, float *bc_scores, bool directed) {
     }
 }
 
-void BC_computation(matrix_pcsr_t *g, float *bc_scores, bool directed) {
+void get_vertex_betweenness(matrix_pcsr_t *g, float *bc_scores, bool directed) {
 
     for (int i = 0; i < g->nrows; i++)
         bc_scores[i] = 0;
@@ -197,11 +197,9 @@ void BC_computation(matrix_pcsr_t *g, float *bc_scores, bool directed) {
             // update for the backward propagation phase
             S.push(v);
 
-            //            printf("%d | ", v);
             for (int k = g->row_offsets[v]; k < g->row_offsets[v + 1]; k++) {
 
                 int w = g->cols[k];
-                //                printf("%d ", w);
 
                 /*
                  * If the vertex was not discovered, discover it and add to
@@ -221,14 +219,7 @@ void BC_computation(matrix_pcsr_t *g, float *bc_scores, bool directed) {
                     sigma[w] += sigma[v];
                 }
             }
-
-            //            printf("\n");
         }
-
-//        if(cnt <= 5) {
-//            print_array(d, g->nrows - 1);
-//            cnt++;
-//        }
 
         while (!S.empty()) {
 
@@ -263,19 +254,19 @@ void BC_computation(matrix_pcsr_t *g, float *bc_scores, bool directed) {
     }
 }
 
-void print_bc_scores(matrix_pcsr_t *g, const float *bc_scores, FILE *fout) {
+void print_bc_scores(matrix_pcsr_t *g, const float *bc_scores, FILE *f) {
 
-    unsigned int nvertices = g->nrows;
-    unsigned int nedges = g->row_offsets[nvertices];
+    int nvertices = g->nrows;
+    int nedges = g->row_offsets[nvertices];
 
-    if (fout != nullptr) {
-        fprintf(fout, "Number of vertices: %d\n", nvertices);
-        fprintf(fout, "Number of edges: %d\n", nedges);
+    if (f != 0) {
+        fprintf(f, "Number of vertices: %d\n", nvertices);
+        fprintf(f, "Number of edges: %d\n", nedges);
 
         for (size_t i = 0; i < nvertices; i++) {
-            fprintf(fout, "%.2f\n", bc_scores[i]);
+            fprintf(f, "%.2f\n", bc_scores[i]);
         }
     } else {
-        fprintf(stderr, "Failed to create output file\n");
+        ZF_LOGE("Failed to create output file");
     }
 }

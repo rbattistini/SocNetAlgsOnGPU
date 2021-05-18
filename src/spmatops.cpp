@@ -2,8 +2,8 @@
  * @file spmatops.h
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Functions for handling sparse matrix-matrix multiplication and generalized
- * indexing into a sparse matrix.
+ * @brief Functions for handling sparse matrix-matrix multiplication and
+ * generalized indexing into a sparse matrix.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -45,7 +45,7 @@ int spgemm(matrix_pcsr_t *A, matrix_pcsr_t *B, matrix_pcsr_t *C) {
     if (!check_matrix_init(A) &&
         !check_matrix_init(B) &&
         A->ncols != B->nrows) {
-        fprintf(stderr, "Input matrices not initialized or mismatched");
+        ZF_LOGF("Input matrices not initialized or mismatched");
         return EXIT_FAILURE;
     }
 
@@ -81,20 +81,24 @@ int spgemm(matrix_pcsr_t *A, matrix_pcsr_t *B, matrix_pcsr_t *C) {
     fill(flag, c_ncols, -1);
 
     int *c_row_offsets = (int*) malloc((c_nrows + 1) * sizeof(int));
-    assert(c_row_offsets);
+
+    if(c_row_offsets == 0) {
+        ZF_LOGF("Memory allocation failed!");
+        return EXIT_FAILURE;
+    }
 
     for (int ic = 0; ic < c_nrows; ic++) {
+
+        c_row_offsets[ic] = c_nnz;
 
         /*
          * For each row of A...
          */
         for (int ia = a_row_offsets[ic]; ia < a_row_offsets[ic + 1]; ia++) {
-            int j_a = a_cols[ia] ;
-
             /*
              * For each row of B...
              */
-            for (int ib = b_row_offsets[j_a]; ib < b_row_offsets[j_a + 1]; ib++) {
+            for (int ib = b_row_offsets[a_cols[ia]]; ib < b_row_offsets[a_cols[ia] + 1]; ib++) {
                 int j_b = b_cols[ib];
 
                 if (flag[j_b] != ic) {
@@ -108,7 +112,7 @@ int spgemm(matrix_pcsr_t *A, matrix_pcsr_t *B, matrix_pcsr_t *C) {
          * Check for integer overflow.
          */
         if (c_nnz < 0) {
-            fprintf(stderr, "Integer overflow occurred!");
+            ZF_LOGF("Integer overflow occurred!");
             return EXIT_FAILURE;
         }
     }
@@ -117,7 +121,10 @@ int spgemm(matrix_pcsr_t *A, matrix_pcsr_t *B, matrix_pcsr_t *C) {
      * Allocate C matrix.
      */
     int *c_cols = (int*) malloc(c_nnz * sizeof(int));
-    assert(c_cols);
+    if(c_cols == 0) {
+        ZF_LOGF("Memory allocation failed!");
+        return EXIT_FAILURE;
+    }
 
     /*******************
      * Perform C = AB.
@@ -133,14 +140,15 @@ int spgemm(matrix_pcsr_t *A, matrix_pcsr_t *B, matrix_pcsr_t *C) {
     /*
      * For each row of C...
      */
-    for (int i = 0; i < c_nrows; i++) {
+    int row_start;
+    for (int ic = 0; ic < c_nrows; ic++) {
 
-        c_row_offsets[i] = c_nnz;
+        row_start = c_row_offsets[ic];
 
         /*
          * For each row of A...
          */
-        for (int k = a_row_offsets[i]; k < a_row_offsets[i + 1]; k++) {
+        for (int k = a_row_offsets[ic]; k < a_row_offsets[ic + 1]; k++) {
             int t = a_cols[k];
 
             /*
@@ -149,7 +157,7 @@ int spgemm(matrix_pcsr_t *A, matrix_pcsr_t *B, matrix_pcsr_t *C) {
             for (int v = b_row_offsets[t]; v < b_row_offsets[t + 1]; v++) {
                 int j = b_cols[v];
 
-                if (flag[j] < c_nnz) {
+                if (flag[j] < row_start) {
                     flag[j] = c_nnz;
                     c_cols[c_nnz] = j;
                     c_nnz++;
@@ -175,13 +183,14 @@ int spref(matrix_pcsr_t *R,
     if (!check_matrix_init(R) ||
         !check_matrix_init(A) ||
         !check_matrix_init(Q)) {
-        fprintf(stderr, "Input matrix not initialized\n");
+        ZF_LOGF("Input matrices not initialized or mismatched");
         return EXIT_FAILURE;
     }
 
     matrix_pcsr_t B;
 
     spgemm(R, A, &B);
+
     spgemm(&B, Q, C);
 
     free_matrix(&B);
@@ -194,17 +203,20 @@ int get_R_matrix(matrix_pcsr_t *R,
                  int nvertices,
                  int nrows) {
 
-    if(vertices == nullptr || nvertices <= 0 || nrows <= 0) {
-        fprintf(stderr, "Input values not valid");
+    if(vertices == 0 || nvertices <= 0 || nrows <= 0) {
+        ZF_LOGF("Input values not valid");
         return EXIT_FAILURE;
     }
 
     int *rows =
             (int*) malloc(nrows * sizeof(*rows));
-    assert(rows);
     int *cols =
             (int*) malloc(nvertices * sizeof(*cols));
-    assert(cols);
+
+    if(rows == 0 || cols == 0) {
+        ZF_LOGF("Memory allocation failed!");
+        return EXIT_FAILURE;
+    }
 
     for(int k = 0; k < nvertices; k++) {
         rows[k] = k;
@@ -213,6 +225,11 @@ int get_R_matrix(matrix_pcsr_t *R,
 
     int *row_offsets =
             (int*) calloc((nvertices + 1), sizeof(*row_offsets));
+
+    if(row_offsets == 0) {
+        ZF_LOGF("Memory allocation failed!");
+        return EXIT_FAILURE;
+    }
 
     /*
      * Compute number of non-zero entries per column of R.

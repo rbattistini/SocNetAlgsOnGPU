@@ -2,7 +2,7 @@
  * @file device_props.h
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Utility functions for NVIDIA GPUs device properties querying
+ * @brief Utility functions for NVIDIA GPUs device properties querying
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -69,20 +69,20 @@ int get_compute_capability() {
     return computeCap;
 }
 
-int get_max_threads_per_block() {
+unsigned int get_max_threads_per_block() {
     int devId, threadsPerBlock;
     cudaSafeCall(cudaGetDevice(&devId));
     cudaSafeCall(cudaDeviceGetAttribute(&threadsPerBlock,
                                         cudaDevAttrMaxThreadsPerBlock, devId));
-    return threadsPerBlock;
+    return (unsigned int) threadsPerBlock;
 }
 
-int get_sm_count() {
+unsigned int get_sm_count() {
     int devId, numProcs;
     cudaSafeCall(cudaGetDevice(&devId));
     cudaSafeCall(cudaDeviceGetAttribute(&numProcs,
                                         cudaDevAttrMultiProcessorCount, devId));
-    return numProcs;
+    return (unsigned int) numProcs;
 }
 
 double get_mem_bandwidth() {

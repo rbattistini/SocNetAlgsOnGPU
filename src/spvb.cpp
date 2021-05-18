@@ -2,7 +2,7 @@
  * @file spvb.cpp
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Modified version of serial algorithm of Brandes for computing
+ * @brief Modified version of serial algorithm of Brandes for computing
  * betweenness centrality optimized for social networks.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
@@ -87,6 +87,9 @@ int spvb(const PUNGraph &g_i, float *bc_scores, float *p, bool directed) {
 
     //    printf("Nit: %d\n", nit);
 
+    print_float_array(bc_scores, nvertices);
+    print_float_array(p, nvertices);
+
     /*
      * Call the BC of Brandes procedure on the new graph g_i.
      */
@@ -110,9 +113,11 @@ void BC_mod_computation(const PUNGraph &g, const float *p, float *bc_scores) {
         auto *sigma = (unsigned long *) malloc(nvertices * sizeof(unsigned long));
         auto *distance = (int *) malloc(nvertices * sizeof(int));
         auto *delta = (float *) malloc(nvertices * sizeof(float));
-        assert(sigma);
-        assert(distance);
-        assert(delta);
+
+        if(sigma == 0 || distance == 0 || delta == 0) {
+            ZF_LOGF("Memory allocation failed!");
+            return;
+        }
 
         for (int i = 0; i < nvertices; i++) {
             sigma[i] = 0;

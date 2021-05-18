@@ -2,7 +2,7 @@
  * @file graphs.h
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Algorithms for graphs manipulation.
+ * @brief Algorithms for graphs manipulation.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -44,7 +44,7 @@
 
 #include "matstorage.h"
 #include "spmatops.h"
-#include "utils.h"
+#include "common.h"
 #include <climits>
 #include <queue>
 #include <stack>
@@ -69,7 +69,7 @@ void BFS_visit(matrix_pcsr_t *g, int *d, int s);
 int* DFS_visit(matrix_pcsr_t *g, bool *visited, int s, int *cc_size);
 
 /**
- * Get the largest cc and extract a subgraph from it.
+ * @brief Get the largest cc and extract a subgraph from it.
  *
  * @param A
  * @param C
@@ -81,12 +81,10 @@ void get_largest_cc(matrix_pcsr_t *A,
 
 void get_cc(matrix_pcsr_t *g, components_t *ccs);
 
-int get_diameter(matrix_pcsr_t *g);
-
 void free_ccs(components_t *ccs);
 
 void extract_subgraph(const int *vertices,
-                      const int nvertices,
+                      int nvertices,
                       matrix_pcsr_t *A,
                       matrix_pcsr_t *C);
 

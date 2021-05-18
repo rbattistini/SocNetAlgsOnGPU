@@ -1,9 +1,10 @@
 /****************************************************************************
- * @file utils.cpp
+ * @file common.cpp
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Basic functions for printing some types of arrays and matrices related to
- * the internal memory storage of graphs and other commonly used utilities.
+ * @brief Basic functions for printing some types of arrays and matrices
+ * related to the internal memory storage of graphs and other commonly used
+ * utilities.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -35,11 +36,16 @@
  *
  ****************************************************************************/
 
-#include "utils.h"
+#include <cstring>
+#include "common.h"
 
 int *stlvector_to_array_int(const std::vector<int> &v, int n) {
     auto array = (int *) malloc(sizeof(int) * n);
-    assert(!v.empty());
+
+    if(v.empty()) {
+        ZF_LOGF("Uninitialized array given!");
+        return 0;
+    }
 
     for (int i = 0; i < n; i++) {
         array[i] = v[i];
@@ -49,19 +55,22 @@ int *stlvector_to_array_int(const std::vector<int> &v, int n) {
 }
 
 void fill(int *arr, int n, int v) {
-    assert(arr && n);
-    for (int i = 0; i < n; i++)
-        arr[i] = v;
-}
 
-void fill(bool *arr, int n, int v) {
-    assert(arr && n);
+    if(arr == 0) {
+        ZF_LOGF("Uninitialized array given!");
+        return;
+    }
     for (int i = 0; i < n; i++)
         arr[i] = v;
 }
 
 int get_max_idx(const int *arr, int n) {
-    assert(arr && n);
+
+    if(arr == 0) {
+        ZF_LOGF("Uninitialized array given!");
+        return -1;
+    }
+
     int max_idx = 0;
     int max_value = arr[0];
 
@@ -102,8 +111,13 @@ int close_stream(FILE *stream) {
     return 0;
 }
 
-void print_array(const int *arr, int n) {
-    assert(arr && n);
+void print_int_array(const int *arr, int n) {
+
+    if(arr == 0) {
+        ZF_LOGF("Uninitialized array given!");
+        return;
+    }
+
     printf("[ ");
 
     for (int i = 0; i < n + 1; i++)
@@ -112,8 +126,13 @@ void print_array(const int *arr, int n) {
     printf("]\n");
 }
 
-void print_array(const float *arr, int n) {
-    assert(arr && n);
+void print_float_array(const float *arr, int n) {
+
+    if(arr == 0) {
+        ZF_LOGF("Uninitialized array given!");
+        return;
+    }
+
     printf("[ ");
 
     for (int i = 0; i < n + 1; i++)
@@ -123,8 +142,16 @@ void print_array(const float *arr, int n) {
 }
 
 void print_edge_list(const int *row_offsets, const int *cols, int nrows) {
-    assert(row_offsets && (nrows + 1));
-    assert(cols && row_offsets[nrows + 1]);
+
+    if(row_offsets == 0) {
+        ZF_LOGF("Uninitialized row_offsets given!");
+        return;
+    }
+
+    if(cols == 0) {
+        ZF_LOGF("Uninitialized cols given!");
+        return;
+    }
 
     printf("Edge lists for each vertex: \n");
 

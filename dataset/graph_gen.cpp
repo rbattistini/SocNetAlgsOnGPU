@@ -1,11 +1,12 @@
 /****************************************************************************
+ * @file graph_gen.cpp
+ * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * graph_gen.cpp - Graph generation
+ * @brief Program to generate synthetic undirected and unweighted graphs
+ * dataset using the SNAP Library. Based on examples available in the SNAP
+ * documentation.
  *
- * Script to generate synthetic undirected and unweighted graphs dataset
- * using the SNAP Library. Based on examples available in the SNAP documentation.
- *
- * Copyright 2021 (c) 2021 by Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
+ * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -42,9 +43,9 @@
 #include <iostream>
 
 enum GraphType {
-    Random = 1,    // Erdős-Rényi random graph
-    SmallWorld = 2,// Watts-Strogatz Small World graph
-    ScaleFree = 3  // Barabási-Albert Scale Free graph
+    Random      = 1,    // Erdős-Rényi random graph
+    SmallWorld  = 2,    // Watts-Strogatz Small World graph
+    ScaleFree   = 3     // Barabási-Albert Scale Free graph
 };
 
 using namespace TSnap;
@@ -55,23 +56,15 @@ using namespace TSnap;
 const int min_vertices = 20;
 const int max_vertices = 1000;
 
-inline int min(int a, int b) {
-    return a < b ? a : b;
-}
-
-/*
- * Taken from: https://www.geeksforgeeks.org/binomial-coefficient-dp-9/
- */
-int binCoeff(int n, int k) {
+int bin_coeff(int n, int k) {
 
     int C[k + 1];
     memset(C, 0, sizeof(C));
 
-    C[0] = 1;// nC0 is 1
+    C[0] = 1;
 
     for (int i = 1; i <= n; i++) {
-        // Compute next row of pascal triangle using
-        // the previous row
+        // Compute next row of pascal triangle using the previous row
         for (int j = min(i, k); j > 0; j--)
             C[j] = C[j] + C[j - 1];
     }
@@ -91,21 +84,23 @@ int write_snap_to_mtx(FILE *f, const PUNGraph &g) {
     mm_set_symmetric(&matcode);
 
     if (mm_write_banner(f, matcode)) {
-        fprintf(stderr, "Error writing mm banner");
+        ZF_LOGF("Error writing mm banner");
         return EXIT_FAILURE;
     }
 
     /*
      * Write the header and the values.
      */
-    if (mm_write_mtx_crd_size(f, g->GetNodes(), g->GetNodes(), g->GetEdges())) {
-        fprintf(stderr, "Error writing header");
+    if (mm_write_mtx_crd_size(f, g->GetNodes(), g->GetNodes(),
+                              g->GetEdges())) {
+        ZF_LOGF("Error writing header");
         return EXIT_FAILURE;
     }
 
     for (TUNGraph::TEdgeI EI = g->BegEI(); EI < g->EndEI(); EI++) {
-        if (fprintf(f, "%d %d\n", EI.GetSrcNId() + 1, EI.GetDstNId() + 1) < 0) {
-            fprintf(stderr, "Error writing values");
+        if (fprintf(f, "%d %d\n", EI.GetSrcNId() + 1,
+                    EI.GetDstNId() + 1) < 0) {
+            ZF_LOGF("Error writing values");
             return EXIT_FAILURE;
         }
     }
@@ -114,8 +109,9 @@ int write_snap_to_mtx(FILE *f, const PUNGraph &g) {
 }
 
 /**
- * Print graph's basic statistics, namely the name of the graph, the number
- * of edges and of vertices and whether the graph is empty and connected.
+ * @brief Print graph's basic statistics, namely the name of the graph, the
+ * number of edges and of vertices and whether the graph is empty and
+ * connected.
  *
  * @tparam PGraph type of graph, directed or undirected
  * @param s pointer to the name of the graph
@@ -137,13 +133,12 @@ int main(int argc, char *argv[]) {
 
     int v, gtype;
     char *fname;
-    TInt::Rnd.PutSeed(0);// random number generator
+    TInt::Rnd.PutSeed(0);   // random number generator
     PUNGraph g;
 
     if (argc != 4) {
-        std::cerr << "Usage: " << argv[0] << " [filename] [graph_type] "
-                                             "[number_vertices]"
-                  << std::endl;
+        ZF_LOGF("Usage: %s [filename] [graph_type] [number_vertices]",
+                argv[0]);
         return EXIT_FAILURE;
     }
 
@@ -152,9 +147,8 @@ int main(int argc, char *argv[]) {
     v = (int) strtol(argv[3], nullptr, 10);
 
     if (v < min_vertices || v > max_vertices) {
-        std::cerr << "A graph must have at least 20 nodes and no more "
-                     "than 1000 nodes"
-                  << std::endl;
+        ZF_LOGF("A graph must have at least 20 nodes and no more "
+                     "than 1000 nodes");
         return EXIT_FAILURE;
     }
 
@@ -164,7 +158,7 @@ int main(int argc, char *argv[]) {
              * Number of edges, computed so that there is a high probability of
              * generating a connected random graph.
              */
-            const int e = (int) (binCoeff(v, 2) * (log(v) / v)) + 2;
+            const int e = (int) (bin_coeff(v, 2) * (log(v) / v)) + 2;
             g = GenRndGnm<PUNGraph>(v, e, false, TInt::Rnd);
             break;
         }
@@ -183,11 +177,10 @@ int main(int argc, char *argv[]) {
             break;
         }
         default:
-            std::cerr << "Graph types accepted are: \n"
+            ZF_LOGF("Graph types accepted are: \n"
                          "[1]: Random graph \n"
                          "[2]: Small World graph \n"
-                         "[3]: Scale Free graph"
-                      << std::endl;
+                         "[3]: Scale Free graph");
             return EXIT_FAILURE;
     }
 

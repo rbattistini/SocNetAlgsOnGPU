@@ -2,9 +2,9 @@
  * @file matstorage.h
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Functions to convert from the COOrdinate format to the Compressed Sparse
- * Rows. In addition it provides a way of representing adjacency matrices
- * with structures of arrays.
+ * @brief Functions to convert from the COOrdinate format to the Compressed
+ * Sparse Rows. In addition it provides a way of representing adjacency
+ * matrices with structures of arrays.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -44,37 +44,37 @@ void check_bc(matrix_pcsr_t g, const float *bc_cpu, const float *bc_gpu) {
 }
 
 int check_matrix_init(matrix_pcoo_t *matrix) {
-    return (matrix->cols != nullptr) &&
-           (matrix->rows != nullptr) &&
+    return (matrix->cols != 0) &&
+           (matrix->rows != 0) &&
            (matrix->nrows > -1) &&
            (matrix->nnz > -1);
 }
 
 int check_matrix_init(matrix_rcoo_t *matrix) {
-    return (matrix->cols != nullptr) &&
-           (matrix->rows != nullptr) &&
-           (matrix->weights != nullptr) &&
+    return (matrix->cols != 0) &&
+           (matrix->rows != 0) &&
+           (matrix->weights != 0) &&
            (matrix->nrows > -1) &&
            (matrix->nnz > -1);
 }
 
 int check_matrix_init(matrix_pcsr_t *matrix) {
-    return (matrix->cols != nullptr) &&
-           (matrix->row_offsets != nullptr) &&
+    return (matrix->cols != 0) &&
+           (matrix->row_offsets != 0) &&
            (matrix->nrows > -1);
 }
 
 int check_matrix_init(matrix_rcsr_t *matrix) {
-    return (matrix->cols != nullptr) &&
-           (matrix->row_offsets != nullptr) &&
-           (matrix->weights != nullptr) &&
+    return (matrix->cols != 0) &&
+           (matrix->row_offsets != 0) &&
+           (matrix->weights != 0) &&
            (matrix->nrows > -1);
 }
 
 int transpose(matrix_pcsr_t *A, matrix_pcsr_t *B) {
 
     if(!check_matrix_init(A)) {
-        fprintf(stderr, "Input matrix not initialized\n");
+        ZF_LOGE("The matrix is not initialized");
         return EXIT_FAILURE;
     }
 
@@ -84,9 +84,12 @@ int transpose(matrix_pcsr_t *A, matrix_pcsr_t *B) {
     int nnz = A->row_offsets[A->nrows];
 
     row_offsets = (int*) calloc((ncols + 1), sizeof(*row_offsets));
-    assert(row_offsets);
     cols = (int*) malloc(nnz * sizeof(*cols));
-    assert(cols);
+
+    if(row_offsets == 0 || cols == 0) {
+        ZF_LOGF("Memory allocation failed!");
+        return EXIT_FAILURE;
+    }
 
     /*
      * Compute number of non-zero entries per column of A.
@@ -131,10 +134,19 @@ int transpose(matrix_pcsr_t *A, matrix_pcsr_t *B) {
     return EXIT_SUCCESS;
 }
 
+void expand_row_pointer(int nrows, const int *row_offsets, int *rows) {
+
+    for(int i = 0; i < nrows; i++){
+        for(int j = row_offsets[i]; j < row_offsets[i + 1]; j++){
+            rows[j] = i;
+        }
+    }
+}
+
 int coo_to_csr(matrix_pcoo_t *A, matrix_pcsr_t *B) {
 
     if(!check_matrix_init(A)) {
-        fprintf(stderr, "Input matrix not initialized\n");
+        ZF_LOGE("The matrix is not initialized");
         return EXIT_FAILURE;
     }
 
@@ -145,9 +157,12 @@ int coo_to_csr(matrix_pcoo_t *A, matrix_pcsr_t *B) {
     int ncols = A->ncols;
 
     row_offsets = (int *) calloc((nrows + 1), sizeof(*row_offsets));
-    assert(row_offsets);
     cols = (int *) malloc(nnz * sizeof(*cols));
-    assert(cols);
+
+    if(row_offsets == 0 || cols == 0) {
+        ZF_LOGF("Memory allocation failed!");
+        return EXIT_FAILURE;
+    }
 
     /*
      * Compute number of non-zero entries per row of A.
@@ -193,7 +208,7 @@ int coo_to_csr(matrix_pcoo_t *A, matrix_pcsr_t *B) {
 void print_matrix(matrix_pcoo_t *matrix) {
 
     if (!check_matrix_init(matrix)) {
-        fprintf(stderr, "The matrix is not initialized\n");
+        ZF_LOGE("The matrix is not initialized");
         return;
     }
 
@@ -201,15 +216,15 @@ void print_matrix(matrix_pcoo_t *matrix) {
     printf("ncols = %d\n", matrix->ncols);
     printf("nnz = %d\n", matrix->nnz);
     printf("rows = \n");
-    print_array(matrix->rows, matrix->nnz - 1);
+    print_int_array(matrix->rows, matrix->nnz - 1);
     printf("cols = \n");
-    print_array(matrix->cols, matrix->nnz - 1);
+    print_int_array(matrix->cols, matrix->nnz - 1);
 }
 
 void print_matrix(matrix_pcsr_t *matrix) {
 
     if (!check_matrix_init(matrix)) {
-        fprintf(stderr, "The matrix is not initialized\n");
+        ZF_LOGE("The matrix is not initialized");
         return;
     }
 
@@ -217,16 +232,16 @@ void print_matrix(matrix_pcsr_t *matrix) {
     printf("nrows = %d\n", matrix->nrows);
     printf("ncols = %d\n", matrix->ncols);
     printf("offsets = \n");
-    print_array(matrix->row_offsets, matrix->nrows);
+    print_int_array(matrix->row_offsets, matrix->nrows);
     printf("cols = \n");
-    print_array(matrix->cols, nnz - 1);
+    print_int_array(matrix->cols, nnz - 1);
 }
 
 void free_matrix(matrix_pcoo_t *matrix) {
     free(matrix->rows);
     free(matrix->cols);
-    matrix->rows = nullptr;
-    matrix->cols = nullptr;
+    matrix->rows = 0;
+    matrix->cols = 0;
     matrix->nnz = -1;
     matrix->nrows = -1;
     matrix->ncols = -1;
@@ -235,8 +250,8 @@ void free_matrix(matrix_pcoo_t *matrix) {
 void free_matrix(matrix_pcsr_t *matrix) {
     free(matrix->row_offsets);
     free(matrix->cols);
-    matrix->row_offsets = nullptr;
-    matrix->cols = nullptr;
+    matrix->row_offsets = 0;
+    matrix->cols = 0;
     matrix->nrows = -1;
     matrix->ncols = -1;
 }
@@ -245,8 +260,8 @@ void free_matrix(matrix_rcoo_t *matrix) {
     free(matrix->rows);
     free(matrix->cols);
     free(matrix->weights);
-    matrix->rows = nullptr;
-    matrix->cols = nullptr;
+    matrix->rows = 0;
+    matrix->cols = 0;
     matrix->nnz = -1;
     matrix->nrows = -1;
     matrix->ncols = -1;
@@ -256,8 +271,8 @@ void free_matrix(matrix_rcsr_t *matrix) {
     free(matrix->row_offsets);
     free(matrix->cols);
     free(matrix->weights);
-    matrix->row_offsets = nullptr;
-    matrix->cols = nullptr;
+    matrix->row_offsets = 0;
+    matrix->cols = 0;
     matrix->nrows = -1;
     matrix->ncols = -1;
 }

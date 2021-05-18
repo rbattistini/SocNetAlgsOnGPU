@@ -2,9 +2,9 @@
  * @file matstorage.h
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Functions to convert from the COOrdinate format to the Compressed Sparse
- * Rows. In addition it provides a way of representing adjacency matrices
- * with structures of arrays.
+ * @brief Functions to convert from the COOrdinate format to the Compressed
+ * Sparse Rows. In addition it provides a way of representing adjacency
+ * matrices with structures of arrays.
  *
  * Thanks to:
  * - https://github.com/scipy/
@@ -47,7 +47,7 @@
 #ifndef MATSTORAGE_H
 #define MATSTORAGE_H
 
-#include "utils.h"
+#include "common.h"
 
 typedef struct matrix_pcoo_t {
     int nrows;
@@ -83,8 +83,19 @@ int check_matrix_init(matrix_rcoo_t *matrix);
 int check_matrix_init(matrix_rcsr_t *matrix);
 
 /**
- * Computes A = B, where A is a pattern matrix in COOrdinate format and B is
- * a pattern matrix in CSR format.
+ * @brief Expand a compressed row pointer into a row array.
+ *
+ * @note Output array Bi must be preallocated
+ *
+ * @param nrows number of rows in A
+ * @param row_offsets row pointer
+ * @param rows row indices
+ */
+void expand_row_pointer(int nrows, const int *row_offsets, int *rows);
+
+/**
+ * @brief Computes A = B, where A is a pattern matrix in COOrdinate format and
+ * B is a pattern matrix in CSR format.
  *
  * @note Duplicate entries in the COO matrix are not merged.
  * @note Row and column indices are not assumed to be ordered.
@@ -99,7 +110,7 @@ int check_matrix_init(matrix_rcsr_t *matrix);
 int coo_to_csr(matrix_pcoo_t *A, matrix_pcsr_t *B);
 
 /**
- * Computes A^T, in which A is an m x n CSR format sparse pattern A.
+ * @brief Computes A^T, in which A is an m x n CSR format sparse pattern A.
  *
  * @note Assumes that A is not stored to exploit symmetry.
  *

@@ -2,7 +2,7 @@
  * @file degree.h
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Functions to compute the degree of the vertices of an undirected and
+ * @brief Functions to compute the degree of the vertices of an undirected and
  * unweighted graph stored as a sparse pattern matrix in CSR format.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
@@ -34,10 +34,11 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 
-
 #pragma once
 #ifndef DEGREE_H
 #define DEGREE_H
+
+#include "matstorage.h"
 
 void compute_degrees_undirected(matrix_pcsr_t *g, int *degree);
 

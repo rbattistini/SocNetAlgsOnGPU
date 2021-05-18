@@ -2,7 +2,7 @@
  * @file tests.h
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Doctest configuration.
+ * @brief doctest configuration.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *

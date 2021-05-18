@@ -2,7 +2,7 @@
  * @file graphs.h
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Algorithms for graphs manipulation.
+ * @brief Algorithms for graphs manipulation.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -145,7 +145,7 @@ void BFS_visit(matrix_pcsr_t *g, int *d, int s) {
 }
 
 void extract_subgraph(const int *vertices,
-                      const int nvertices,
+                      int nvertices,
                       matrix_pcsr_t *A,
                       matrix_pcsr_t *C) {
 
@@ -187,33 +187,6 @@ void get_largest_cc(matrix_pcsr_t *A, matrix_pcsr_t *C, components_t *ccs) {
     std::sort(largest_cc_vertices, largest_cc_vertices + largest_cc_size);
     extract_subgraph(largest_cc_vertices, largest_cc_size, A, C);
     free(largest_cc_vertices);
-}
-
-int get_diameter(matrix_pcsr_t *g) {
-
-    int diameter, max_diameter = 0;
-    auto *d = (int *) malloc(g->nrows * sizeof(int));
-    assert(d);
-//    int cnt = 0;
-    for(int i = 0; i < g->nrows; i++) {
-
-        fill(d, g->nrows, INT_MAX);
-        BFS_visit(g, d, i);
-        diameter = d[get_max_idx(d, g->nrows)];
-
-        if(max_diameter < diameter) {
-            max_diameter = diameter;
-        }
-
-//        if(cnt <= 5) {
-//            print_array(d, g->nrows - 1);
-//            cnt++;
-//        }
-
-    }
-
-    free(d);
-    return max_diameter;
 }
 
 void free_ccs(components_t *ccs) {

@@ -2,8 +2,7 @@
  * @file matio.h
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Functions for reading and writing external matrix storage file
- * formats (COO or edge list).
+* @brief Functions for reading and writing Matrix Market files.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -64,9 +63,10 @@ extern "C" {
 int query_gprops(const char *fname, gprops_t *gp);
 
 /**
- * @brief Reads a MARKET graph from an input-stream into a CSR sparse format
+ * @brief Reads a MARKET graph from an input-log_file into COOrdinate format.
  *
- * Here is an example of the matrix market format
+ * Here is an example of the matrix market format:
+ *
  * +----------------------------------------------+
  * |%%MatrixMarket matrix coordinate real general | <--- header line
  * |%                                             | <--+
@@ -84,12 +84,13 @@ int query_gprops(const char *fname, gprops_t *gp);
  * Guaranteed ordered cols. Lacks duplicated entries (edges) elimination.
  * Symmetric graphs are meant to be undirected. Non-symmetric matrices are not
  * converted to undirected graphs. Converts one-based to zero-based. Validates
- * indices' ranges. Accepts only adjacency matrices.
+ * indices' ranges.
  *
  * @param fname
  * @param m_coo
  * @return
  */
+
 int read_mm_pattern(FILE *f, matrix_pcoo_t *m_coo, bool has_self_loops);
 
 int read_mm_real(FILE *f, matrix_rcoo_t *m_coo, bool has_self_loops);

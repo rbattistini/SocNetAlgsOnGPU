@@ -2,7 +2,7 @@
  * @file timing.cuh
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Utility functions for NVIDIA GPUs profiling using the CUDA Event API
+ * @brief Utility functions for NVIDIA GPUs profiling using the CUDA Event API
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -89,8 +89,8 @@ public:
         return elapsed;
     }
 
-    void report() {
-        printf("Time elapsed: %f\n", this->elapsed());
+    void log(const char* msg) {
+        ZF_LOGI("%s: %f", msg, this->elapsed());
     }
 
 private:

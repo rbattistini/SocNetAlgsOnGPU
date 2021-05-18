@@ -2,7 +2,7 @@
  * @file errcheck.cuh
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Utility functions for NVIDIA GPUs error checking
+ * @brief Utility functions for NVIDIA GPUs error checking
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -79,65 +79,6 @@ inline void __cudaCheckError(const char *file, const int line) {
     }
 #endif
 }
-
-/*
- * Taken from https://github.com/OrangeOwlSolutions/CUDA-Utilities/blob/95f38b30bbb017d89a8147688cccb042387f81bf/Utilities.cu#L215
- */
-static const char *_cusparseGetErrorEnum(cusparseStatus_t error)
-{
-    switch (error)
-    {
-
-        case CUSPARSE_STATUS_SUCCESS:
-            return "CUSPARSE_STATUS_SUCCESS";
-
-        case CUSPARSE_STATUS_NOT_INITIALIZED:
-            return "CUSPARSE_STATUS_NOT_INITIALIZED";
-
-        case CUSPARSE_STATUS_ALLOC_FAILED:
-            return "CUSPARSE_STATUS_ALLOC_FAILED";
-
-        case CUSPARSE_STATUS_INVALID_VALUE:
-            return "CUSPARSE_STATUS_INVALID_VALUE";
-
-        case CUSPARSE_STATUS_ARCH_MISMATCH:
-            return "CUSPARSE_STATUS_ARCH_MISMATCH";
-
-        case CUSPARSE_STATUS_MAPPING_ERROR:
-            return "CUSPARSE_STATUS_MAPPING_ERROR";
-
-        case CUSPARSE_STATUS_EXECUTION_FAILED:
-            return "CUSPARSE_STATUS_EXECUTION_FAILED";
-
-        case CUSPARSE_STATUS_INTERNAL_ERROR:
-            return "CUSPARSE_STATUS_INTERNAL_ERROR";
-
-        case CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED:
-            return "CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED";
-
-        case CUSPARSE_STATUS_ZERO_PIVOT:
-            return "CUSPARSE_STATUS_ZERO_PIVOT";
-
-        case CUSPARSE_STATUS_NOT_SUPPORTED:
-            return "CUSPARSE_STATUS_NOT_SUPPORTED";
-
-        case CUSPARSE_STATUS_INSUFFICIENT_RESOURCES:
-            return "CUSPARSE_STATUS_INSUFFICIENT_RESOURCES";
-    }
-
-    return "<unknown>";
-}
-
-inline void __cusparseSafeCall(cusparseStatus_t err, const char *file, const int line)
-{
-    if (CUSPARSE_STATUS_SUCCESS != err) {
-        fprintf(stderr, "CUSPARSE error in file '%s', line %d, error %s\nterminating!\n", __FILE__, __LINE__, \
-			_cusparseGetErrorEnum(err)); \
-			assert(0); \
-	}
-}
-
-#define cusparseSafeCall(err) __cusparseSafeCall((err), __FILE__, __LINE__)
 
 #endif
 

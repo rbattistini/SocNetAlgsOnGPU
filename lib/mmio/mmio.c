@@ -86,6 +86,18 @@ int mm_read_banner(FILE *f, MM_typecode *matcode) {
     return 0;
 }
 
+/**
+*  Create a new copy of a string s.  mm_strdup() is a common routine, but
+*  not part of ANSI C, so it is included here.  Used by mm_typecode_to_str().
+*
+*/
+char *mm_strdup(const char *s)
+{
+    int len = strlen(s);
+    char *s2 = (char *) malloc((len+1)*sizeof(char));
+    return strcpy(s2, s);
+}
+
 char *mm_typecode_to_str(const MM_typecode matcode) {
     char buffer[MM_MAX_LINE_LENGTH];
     const char *types[4];
@@ -128,8 +140,7 @@ char *mm_typecode_to_str(const MM_typecode matcode) {
         return NULL;
 
     sprintf(buffer, "%s %s %s %s", types[0], types[1], types[2], types[3]);
-    return strdup(buffer);
-
+    return mm_strdup(buffer);
 }
 
 int mm_write_banner(FILE *f, MM_typecode matcode) {
