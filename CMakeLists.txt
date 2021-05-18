@@ -16,22 +16,14 @@ endif()
 find_package(OpenMP REQUIRED)
 find_package(Boost REQUIRED COMPONENTS regex graph)
 
-add_library(mmio STATIC lib/mmio/mmio.c lib/mmio/mmio.h)
-
-# from https://developer.nvidia.com/blog/building-cuda-applications-cmake/
-set_target_properties(mmio PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-
-include_directories(lib/mmio)
+add_subdirectory(lib/mmio)
+add_subdirectory(lib/zf_log)
 include_directories(lib/snap-core)
 include_directories(lib/glib-core)
 include_directories(lib/doctest)
 include_directories(include)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
-
-#include(cmake/code-coverage.cmake)
-#include(cmake/sanitizers.cmake)
-#include(cmake/tools.cmake)
 
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
@@ -48,8 +40,14 @@ add_subdirectory(dataset)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wpedantic -Wextra")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 
+set(CMAKE_CUDA_FLAGS_DEBUG "${CMAKE_CUDA_FLAGS_DEBUG} -g -G -gencode arch=compute_60,code=sm_60 -Wall -Wpedantic -Wextra")
+
 #message("-- CMAKE_C_FLAGS_DEBUG is ${CMAKE_C_FLAGS_DEBUG}")
 #message("-- CMAKE_C_FLAGS_RELEASE is ${CMAKE_C_FLAGS_RELEASE}")
 
 message("-- CMAKE_CXX_FLAGS_DEBUG is ${CMAKE_CXX_FLAGS_DEBUG}")
 message("-- CMAKE_CXX_FLAGS_RELEASE is ${CMAKE_CXX_FLAGS_RELEASE}")
+
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
+    add_compile_definitions(try -DNDEBUG -DRELEASE -DNO_CUDA_CHECK_ERROR)
+endif ()

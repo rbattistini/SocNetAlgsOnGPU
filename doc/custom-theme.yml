@@ -20,6 +20,10 @@ conum:
   font-family: M+ 1mn
   glyphs: circled
 
+table:
+  font-size: 8
+  font-family: Fira Code
+
 literal:
   font-family: Fira Code
   border-width: 0.1
