@@ -22,10 +22,10 @@ These are the dependencies needed to build the project:
 There also some optional dependencies:
 
 - To launch the benchmarks with the script given, link:script/perf_eval.sh[perf-eval,sh], a Unix Shell must be available;
-- The link:https://www.boost.org/users/history/version_1_75_0.html[Boost Graph Library] is used for the CPU reference implementation of the Betweenness Centrality algorithm and for the random graph generation;
+- The link:https://www.boost.org/users/history/version_1_75_0.html[Boost Graph Library] is used for the CPU reference implementation of the Betweenness Centrality algorithm;
 - link:https://www.python.org/downloads/[Python 3] to execute the script that
 processes the result of the benchmarking;
-- link:https://www.ruby-lang.org/en/downloads/[Ruby] and some gems listed in the link:{docdir}/script/Gemfile[Gemfile] to generate the report;
+- link:https://www.ruby-lang.org/en/downloads/[Ruby] and some gems listed in the link:{docdir}/script/Gemfile[Gemfile] to generate the log;
 - `clang-format` for formatting the source code and `clang-tidy` for static code analysis;
 
 [WARNING]
@@ -74,16 +74,33 @@ with optimization flags enabled (`-O2`) and Debug uses both debug symbols (`-g`)
 
 All dataset-related code is under the `dataset` subdirectory. Only link:https://math.nist.gov/MatrixMarket/formats.html[Matrix-market] coordinate-formatted graph format is supported.
 
-A helper script, `dataset/convert_snap_to_mm` for converting graphs from the SNAP graph library to the Matrix-market format is given.
-
-A script for generating random graphs is also given, `dataset/graph_gen`.
+A script for generating random graphs is given, `dataset/graph_gen`.
 
 Currently, only undirected and unweighted graphs are supported. To convert a directed graph to an undirected one, just change the `general` property of the Matrix-market file banner to `symmetric`.
 
 To download them just type `make` in the `dataset` subdirectory. To only download one specific dataset step into its subdirectory and type `make` there.
 
+=== Libraries
+
+There is the SNAP library from the link:https://snap.stanford.edu/snap/index.html[SNAP System], used for random graph generation and for parsing edgelist files from the link:https://snap.stanford.edu/data/index.html[Stanford Large Network Dataset Collection].
+
+There is the link:https://math.nist.gov/MatrixMarket/mmio-c.html[library for parsing Matrix Market files].
+
+Finally, the link:https://github.com/onqtam/doctest[doctest] header file for testing {cpp} code.
+
 == Hardware
 
-
+The GPU used during the development of this project is a Quadro P620 with four Streaming Multiprocessors, a base clock of 2505 Mhz, two GB of GDDR5 memory and compute capability of 6.1 (Pascal architecture).
 
 == Performance Analysis
+
+- Speedup in regard to the reference CPU algorithm of the BGl.
+- Throughput, in terms of TEPS.
+- Runtime, measured in ms and related only to the GPU. This means that transfer times, either host to device and device to host, are ignored.
+- Memory bandwidth for comparing thread blocks sizes.
+- Vertex frontier evolution for comparing techniques.
+- Impact of degree-1 reduction.
+
+For gathering results the test is run multiple times, then the average runtime and std deviation is reported and the average MTEPS is computed from that average runtime.
+
+To calculate TEPS, we require the number of edges traversed (touched), which we count dynamically. For traversal primitives, we note that non-connected components will not be visited, so the number of visited edges may be fewer than the number of edges in the graph.
