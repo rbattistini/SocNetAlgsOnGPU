@@ -40,46 +40,6 @@
 static matrix_pcoo_t m_coo;
 static gprops_t gprops;
 
-TEST_CASE("Test BC computation on an undirected unweighted graph") {
-
-    /*
-     * Workspace setup for this test.
-     */
-    int rows[] = {1, 0, 3, 0, 4, 0, 5, 0, 2, 1, 6, 2, 7, 2, 5, 4, 8, 7};
-    int cols[] = {0, 1, 0, 3, 0, 4, 0, 5, 1, 2, 2, 6, 2, 7, 4, 5, 7, 8};
-
-    m_coo.nnz = 18;
-    m_coo.nrows = 9;
-    m_coo.rows = rows;
-    m_coo.cols = cols;
-
-    float expected_bc_scores[] =
-            {17.0, 16.0, 17.0, 0.0, 0.0, 0.0, 0.0, 7.0, 0.0};
-    float *bc_scores;
-
-    PUNGraph g = TUNGraph::New();
-    for(int i = 0; i < m_coo.nrows; i++) {
-        g->AddNode(i);
-    }
-
-    for(int i = 0; i < m_coo.nnz; i++) {
-        g->AddEdge(m_coo.rows[i], m_coo.cols[i]);
-    }
-
-    gprops.is_directed = false;
-
-    bc_scores = (float*) malloc(m_coo.nrows * sizeof(*bc_scores));
-    REQUIRE_UNARY(bc_scores);
-
-    BC_computation(g, bc_scores, gprops.is_directed);
-
-    for(int i = 0; i < m_coo.nrows; i++) {
-        REQUIRE_EQ(bc_scores[i], expected_bc_scores[i]);
-    }
-
-    free(bc_scores);
-}
-
 TEST_CASE("Test SPVB BC computation on an undirected unweighted graph") {
 
     /*
