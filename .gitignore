@@ -7,3 +7,6 @@ doc/images
 samples/*
 *.mtx
 *.lock
+*.tar.gz
+*.png
+*.pdf
