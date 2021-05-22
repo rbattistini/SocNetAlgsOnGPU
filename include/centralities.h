@@ -39,8 +39,9 @@
 #ifndef SOCNETALGSONGPU_CENTRALITIES_H
 #define SOCNETALGSONGPU_CENTRALITIES_H
 
-#include "degree.h"
 #include "bc.h"
+#include "degree.h"
+#include "ecc.h"
 #include "spvb.h"
 
-#endif //SOCNETALGSONGPU_CENTRALITIES_H
+#endif//SOCNETALGSONGPU_CENTRALITIES_H

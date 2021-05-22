@@ -38,14 +38,14 @@
 
 void compute_degrees_undirected(matrix_pcsr_t *g, int *degree) {
 
-    if (!check_matrix_init(g)) {
+    if (!check_matrix_pcsr(g)) {
         ZF_LOGF("The graph is not initialized");
         return;
     }
 
-    int *rows = g->row_offsets;             // row indices of A
-    int nnz = g->row_offsets[g->nrows];     // number of nnz in A
-    int nrows = g->nrows;                   // number of rows in A
+    int *rows = g->row_offsets;        // row indices of A
+    int nnz = g->row_offsets[g->nrows];// number of nnz in A
+    int nrows = g->nrows;              // number of rows in A
 
     fill(degree, nrows, 0);
 
@@ -59,7 +59,7 @@ void compute_degrees_undirected(matrix_pcsr_t *g, int *degree) {
 
 void compute_degrees_undirected(matrix_pcoo_t *g, int *degree) {
 
-    if (!check_matrix_init(g)) {
+    if (!check_matrix_pcoo(g)) {
         ZF_LOGF("The graph is not initialized");
         return;
     }

@@ -182,7 +182,7 @@ TEST_CASE("Test subgraph extraction from undirected graph given vertices ids") {
     }
 
     free(vertices);
-    free_matrix(&C);
+    free_matrix_pcsr(&C);
 
     /*
      * Ensure that the second cc is composed by vertices:  3 5 6
@@ -210,7 +210,7 @@ TEST_CASE("Test subgraph extraction from undirected graph given vertices ids") {
     nnz = C.row_offsets[C.nrows];
     int expected_cols2[] = {1, 2, 0, 2, 0, 1};
 
-    print_matrix(&C);
+    print_matrix_pcsr(&C);
 
     REQUIRE_EQ(nrows, size);
 
@@ -223,7 +223,7 @@ TEST_CASE("Test subgraph extraction from undirected graph given vertices ids") {
     }
 
     free(vertices);
-    free_matrix(&C);
+    free_matrix_pcsr(&C);
 }
 
 TEST_CASE("Test largest connected component extraction of undirected unweighted graph") {
@@ -267,7 +267,7 @@ TEST_CASE("Test largest connected component extraction of undirected unweighted 
          */
         get_largest_cc(&A, &subgraph, &ccs);
 
-        print_matrix(&subgraph);
+        print_matrix_pcsr(&subgraph);
 
         int nrows = subgraph.nrows;
         int expected_row_offsets[] = {0, 1, 4, 5, 6};
@@ -285,7 +285,7 @@ TEST_CASE("Test largest connected component extraction of undirected unweighted 
             CHECK_EQ(subgraph.row_offsets[i], expected_row_offsets[i]);
         }
 
-        free_matrix(&subgraph);
+        free_matrix_pcsr(&subgraph);
     }
 
     SUBCASE("Test connection of the largest cc when it is not the first") {
@@ -348,6 +348,6 @@ TEST_CASE("Test largest connected component extraction of undirected unweighted 
             CHECK_EQ(subgraph.row_offsets[i], expected_row_offsets[i]);
         }
 
-        free_matrix(&subgraph);
+        free_matrix_pcsr(&subgraph);
     }
 }

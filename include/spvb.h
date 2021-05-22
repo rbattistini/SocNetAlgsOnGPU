@@ -40,8 +40,8 @@
 #define BC_H
 
 #include "Snap.h"
-#include "matstorage.h"
 #include "common.h"
+#include "matstorage.h"
 #include <climits>
 #include <queue>
 #include <stack>

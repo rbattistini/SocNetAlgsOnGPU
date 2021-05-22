@@ -40,13 +40,16 @@
 #ifndef SOCNETALGSONGPU_COMMON_H
 #define SOCNETALGSONGPU_COMMON_H
 
+#include "zf_log.h"
 #include <cassert>
 #include <cerrno>
+#include <cstring>
 #include <cstdio>
 #include <cstdlib>
 #include <stdio_ext.h>
 #include <vector>
-#include "zf_log.h"
+
+#define LINE_LENGTH 79
 
 #ifndef __CUDACC__
 inline int max(int a, int b) {
@@ -57,6 +60,13 @@ inline int min(int a, int b) {
     return a < b ? a : b;
 }
 #endif
+
+inline void print_separator() {
+    for (int i = 0; i < LINE_LENGTH; i++)
+        printf("-");
+
+    printf("\n");
+}
 
 int *stlvector_to_array_int(const std::vector<int> &v, int n);
 
@@ -79,9 +89,9 @@ void fill(int *arr, int n, int v);
 int get_max_idx(const int *arr, int n);
 
 /**
- * @brief Properly close a log_file with error checking.
+ * @brief Properly close a file with error checking.
  *
- * Taken from: https://stackoverflow.com/questions/4972994/how-to-close-stdout-and-stderr-in-c
+ * @see https://stackoverflow.com/questions/4972994/how-to-close-stdout-and-stderr-in-c
  */
 int close_stream(FILE *stream);
 

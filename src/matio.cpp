@@ -35,10 +35,10 @@
 
 #include "matio.h"
 
-/*
- * Check if a filename has a given extension.
+/**
+ * @brief Check if a filename has a given extension.
  *
- * Taken from: https://stackoverflow.com/questions/4849986/how-can-i-check-the-file-extensions-in-c
+ * @see https://stackoverflow.com/questions/4849986/how-can-i-check-the-file-extensions-in-c
  */
 static int has_extension(const char *name, const char *extension,
                          size_t length) {
@@ -132,9 +132,9 @@ int query_gprops(const char *fname, gprops_t *gp) {
         gp->is_weighted = true;
     } else {
         int sup_entr = 0;
-        if(mm_is_pattern(matcode))
+        if (mm_is_pattern(matcode))
             sup_entr = 2;
-        else if(mm_is_real(matcode))
+        else if (mm_is_real(matcode))
             sup_entr = 3;
 
         ZF_LOGF("%d entries given but only %d entries per row are supported",
@@ -143,7 +143,7 @@ int query_gprops(const char *fname, gprops_t *gp) {
     }
 
     gp->is_connected = -1;
-    fclose(f);
+    close_stream(f);
 
     return 0;
 }
@@ -197,7 +197,8 @@ int read_mm(FILE *f, MM_typecode *matcode, int *nnz, const int *m, const int *n,
              */
             if (nitems != 2) {
                 ZF_LOGF("%d entries given but only 2 entries per row are "
-                        "supported on pattern matrices\n", nitems);
+                        "supported on pattern matrices\n",
+                        nitems);
                 return EXIT_FAILURE;
             }
 
@@ -249,7 +250,8 @@ int read_mm(FILE *f, MM_typecode *matcode, int *nnz, const int *m, const int *n,
              */
             if (nitems != 3) {
                 ZF_LOGF("%d entries given but only 3 entries per row are "
-                        "supported on real matrices\n", nitems);
+                        "supported on real matrices\n",
+                        nitems);
                 return EXIT_FAILURE;
             }
 
@@ -414,7 +416,7 @@ int read_matrix(const char *fname, matrix_pcoo_t *m_coo, gprops_t *gp) {
                 return EXIT_FAILURE;
             }
 
-            fclose(f);
+            close_stream(f);
         }
 
     } else {
@@ -442,7 +444,7 @@ int write_mm_pattern(FILE *f, matrix_pcoo_t *m_coo, bool directed) {
     else
         mm_set_symmetric(&matcode);
 
-    if (mm_write_banner(stdout, matcode))
+    if (mm_write_banner(f, matcode))
         return EXIT_FAILURE;
 
     /*
@@ -477,7 +479,7 @@ int write_mm_real(FILE *f, matrix_rcoo_t *m_coo, bool directed) {
     else
         mm_set_symmetric(&matcode);
 
-    if (mm_write_banner(stdout, matcode))
+    if (mm_write_banner(f, matcode))
         return EXIT_FAILURE;
 
     /*

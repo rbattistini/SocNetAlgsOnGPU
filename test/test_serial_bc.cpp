@@ -61,7 +61,7 @@ TEST_CASE("Test BC computation on an undirected unweighted graph") {
     bc_scores = (float*) malloc(csr.nrows * sizeof(*bc_scores));
     REQUIRE_UNARY(bc_scores);
 
-    get_vertex_betweenness(&csr, bc_scores, gprops.is_directed);
+    compute_ser_bc_cpu(&csr, bc_scores, gprops.is_directed);
 
     for(int i = 0; i < nrows; i++) {
         REQUIRE_EQ(bc_scores[i], expected_bc_scores[i]);

@@ -42,8 +42,8 @@ int spgemm(matrix_pcsr_t *A, matrix_pcsr_t *B, matrix_pcsr_t *C) {
     /*
      * Check inputs.
      */
-    if (!check_matrix_init(A) &&
-        !check_matrix_init(B) &&
+    if (!check_matrix_pcsr(A) &&
+        !check_matrix_pcsr(B) &&
         A->ncols != B->nrows) {
         ZF_LOGF("Input matrices not initialized or mismatched");
         return EXIT_FAILURE;
@@ -73,16 +73,16 @@ int spgemm(matrix_pcsr_t *A, matrix_pcsr_t *B, matrix_pcsr_t *C) {
      * Count nnz of C.
      */
     int c_nnz = 0;
-    int *flag = (int*) malloc(c_ncols * sizeof(*flag));
+    int *flag = (int *) malloc(c_ncols * sizeof(*flag));
 
     /*
      * Clear the flag array at each iteration.
      */
     fill(flag, c_ncols, -1);
 
-    int *c_row_offsets = (int*) malloc((c_nrows + 1) * sizeof(int));
+    int *c_row_offsets = (int *) malloc((c_nrows + 1) * sizeof(int));
 
-    if(c_row_offsets == 0) {
+    if (c_row_offsets == 0) {
         ZF_LOGF("Memory allocation failed!");
         return EXIT_FAILURE;
     }
@@ -120,8 +120,8 @@ int spgemm(matrix_pcsr_t *A, matrix_pcsr_t *B, matrix_pcsr_t *C) {
     /*
      * Allocate C matrix.
      */
-    int *c_cols = (int*) malloc(c_nnz * sizeof(int));
-    if(c_cols == 0) {
+    int *c_cols = (int *) malloc(c_nnz * sizeof(int));
+    if (c_cols == 0) {
         ZF_LOGF("Memory allocation failed!");
         return EXIT_FAILURE;
     }
@@ -180,9 +180,9 @@ int spref(matrix_pcsr_t *R,
           matrix_pcsr_t *Q,
           matrix_pcsr_t *C) {
 
-    if (!check_matrix_init(R) ||
-        !check_matrix_init(A) ||
-        !check_matrix_init(Q)) {
+    if (!check_matrix_pcsr(R) ||
+        !check_matrix_pcsr(A) ||
+        !check_matrix_pcsr(Q)) {
         ZF_LOGF("Input matrices not initialized or mismatched");
         return EXIT_FAILURE;
     }
@@ -193,40 +193,40 @@ int spref(matrix_pcsr_t *R,
 
     spgemm(&B, Q, C);
 
-    free_matrix(&B);
+    free_matrix_pcsr(&B);
 
     return EXIT_SUCCESS;
 }
 
 int get_R_matrix(matrix_pcsr_t *R,
-                 const int* vertices,
+                 const int *vertices,
                  int nvertices,
                  int nrows) {
 
-    if(vertices == 0 || nvertices <= 0 || nrows <= 0) {
+    if (vertices == 0 || nvertices <= 0 || nrows <= 0) {
         ZF_LOGF("Input values not valid");
         return EXIT_FAILURE;
     }
 
     int *rows =
-            (int*) malloc(nrows * sizeof(*rows));
+            (int *) malloc(nrows * sizeof(*rows));
     int *cols =
-            (int*) malloc(nvertices * sizeof(*cols));
+            (int *) malloc(nvertices * sizeof(*cols));
 
-    if(rows == 0 || cols == 0) {
+    if (rows == 0 || cols == 0) {
         ZF_LOGF("Memory allocation failed!");
         return EXIT_FAILURE;
     }
 
-    for(int k = 0; k < nvertices; k++) {
+    for (int k = 0; k < nvertices; k++) {
         rows[k] = k;
         cols[k] = vertices[k];
     }
 
     int *row_offsets =
-            (int*) calloc((nvertices + 1), sizeof(*row_offsets));
+            (int *) calloc((nvertices + 1), sizeof(*row_offsets));
 
-    if(row_offsets == 0) {
+    if (row_offsets == 0) {
         ZF_LOGF("Memory allocation failed!");
         return EXIT_FAILURE;
     }

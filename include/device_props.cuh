@@ -1,5 +1,5 @@
 /****************************************************************************
- * @file device_props.h
+ * @file device_props.cuh
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
  * @brief Utility functions for NVIDIA GPUs device properties querying
@@ -31,7 +31,6 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  ****************************************************************************/
 
 #pragma once
@@ -41,73 +40,27 @@
 #ifdef __CUDACC__
 
 #define LINE_LENGTH 79
+
 #include "errcheck.cuh"
 #include <cstdio>
 
-int get_runtime_version() {
-    int driverVersion;
-    cudaSafeCall(cudaRuntimeGetVersion(&driverVersion));
-    return driverVersion;
-}
+int get_runtime_version();
 
-size_t get_global_mem_size() {
-    size_t totalMem;
-    cudaSafeCall(cudaMemGetInfo(nullptr, &totalMem));
-    return totalMem;
-}
+size_t get_global_mem_size();
 
-/*
- * Fast property querying.
- *
- * Taken from https://gist.github.com/teju85/9521e2224f0c31f71a93b593ff64e8da
- */
-int get_compute_capability() {
-    int devId, computeCap;
-    cudaSafeCall(cudaGetDevice(&devId));
-    cudaSafeCall(cudaDeviceGetAttribute(&computeCap,
-                                        cudaDevAttrComputeCapabilityMajor, devId));
-    return computeCap;
-}
+int get_compute_capability_major();
 
-unsigned int get_max_threads_per_block() {
-    int devId, threadsPerBlock;
-    cudaSafeCall(cudaGetDevice(&devId));
-    cudaSafeCall(cudaDeviceGetAttribute(&threadsPerBlock,
-                                        cudaDevAttrMaxThreadsPerBlock, devId));
-    return (unsigned int) threadsPerBlock;
-}
+unsigned int get_max_threads_per_block();
 
-unsigned int get_sm_count() {
-    int devId, numProcs;
-    cudaSafeCall(cudaGetDevice(&devId));
-    cudaSafeCall(cudaDeviceGetAttribute(&numProcs,
-                                        cudaDevAttrMultiProcessorCount, devId));
-    return (unsigned int) numProcs;
-}
+unsigned int get_sm_count();
 
-double get_mem_bandwidth() {
-    int devId, clock_rate, mem_bus_width;
-    cudaSafeCall(cudaGetDevice(&devId));
-    cudaSafeCall(cudaDeviceGetAttribute(&clock_rate,
-                                        cudaDevAttrClockRate, devId));
-    cudaSafeCall(cudaDeviceGetAttribute(&mem_bus_width,
-                                        cudaDevAttrGlobalMemoryBusWidth, devId));
+double get_mem_bandwidth();
 
-    return (clock_rate * 1000.0) * (mem_bus_width / 8 * 2) / 1.0e9;
-}
+void set_device(int device_id);
 
-void print_gpu_overview() {
+int get_device_count();
 
-    printf("CUDA Runtime version: %d\n", get_runtime_version());
-    printf("Compute Capability: %d\n", get_compute_capability());
-    printf("Memory bandwidth: %.2f GB/s\n", get_mem_bandwidth());
-    printf("Global Memory size: %.2f GB\n",
-           get_global_mem_size() / (double) (1 << 30));
-    printf("Number of Streaming Multiprocessors: %d\n", get_sm_count());
-    for (int i = 0; i < LINE_LENGTH; i++)
-        printf("-");
-    printf("\n");
-}
+void print_gpu_overview(int device_id);
 
 #endif
 

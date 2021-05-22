@@ -38,20 +38,21 @@
 #ifndef ERRCHECK_CUH
 #define ERRCHECK_CUH
 
-#include <cusparse_v2.h>
 #include <cassert>
 #include <cstdio>
 
 #ifdef __CUDACC__
 
-/*
- * Taken from https://gist.github.com/ashwin/2652488
+/**
+ * @brief Macros for error checking of CUDA Runtime API calls.
+ *
+ * @see https://gist.github.com/ashwin/2652488
  */
 #define cudaSafeCall(err) __cudaSafeCall(err, __FILE__, __LINE__)
 #define cudaCheckError() __cudaCheckError(__FILE__, __LINE__)
 
 inline void __cudaSafeCall(cudaError err, const char *file, const int line) {
-#ifdef CUDA_DEBUG
+#ifndef CUDA_NDEBUG
     if (cudaSuccess != err) {
         fprintf(stderr, "cudaSafeCall() failed at %s:%i : %s\n",
                 file, line, cudaGetErrorString(err));
@@ -61,7 +62,7 @@ inline void __cudaSafeCall(cudaError err, const char *file, const int line) {
 }
 
 inline void __cudaCheckError(const char *file, const int line) {
-#ifdef CUDA_DEBUG
+#ifndef CUDA_NDEBUG
     cudaError err = cudaGetLastError();
     if (cudaSuccess != err) {
         fprintf(stderr, "cudaCheckError() failed at %s:%i : %s\n",

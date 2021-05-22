@@ -104,7 +104,7 @@ TEST_CASE("Test graph loading with properties querying") {
 
         write_tmp_file(tmp, tmp_mm_header, tmp_header, tmp_row, tmp_col, nullptr);
 
-        fclose(tmp);
+        close_stream(tmp);
         tmp = fopen(gname, "r");
 
         query_gprops(gname, &gprops);
@@ -112,7 +112,7 @@ TEST_CASE("Test graph loading with properties querying") {
         CHECK_EQ(gprops.is_directed, false);
         CHECK_EQ(gprops.is_weighted, false);
 
-        fclose(tmp);
+        close_stream(tmp);
     }
 
     SUBCASE("undirected weighted graph") {
@@ -128,14 +128,14 @@ TEST_CASE("Test graph loading with properties querying") {
 
         write_tmp_file(tmp, tmp_mm_header, tmp_header, tmp_row, tmp_col, tmp_weight);
 
-        fclose(tmp);
+        close_stream(tmp);
         tmp = fopen(gname, "r");
         query_gprops(gname, &gprops);
 
         CHECK_EQ(gprops.is_directed, false);
         CHECK_EQ(gprops.is_weighted, true);
 
-        fclose(tmp);
+        close_stream(tmp);
     }
 
     SUBCASE("directed unweighted graph") {
@@ -150,14 +150,14 @@ TEST_CASE("Test graph loading with properties querying") {
 
         write_tmp_file(tmp, tmp_mm_header, tmp_header, tmp_row, tmp_col, nullptr);
 
-        fclose(tmp);
+        close_stream(tmp);
         tmp = fopen(gname, "r");
         query_gprops(gname, &gprops);
 
         CHECK_EQ(gprops.is_directed, true);
         CHECK_EQ(gprops.is_weighted, false);
 
-        fclose(tmp);
+        close_stream(tmp);
     }
 
     SUBCASE("directed weighted graph") {
@@ -173,14 +173,14 @@ TEST_CASE("Test graph loading with properties querying") {
 
         write_tmp_file(tmp, tmp_mm_header, tmp_header, tmp_row, tmp_col, tmp_weight);
 
-        fclose(tmp);
+        close_stream(tmp);
         tmp = fopen(gname, "r");
         query_gprops(gname, &gprops);
 
         CHECK_EQ(gprops.is_directed, true);
         CHECK_EQ(gprops.is_weighted, true);
 
-        fclose(tmp);
+        close_stream(tmp);
     }
 }
 
@@ -198,13 +198,13 @@ TEST_CASE("Test graph loading using mmio with some corner cases") {
 
         write_tmp_file(tmp, tmp_mm_header, tmp_header, tmp_row, tmp_col, nullptr);
 
-        fclose(tmp);
+        close_stream(tmp);
         tmp = fopen(gname, "r");
 
         CHECK_UNARY_FALSE(read_mm_pattern(tmp, &coo, gprops.has_self_loops));
         CHECK_NE(coo.nnz, 18);
 
-        fclose(tmp);
+        close_stream(tmp);
     }
 
     SUBCASE("check out of bound indices") {
@@ -219,12 +219,12 @@ TEST_CASE("Test graph loading using mmio with some corner cases") {
 
         write_tmp_file(tmp, tmp_mm_header, tmp_header, tmp_row, tmp_col, nullptr);
 
-        fclose(tmp);
+        close_stream(tmp);
         tmp = fopen(gname, "r");
 
         CHECK_UNARY(read_mm_pattern(tmp, &coo, gprops.has_self_loops));
 
-        fclose(tmp);
+        close_stream(tmp);
     }
 
     SUBCASE("handling numbers near infinite") {
@@ -239,12 +239,12 @@ TEST_CASE("Test graph loading using mmio with some corner cases") {
 
         write_tmp_file(tmp, tmp_mm_header, tmp_header, tmp_row, tmp_col, nullptr);
 
-        fclose(tmp);
+        close_stream(tmp);
         tmp = fopen(gname, "r");
 
         CHECK_UNARY(read_mm_pattern(tmp, &coo, gprops.has_self_loops));
 
-        fclose(tmp);
+        close_stream(tmp);
     }
 
     SUBCASE("handling non-numeric values") {
@@ -260,11 +260,11 @@ TEST_CASE("Test graph loading using mmio with some corner cases") {
         write_tmp_file(tmp, tmp_mm_header, tmp_header, tmp_row, tmp_col, nullptr);
         write_random_char_to_file(tmp, 3);
 
-        fclose(tmp);
+        close_stream(tmp);
         tmp = fopen(gname, "r");
 
         CHECK_UNARY(read_mm_pattern(tmp, &coo, gprops.has_self_loops));
 
-        fclose(tmp);
+        close_stream(tmp);
     }
 }

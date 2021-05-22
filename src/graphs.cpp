@@ -34,16 +34,21 @@
  *
  ****************************************************************************/
 
-#include <algorithm>
 #include "graphs.h"
+#include <algorithm>
 
 using std::queue;
 using std::stack;
 
 void print_gprops(gprops_t *gp) {
-    printf("Directed: %s\n", (gp->is_directed == 1) ? "yes" : "no");
-    printf("Weighted: %s\n", (gp->is_weighted == 1) ? "yes" : "no");
-    printf("Connected: %s\n", (gp->is_connected == 1) ? "yes" : "no");
+
+    printf("Graph properties:\n\n");
+    printf("\tDirected: \t\t%s\n", (gp->is_directed == 1) ? "yes" : "no");
+    printf("\tWeighted: \t\t%s\n", (gp->is_weighted == 1) ? "yes" : "no");
+    printf("\tConnected: \t\t%s\n", (gp->is_connected == 1) ? "yes" : "no");
+    printf("\tHas self loops: \t%s\n", (gp->has_self_loops == 1) ? "yes" : "no");
+
+    print_separator();
 }
 
 int *DFS_visit(matrix_pcsr_t *g, bool *visited, int s, int *cc_size) {
@@ -155,8 +160,8 @@ void extract_subgraph(const int *vertices,
     transpose(&R, &Q);
     spref(&R, A, &Q, C);
 
-    free_matrix(&R);
-    free_matrix(&Q);
+    free_matrix_pcsr(&R);
+    free_matrix_pcsr(&Q);
 }
 
 void get_largest_cc(matrix_pcsr_t *A, matrix_pcsr_t *C, components_t *ccs) {
@@ -170,12 +175,12 @@ void get_largest_cc(matrix_pcsr_t *A, matrix_pcsr_t *C, components_t *ccs) {
 
     int start, end;
 
-    if(max_idx == 0) {
+    if (max_idx == 0) {
         start = 0;
         end = largest_cc_size;
     } else {
         int csum = 0;
-        for(int i = 0; i < max_idx; i++)
+        for (int i = 0; i < max_idx; i++)
             csum += ccs->cc_size[i];
         start = csum;
         end = start + ccs->cc_size[max_idx];

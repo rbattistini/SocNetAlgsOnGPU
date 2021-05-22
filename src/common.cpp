@@ -36,13 +36,12 @@
  *
  ****************************************************************************/
 
-#include <cstring>
 #include "common.h"
 
 int *stlvector_to_array_int(const std::vector<int> &v, int n) {
     auto array = (int *) malloc(sizeof(int) * n);
 
-    if(v.empty()) {
+    if (v.empty()) {
         ZF_LOGF("Uninitialized array given!");
         return 0;
     }
@@ -56,7 +55,7 @@ int *stlvector_to_array_int(const std::vector<int> &v, int n) {
 
 void fill(int *arr, int n, int v) {
 
-    if(arr == 0) {
+    if (arr == 0) {
         ZF_LOGF("Uninitialized array given!");
         return;
     }
@@ -66,7 +65,7 @@ void fill(int *arr, int n, int v) {
 
 int get_max_idx(const int *arr, int n) {
 
-    if(arr == 0) {
+    if (arr == 0) {
         ZF_LOGF("Uninitialized array given!");
         return -1;
     }
@@ -75,18 +74,14 @@ int get_max_idx(const int *arr, int n) {
     int max_value = arr[0];
 
     for (int i = 1; i < n; ++i) {
-        if (arr[i] > max_value ) {
+        if (arr[i] > max_value) {
             max_value = arr[i];
             max_idx = i;
         }
-
     }
     return max_idx;
 }
 
-/*
- * Taken from: https://git.savannah.gnu.org/cgit/gnulib.git/tree/lib/close-stream.c
- */
 int close_stream(FILE *stream) {
 
     const bool some_pending = (__fpending(stream) != 0);
@@ -113,7 +108,7 @@ int close_stream(FILE *stream) {
 
 void print_int_array(const int *arr, int n) {
 
-    if(arr == 0) {
+    if (arr == 0) {
         ZF_LOGF("Uninitialized array given!");
         return;
     }
@@ -128,7 +123,7 @@ void print_int_array(const int *arr, int n) {
 
 void print_float_array(const float *arr, int n) {
 
-    if(arr == 0) {
+    if (arr == 0) {
         ZF_LOGF("Uninitialized array given!");
         return;
     }
@@ -143,12 +138,12 @@ void print_float_array(const float *arr, int n) {
 
 void print_edge_list(const int *row_offsets, const int *cols, int nrows) {
 
-    if(row_offsets == 0) {
+    if (row_offsets == 0) {
         ZF_LOGF("Uninitialized row_offsets given!");
         return;
     }
 
-    if(cols == 0) {
+    if (cols == 0) {
         ZF_LOGF("Uninitialized cols given!");
         return;
     }

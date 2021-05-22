@@ -39,8 +39,8 @@
 #ifndef SPMATOPS_H
 #define SPMATOPS_H
 
-#include "matstorage.h"
 #include "common.h"
+#include "matstorage.h"
 
 /**
  * @brief Implements the Gustavson’s row-wise sparse general matrix-matrix
@@ -87,8 +87,8 @@ int spref(matrix_pcsr_t *R,
           matrix_pcsr_t *C);
 
 int get_R_matrix(matrix_pcsr_t *R,
-                 const int* vertices,
+                 const int *vertices,
                  int nvertices,
                  int nrows);
 
-#endif //SPMATOPS_H
+#endif//SPMATOPS_H

@@ -2,7 +2,7 @@
  * @file timing.cuh
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * @brief Utility functions for NVIDIA GPUs profiling using the CUDA Event API
+ * @brief Utility functions for profiling NVIDIA GPUs using the CUDA Event API.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -49,8 +49,10 @@
 // outputs bandwidth in GB/s
 #define bandwidth(bytes, microseconds) ((bytes) *1e-6 / (microseconds))
 
-/*
- * Taken from https://stackoverflow.com/questions/6959213/timing-a-cuda-application-using-events/6977536#6977536
+/**
+ * @brief Uses the CUDA Event API to profile kernels and memory transfers.
+ *
+ * @see https://stackoverflow.com/questions/6959213/timing-a-cuda-application-using-events/6977536#6977536
  */
 class EventTimer {
 
@@ -89,19 +91,13 @@ public:
         return elapsed;
     }
 
-    void log(const char* msg) {
-        ZF_LOGI("%s: %f", msg, this->elapsed());
+    void log(const char *msg) {
+        ZF_LOGI("%s: %f ms", msg, this->elapsed());
     }
 
 private:
     bool mStarted, mStopped;
     cudaEvent_t mStart, mStop;
-};
-
-/*
- * The throughput is measured as TEPS, i.e. Traversed Edges Per Second
- */
-class ThroughputComputer {
 };
 
 /*

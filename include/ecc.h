@@ -38,8 +38,8 @@
 #ifndef ECC_H
 #define ECC_H
 
-#include "matstorage.h"
 #include "graphs.h"
+#include "matstorage.h"
 #include <climits>
 
 /**
@@ -76,6 +76,6 @@ int get_vertices_eccentricity(matrix_pcsr_t *g, int *eccentricity);
  * @param nedges
  * @return the density of the graph.
  */
-float get_density(float nvertices, float nedges);
+double get_density(double nvertices, double nedges);
 
-#endif //ECC_H
+#endif//ECC_H

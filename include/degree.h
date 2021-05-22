@@ -48,4 +48,4 @@ void compute_degrees_directed(matrix_pcoo_t *g,
                               int *in_degree,
                               int *out_degree);
 
-#endif //DEGREE_H
+#endif//DEGREE_H

@@ -31,34 +31,29 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * --------------------------------------------------------------------------
- *
- * TODO: Compute bc score of the network
- *
  ****************************************************************************/
 
 #pragma once
 #ifndef GRAPHS_H
 #define GRAPHS_H
 
+#include "common.h"
 #include "matstorage.h"
 #include "spmatops.h"
-#include "common.h"
 #include <climits>
 #include <queue>
 #include <stack>
 
 typedef struct gprops_t {
-    bool is_directed;
-    bool is_weighted;
-    bool is_connected;
-    bool has_self_loops;
+    int is_directed;
+    int is_weighted;
+    int is_connected;
+    int has_self_loops;
 } gprops_t;
 
 typedef struct components_t {
-    int *array;     // vertices ids of each cc
-    int *cc_size;   // size of the i-th cc at index i
+    int *array;  // vertices ids of each cc
+    int *cc_size;// size of the i-th cc at index i
     int cc_count;
 } components_t;
 
@@ -66,7 +61,7 @@ void print_gprops(gprops_t *gp);
 
 void BFS_visit(matrix_pcsr_t *g, int *d, int s);
 
-int* DFS_visit(matrix_pcsr_t *g, bool *visited, int s, int *cc_size);
+int *DFS_visit(matrix_pcsr_t *g, bool *visited, int s, int *cc_size);
 
 /**
  * @brief Get the largest cc and extract a subgraph from it.

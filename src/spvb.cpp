@@ -82,7 +82,6 @@ int spvb(const PUNGraph &g_i, float *bc_scores, float *p, bool directed) {
             tree_nodes++;
         }
 
-
     } while (!S.empty());
 
     //    printf("Nit: %d\n", nit);
@@ -114,7 +113,7 @@ void BC_mod_computation(const PUNGraph &g, const float *p, float *bc_scores) {
         auto *distance = (int *) malloc(nvertices * sizeof(int));
         auto *delta = (float *) malloc(nvertices * sizeof(float));
 
-        if(sigma == 0 || distance == 0 || delta == 0) {
+        if (sigma == 0 || distance == 0 || delta == 0) {
             ZF_LOGF("Memory allocation failed!");
             return;
         }

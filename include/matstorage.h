@@ -6,8 +6,7 @@
  * Sparse Rows. In addition it provides a way of representing adjacency
  * matrices with structures of arrays.
  *
- * Thanks to:
- * - https://github.com/scipy/
+ * @see https://github.com/scipy/scipy/tree/master/scipy/sparse/sparsetools
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -39,7 +38,7 @@
  *
  * --------------------------------------------------------------------------
  *
- * TODO: Remove duplicated edges
+ * TODO: Handling duplicated edges by removing them
  *
  ****************************************************************************/
 
@@ -48,39 +47,67 @@
 #define MATSTORAGE_H
 
 #include "common.h"
+#include <cmath>
 
 typedef struct matrix_pcoo_t {
     int nrows;
     int ncols;
     int nnz;
-    int *rows;  // row index for each non-zero value
-    int *cols;  // column index for each non-zero value
+    int *rows;// row index for each non-zero value
+    int *cols;// column index for each non-zero value
 } matrix_pcoo_t;
 
 typedef struct matrix_rcoo_t : matrix_pcoo_t {
-    int *weights;   // value of each entry
+    int *weights;// value of each entry
 } matrix_rcoo_t;
 
 typedef struct matrix_pcsr_t {
     int nrows;
     int ncols;
-    int *row_offsets;   // offset in columns
-    int *cols;          // column index for each non-zero value
+    int *row_offsets;// offset in columns
+    int *cols;       // column index for each non-zero value
 } matrix_pcsr_t;
 
 typedef struct matrix_rcsr_t : matrix_pcsr_t {
-    int *weights;    // value of each entry
+    int *weights;// value of each entry
 } matrix_rcsr_t;
 
-void check_bc(matrix_pcsr_t g, const float *bc_cpu, const float *bc_gpu);
 
-int check_matrix_init(matrix_pcoo_t *matrix);
+int check_matrix_pcoo(matrix_pcoo_t *matrix);
 
-int check_matrix_init(matrix_pcsr_t *matrix);
+int check_matrix_pcsr(matrix_pcsr_t *matrix);
 
-int check_matrix_init(matrix_rcoo_t *matrix);
+int check_matrix_rcoo(matrix_rcoo_t *matrix);
 
-int check_matrix_init(matrix_rcsr_t *matrix);
+int check_matrix_rcsr(matrix_rcsr_t *matrix);
+
+void free_matrix_pcoo(matrix_pcoo_t *matrix);
+
+void free_matrix_pcsr(matrix_pcsr_t *matrix);
+
+void free_matrix_rcoo(matrix_rcoo_t *matrix);
+
+void free_matrix_rcsr(matrix_rcsr_t *matrix);
+
+void print_matrix_pcoo(matrix_pcoo_t *matrix);
+
+void print_matrix_pcsr(matrix_pcsr_t *matrix);
+
+/**
+ * @brief Computes the RMSE (Root-Mean-Square Error) of the bc scores obtained
+ * by the CPU and the GPU.
+ *
+ * @note The RMSE describes the standard deviation of the differences
+ * between the predicted bc scores of the CPU and the observed bc scores on
+ * the GPU. This result can be used to evaluate the correctness of the GPU
+ * algorithm compared to the reference implementation of the PBGL.
+ *
+ * @param nnz
+ * @param bc_cpu
+ * @param bc_gpu
+ * @return
+ */
+double check_bc(int nnz, const float *bc_cpu, const float *bc_gpu);
 
 /**
  * @brief Expand a compressed row pointer into a row array.
@@ -117,22 +144,10 @@ int coo_to_csr(matrix_pcoo_t *A, matrix_pcsr_t *B);
  * @note Transposition of a CSR A is the equivalent of converting the
  * A to the CSC format.
  *
- * @param A sparse pattern A A, can be symmetric or unsymmetric
+ * @param A sparse pattern matrix, can be symmetric or unsymmetric
  * @param B  the transpose of A
  * @return 0 if successful, 1 otherwise
  */
 int transpose(matrix_pcsr_t *A, matrix_pcsr_t *B);
-
-void print_matrix(matrix_pcoo_t *matrix);
-
-void print_matrix(matrix_pcsr_t *matrix);
-
-void free_matrix(matrix_pcoo_t *matrix);
-
-void free_matrix(matrix_pcsr_t *matrix);
-
-void free_matrix(matrix_rcoo_t *matrix);
-
-void free_matrix(matrix_rcsr_t *matrix);
 
 #endif// MATSTORAGE_H
