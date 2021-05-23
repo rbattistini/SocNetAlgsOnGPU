@@ -6,8 +6,7 @@ ifdef::env-github[]
 :warning-caption: :warning:
 endif::[]
 
-A command-line GPU-accelerated application for computing Betweenness Centrality of sparse
-graphs that represent social networks.
+A command-line GPU-accelerated application for computing Betweenness Centrality of sparse graphs that represent social networks.
 
 == Installation
 
@@ -25,7 +24,7 @@ There also some optional dependencies:
 - The link:https://www.boost.org/users/history/version_1_75_0.html[Boost Graph Library] is used for the CPU reference implementation of the Betweenness Centrality algorithm;
 - link:https://www.python.org/downloads/[Python 3] to execute the script that
 processes the result of the benchmarking;
-- link:https://www.ruby-lang.org/en/downloads/[Ruby] and some gems listed in the link:{docdir}/script/Gemfile[Gemfile] to generate the log;
+- link:https://www.ruby-lang.org/en/downloads/[Ruby] and some gems listed in the link:{docdir}/script/Gemfile[Gemfile] to generate the report;
 - `clang-format` for formatting the source code and `clang-tidy` for static code analysis;
 
 [WARNING]
@@ -76,17 +75,26 @@ All dataset-related code is under the `dataset` subdirectory. Only link:https://
 
 A script for generating random graphs is given, `dataset/graph_gen`.
 
-Currently, only undirected and unweighted graphs are supported. To convert a directed graph to an undirected one, just change the `general` property of the Matrix-market file banner to `symmetric`.
+Currently, only undirected and unweighted graphs are supported.
 
 To download them just type `make` in the `dataset` subdirectory. To only download one specific dataset step into its subdirectory and type `make` there.
 
 === Libraries
 
-There is the SNAP library from the link:https://snap.stanford.edu/snap/index.html[SNAP System], used for random graph generation and for parsing edgelist files from the link:https://snap.stanford.edu/data/index.html[Stanford Large Network Dataset Collection].
+There is the SNAP library from the link:https://snap.stanford.edu/snap/index.html[SNAP System], used for random graph generation from the link:https://snap.stanford.edu/data/index.html[Stanford Large Network Dataset Collection].
 
 There is the link:https://math.nist.gov/MatrixMarket/mmio-c.html[library for parsing Matrix Market files].
 
-Finally, the link:https://github.com/onqtam/doctest[doctest] header file for testing {cpp} code.
+Finally, the link:https://github.com/onqtam/doctest[doctest] header file for testing {cpp} code and the link:https://github.com/wonder-mice/zf_log[zf_Log] library for logging.
+
+== Usage
+
+[example]
+====
+./sna_bc	[-i|--input file] [-r|--nrun] [-b|--dump-scores file]
+            [-s|--dump-stats file] [-v|--verbose] [-c|--check]
+            [-wsl|--wself-loops] [-u|--usage] ][-h|--help]
+====
 
 == Hardware
 
