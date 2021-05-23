@@ -40,10 +40,10 @@ title-page:
       name_only: "{author}"
       with_email: "{author} <{email}>"
       with_url: "{url}[{author}]"
-  font-family: Frank Ruhl Libre
+  font-family: Noto Serif
 
 heading:
-  font-family: Frank Ruhl Libre
+  font-family: Noto Serif
   h1-font-color: #949494
   h1-font-size: 21
   h1-align: right
@@ -54,7 +54,7 @@ thematic-break:
   border-style: dashed
 
 base:
-  font-family: Merriweather
+  font-family: Noto Serif
   font-size: 10
   align: justify
 
@@ -63,6 +63,9 @@ role:
     font-size: 9
   shrink:
     align: left
+  normalize:
+    font-family : Noto Serif
+    font-size: 9
 
 font:
   catalog:
@@ -72,28 +75,13 @@ font:
       bold: firacode-bold.ttf
       italic: firacode-italic.ttf
       bold_italic: firacode-bold_italic.ttf
-    Frank Ruhl Libre:
-      normal: frankruhllibre-regular.ttf
-      bold: frankruhllibre-bold.ttf
-      italic: frankruhllibre-italic.ttf
-      bold_italic: frankruhllibre-bold_italic.ttf
     Merriweather:
       normal: merriweather-regular.ttf
       bold: merriweather-bold.ttf
       italic: merriweather-italic.ttf
       bold_italic: merriweather-bold_italic.ttf
-    Arimo:
-      normal: arimo-regular.ttf
-      bold: arimo-bold.ttf
-      italic: arimo-italic.ttf
-      bold_italic: arimo-bold_italic.ttf
-    Noto Sans:
-      normal: notosans-regular.ttf
-      bold: notosans-bold.ttf
-      italic: notosans-italic.ttf
-      bold_italic: notosans-bold_italic.ttf
-    Inconsolata: inconsolata.ttf
-  fallbacks:
-    - Noto Serif
-    - Arimo
-    - Inconsolata
+    Open Sans:
+      normal: opensans-regular.ttf
+      bold: opensans-bold.ttf
+      italic: opensans-italic.ttf
+      bold_italic: opensans-bold_italic.ttf

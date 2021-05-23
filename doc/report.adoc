@@ -4,6 +4,7 @@
 :figure-caption: Fig.
 :listing-caption: Listato
 :section-refsig: Sezione
+:table-caption: Tabella
 :version-label: ""
 :stem: latexmath
 :mathematical-format: svg
@@ -18,7 +19,7 @@
 :bibtex-order: alphabetical
 :bibtex-style: ieee
 :bibtex-locale: it-IT
-:srcdir: ../scripts
+:srcdir: ../script
 :imagesdir: ./images
 
 :compiler_nvidia: nvcc 11.2.142
@@ -34,10 +35,10 @@ Corso di Laurea Triennale in Ingegneria e Scienze Informatiche
 '''
 
 |=======
-|Tirocinante |Riccardo Battistini, 0000873514
-|Tutor didattico |Moreno Marzolla
-|Laboratorio |High-Performance Computing
-|Periodo di svolgimento del tirocinio |01/04/21 - 31/05/21
+|[.normalize]#Tirocinante# |[.normalize]#Riccardo Battistini, 0000873514#
+|[.normalize]#Tutor didattico# |[.normalize]#Moreno Marzolla#
+|[.normalize]#Laboratorio# |[.normalize]#High-Performance Computing#
+|[.normalize]#Periodo di svolgimento del tirocinio# |[.normalize]#01/04/21 - 31/05/21#
 |=======
 
 <<<
@@ -328,7 +329,7 @@ typedef struct {
 
 Il formato COO rappresenta il modo più semplice per memorizzare una matrice sparsa ma non è particolarmente efficiente. Ad esempio, in un grafo diretto con stem:[n] vertici se si effettua una ricerca per stabilire se il vertice ennesimo è legato a un altro è necessario scorrere tutti gli stem:[n] elementi del vettore `rows` prima di poter ottenere il risultato. Ciò accade perché nel vettore `rows` sono memorizzati tutti i valori ripetuti degli indici riga degli elementi non nulli. Il formato CSR è stato introdotto per eliminare gli elementi ridondanti in `rows` e per rendere la ricerca di un elemento più rapida. Questo formato è molto simile alla rappresentazione di un grafo tramite liste di adiacenza ma non ha i costi aggiuntivi legati all'uso dei puntatori ed è molto più efficiente nell'uso della cache.
 
-[source, c, id="csr"]
+[source, c, id="A"]
 .Matrice di adiacenza rappresentata in formato CSR in C
 ----
 typedef struct {
@@ -358,7 +359,7 @@ nnz \ < \ \frac{n^2}{3}
 
 per il formato CSR deve valere:
 
-[latexmath, id="eq-csr"]
+[latexmath, id="eq-A"]
 ++++
 nnz \ < \ \frac{n (n - 1)}{2}
 ++++
@@ -443,15 +444,49 @@ propria delle reti sociali per cui ... (preferential-attachment)
 
 === Studio di scalabilità e throughput
 
-Per i test sono stati impiegati una CPU {hardware_local} con frequenza di funzionamento pari a 2.9 Ghz, una cache di 16 Mb e 16 Gb di DRAM.
+Per i test sono stati impiegati una CPU {hardware_local} con frequenza di funzionamento pari a 2.9 Ghz, una cache di 16 Mb e 16 Gb di DRAM con HyperThreading abilitato.
 
-La GPU è una {hardware_nvidia} con quattro _Streaming Multiprocessors_ e clock di base di 2505 Mhz. La memoria GDDR5 a disposizione è pari a due Gb e la _compute capability_ è 6.1 (architettura Pascal).
+La GPU è una {hardware_nvidia} con quattro _Streaming Multiprocessors_ e clock di base di 2505 Mhz. Ciascuno SM contiene 512 CUDA Core per un totale di 2048 CUDA Cores. La memoria GDDR5 a disposizione è pari a due Gb e la _compute capability_ è 6.1 (architettura Pascal).
 
-I dataset per effettuare i test sono reperibili nella _Sparse Matrix Collection_ dell'Università della Florida cite:[davis_university_2011] e dalla _Standford Network Analysis Platform_ (SNAP) cite:[snapnets].
+I dataset per effettuare i test sono reperibili nella _Sparse Matrix Collection_ dell'Università della Florida cite:[davis_university_2011] e nella _Standford Network Analysis Platform_ (SNAP) cite:[snapnets].
+
+[stripes=even, cols="5,^3,^3,^5,^3,9"]
+.Proprietà generali dei dataset considerando la più grande componente connessa
+|===
+|Grafo       | Nodi  | Archi  | Grado massimo | Diametro | Descrizione
+
+| rnd-er     | 3000  |        |   |   | Grafo casuale Erdös-Rényi
+| rnd-sw     | 3000  |        |   |   | Grafo di tipo Small World
+| rnd-sf     | 3000  |        |   |   | Grafo di tipo Scale-free
+| ca-GrQc    | 4158  | 26850  | ? | ? | Rete di collaborazioni
+| ca-HepTh   | 8638  | 49633  | ? | ? | Rete di collaborazioni
+| ca-HepPh   | 11204 | 235268 | ? | ? | Rete di collaborazioni
+| ca-AstroPh | 17903 | 394003 | ? | ? | Rete di collaborazioni
+|===
+
+[stripes=even]
+.Proprietà generali dei dataset in seguito alla compressione e considerando la più grande componente connessa
+|===
+|Grafo       | Nodi  | Archi  | Grado massimo | Diametro
+
+| rnd-er     |       |        |   |
+| rnd-sw     |       |        |   |
+| rnd-sf     |       |        |   |
+| ca-GrQc    | ? | ? | ? | ?
+| ca-HepTh   | ? | ? | ? | ?
+| ca-HepPh   | ? | ? | ? | ?
+| ca-AstroPh | ? | ? | ? | ?
+|===
+
+<<<
 
 Per la generazione casuale di grafi secondo i modelli di Erdös-Rényi, Watts-Strogatz e Barabàsi-Albert citenp:[gkoulalas-divanis_large-scale_2014(7)] sono state impiegate le funzioni rese disponibili dalla libreria SNAP cite:[leskovec2016snap].
 
 Di seguito si analizzano i risultati ottenuti.
+
+Il tempo di esecuzione non include il tempo impiegato per la lettura del grafo
+da disco ma tiene conto dell'estrazione della componente connessa, della
+compressione e include tutte le comunicazioni tra host e device.
 
 == Conclusioni
 
