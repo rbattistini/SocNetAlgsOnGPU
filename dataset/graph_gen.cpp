@@ -54,9 +54,49 @@ using namespace TSnap;
  * Basic configuration parameters.
  */
 const int min_vertices = 20;
-const int max_vertices = 1000;
+const int max_vertices = 5000;
 
-int bin_coeff(int n, int k) {
+/**
+ * @brief Parsing with error handling.
+ *
+ * @param p pointer to the null-terminated byte string to be interpreted
+ * @param endp pointer to a pointer to character
+ * @param base base of the interpreted integer value
+ * @return the parsed number or -1 if unsuccessful
+ */
+static long strtol_wcheck(const char *p, char* endp, int base) {
+    int done = 0;
+    long i = -1;
+
+    while(!done) {
+        /*
+         * errno can be set to any non-zero value by a library function call
+         * regardless of whether there was an error, so it needs to be cleared
+         * in order to check the error set by strtol.
+         */
+        errno = 0;
+        i = strtol(p, &endp, base);
+
+        if (p == endp)
+            done = 1;
+
+        const bool range_error = errno == ERANGE;
+        ZF_LOGI("Extracted '%.*s', strtol returned %ld.",
+                (int)(endp - p), p, i);
+        p = endp;
+
+        if (range_error) {
+            ZF_LOGE("Range error occurred");
+            return -1;
+        }
+
+        putchar('\n');
+    }
+
+    return i;
+}
+
+static int bin_coeff(int n, int k) {
 
     int C[k + 1];
     memset(C, 0, sizeof(C));
@@ -71,7 +111,7 @@ int bin_coeff(int n, int k) {
     return C[k];
 }
 
-int write_snap_to_mtx(FILE *f, const PUNGraph &g) {
+static int write_snap_to_mtx(FILE *f, const PUNGraph &g) {
 
     /*
      * Write the banner.
@@ -137,14 +177,14 @@ int main(int argc, char *argv[]) {
     PUNGraph g;
 
     if (argc != 4) {
-        ZF_LOGF("Usage: %s [filename] [graph_type] [number_vertices]",
+        fprintf(stderr, "Usage: %s [filename] [graph_type] [number_vertices]\n",
                 argv[0]);
         return EXIT_FAILURE;
     }
 
     fname = argv[1];
-    gtype = (int) strtol(argv[2], nullptr, 10);
-    v = (int) strtol(argv[3], nullptr, 10);
+    gtype = (int) strtol_wcheck(argv[2], nullptr, 10);
+    v = (int) strtol_wcheck(argv[3], nullptr, 10);
 
     if (v < min_vertices || v > max_vertices) {
         ZF_LOGF("A graph must have at least 20 nodes and no more "
@@ -197,7 +237,7 @@ int main(int argc, char *argv[]) {
     if (write_snap_to_mtx(f, g))
         return EXIT_FAILURE;
 
-    fclose(f);
+    close_stream(f);
 
     return EXIT_SUCCESS;
 }
