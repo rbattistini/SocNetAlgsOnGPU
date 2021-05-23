@@ -90,11 +90,11 @@ Finally, the link:https://github.com/onqtam/doctest[doctest] header file for tes
 == Usage
 
 [example]
-====
-./sna_bc	[-i|--input file] [-r|--nrun] [-b|--dump-scores file]
+----
+./sna_bc    [-i|--input file] [-r|--nrun] [-b|--dump-scores file]
             [-s|--dump-stats file] [-v|--verbose] [-c|--check]
             [-wsl|--wself-loops] [-u|--usage] ][-h|--help]
-====
+----
 
 == Hardware
 
