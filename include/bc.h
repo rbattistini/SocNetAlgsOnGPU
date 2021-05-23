@@ -33,14 +33,25 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * ----------------------------------------------------------------------------
+ *
+ * TODO: Compute bc score of the network
+ *
  ****************************************************************************/
 
 #pragma once
 #ifndef SOCNETALGSONGPU_BC_H
 #define SOCNETALGSONGPU_BC_H
 
-#include "matstorage.h"
+#include "bc_statistics.h"
 #include "common.h"
+#include "matstorage.h"
+#include "profiler.h"
+#include <boost/graph/use_mpi.hpp>
+#include <boost/graph/distributed/adjacency_list.hpp>
+#include <boost/graph/distributed/betweenness_centrality.hpp>
+#include <boost/graph/distributed/mpi_process_group.hpp>
+#include <boost/graph/use_mpi.hpp>
 #include <climits>
 #include <queue>
 #include <stack>
@@ -49,28 +60,10 @@
 using std::queue;
 using std::stack;
 
-void compute_dep_acc(matrix_pcsr_t *g,
-                     stack<int> S,
-                     const unsigned long *sigma,
-                     const int *d,
-                     float *delta,
-                     float *bc,
-                     int s);
+void compute_ser_bc_cpu(matrix_pcsr_t *g, float *bc_scores, bool directed);
 
-void compute_bfs(matrix_pcsr_t *g,
-                 queue<int> Q,
-                 stack<int> S,
-                 unsigned long *sigma,
-                 int *d);
+void compute_par_bc_cpu(matrix_pcsr_t *g_tmp, float *bc_cpu);
 
-void BC_dec_comp(matrix_pcsr_t *g, float *bc_scores, bool directed);
+void compute_closeness_ser__cpu();
 
-void get_vertex_betweenness(matrix_pcsr_t *g, float *bc_scores, bool directed);
-
-void print_bc_scores(matrix_pcsr_t *g, const float *bc_scores, FILE *f);
-
-void get_closeness() {
-    // TODO
-}
-
-#endif //SOCNETALGSONGPU_BC_H
+#endif//SOCNETALGSONGPU_BC_H

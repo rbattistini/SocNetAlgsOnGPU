@@ -64,9 +64,9 @@ void compute_degrees_undirected(matrix_pcoo_t *g, int *degree) {
         return;
     }
 
-    int *rows = g->rows; // row indices of A
-    int nnz = g->nnz;    // number of nnz in A
-    int nrows = g->nrows;// number of rows in A
+    int *rows = g->rows;   // row indices of A
+    int nnz = g->nnz;      // number of nnz in A
+    int nrows = g->nrows;  // number of rows in A
 
     fill(degree, nrows, 0);
 
