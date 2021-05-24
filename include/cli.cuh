@@ -43,7 +43,6 @@
 #include <cstdlib>
 #include <unistd.h>
 
-#define NUM_DEVICES 1
 #define EXIT_WHELP_OR_USAGE 2
 #define MAX_RUNS 10
 
@@ -77,7 +76,7 @@ int parse_args(params_t *p, int argc, char *argv[]);
  */
 int dump_run_config(params_t *p, char *fname);
 
-int print_run_config(params_t *p);
+void print_run_config(params_t *p);
 
 void free_params(params_t *p);
 

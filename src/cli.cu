@@ -33,8 +33,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 
-#include "cli.h"
+#include "cli.cuh"
 #include <bc_statistics.h>
+#include <device_props.cuh>
 #include <getopt.h>
 
 typedef struct commands_t {
@@ -42,14 +43,14 @@ typedef struct commands_t {
     const char *cmd_descr;
 } commands_t;
 
-static int print_usage(char *app_name) {
+static void print_usage(char *app_name) {
     printf("Usage:\n %s\t[-i|--input file] [-r|--nrun] [-b|--dump-scores file] \n"
            "\t\t[-s|--dump-stats file] [-v|--verbose] [-c|--check]\n"
            "\t\t[-wsl|--wself-loops] [-d|--device] [-u|--usage] ][-h|--help]\n",
            app_name);
 }
 
-static int print_help() {
+static void print_help() {
 
     const int nopt = 10;
     static struct commands_t cmds[nopt] = {
@@ -261,9 +262,9 @@ int parse_args(params_t *params, int argc, char *argv[]) {
      */
     if (device_id != 0) {
         int tmp_id = (int) (strtol_wcheck(device_id, 0, 10));
-        if (tmp_id < 0 || tmp_id > NUM_DEVICES - 1) {
+        if (tmp_id < 0 || tmp_id > get_device_count() - 1) {
             ZF_LOGF("Invalid device id: min is 0, max is %d",
-                    NUM_DEVICES - 1);
+                    get_device_count() - 1);
             return EXIT_FAILURE;
         }
         params->device_id = tmp_id;
@@ -335,7 +336,7 @@ int dump_run_config(params_t *p, char *fname) {
     return close_stream(f);
 }
 
-int print_run_config(params_t *p) {
+void print_run_config(params_t *p) {
 
     print_separator();
 
