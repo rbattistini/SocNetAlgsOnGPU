@@ -1,10 +1,9 @@
 /****************************************************************************
- * @file bc.h
+ * @file bc_par.h
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * @brief Function to compute the betweenness centrality of the vertices of an
- * undirected and unweighted graph stored as a sparse pattern matrix in CSR
- * format.
+ * @brief Function to compute the betweenness centrality using the parallel
+ * algorithm of the Parallel Boost Graph Library.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -36,20 +35,19 @@
  ****************************************************************************/
 
 #pragma once
-#ifndef SOCNETALGSONGPU_BC_H
-#define SOCNETALGSONGPU_BC_H
+#ifndef SOCNETALGSONGPU_BC_PAR_H
+#define SOCNETALGSONGPU_BC_PAR_H
 
 #include "bc_statistics.h"
 #include "common.h"
 #include "matstorage.h"
+#include <boost/graph/use_mpi.hpp>
+#include <boost/graph/distributed/adjacency_list.hpp>
+#include <boost/graph/distributed/betweenness_centrality.hpp>
+#include <boost/graph/distributed/mpi_process_group.hpp>
+#include <boost/graph/use_mpi.hpp>
 #include <climits>
-#include <queue>
-#include <stack>
-#include <vector>
 
-using std::queue;
-using std::stack;
+void compute_par_bc_cpu(matrix_pcsr_t *g_tmp, float *bc_cpu);
 
-void compute_ser_bc_cpu(matrix_pcsr_t *g, float *bc_scores, bool directed);
-
-#endif//SOCNETALGSONGPU_BC_H
+#endif //SOCNETALGSONGPU_BC_PAR_H

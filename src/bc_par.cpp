@@ -1,10 +1,9 @@
 /****************************************************************************
- * @file bc.h
+ * @file bc_par.cpp
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * @brief Function to compute the betweenness centrality of the vertices of an
- * undirected and unweighted graph stored as a sparse pattern matrix in CSR
- * format.
+ * @brief Function to compute the betweenness centrality using the parallel
+ * algorithm of the Parallel Boost Graph Library.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -35,21 +34,45 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 
-#pragma once
-#ifndef SOCNETALGSONGPU_BC_H
-#define SOCNETALGSONGPU_BC_H
+#include "bc_par.h"
 
-#include "bc_statistics.h"
-#include "common.h"
-#include "matstorage.h"
-#include <climits>
-#include <queue>
-#include <stack>
-#include <vector>
+void compute_par_bc_cpu(matrix_pcsr_t *g_tmp, float *bc_cpu) {
 
-using std::queue;
-using std::stack;
+    /*
+     * Build the Boost graph from the pattern CSR matrix given in input.
+     */
+    typedef boost::adjacency_list<> graph;
+    int nnz = g_tmp->row_offsets[g_tmp->nrows];
+    graph g((unsigned long) g_tmp->nrows);
 
-void compute_ser_bc_cpu(matrix_pcsr_t *g, float *bc_scores, bool directed);
+    auto rows = (int *) malloc(nnz * sizeof(int));
+    expand_row_pointer(g_tmp->nrows, g_tmp->row_offsets, rows);
 
-#endif//SOCNETALGSONGPU_BC_H
+    for (int i = 0; i < nnz; i++) {
+        boost::add_edge((unsigned long) rows[i], (unsigned long) g_tmp->cols[i],
+                        g);
+    }
+
+    /*
+     * Compute BC with the algorithm that uses multithreading of the BGL.
+     */
+    double start_time = get_time();
+    boost::shared_array_property_map<double, boost::property_map<graph,
+            boost::vertex_index_t>::const_type>
+            centrality_map(num_vertices(g), get(boost::vertex_index, g));
+
+    boost::brandes_betweenness_centrality(g, centrality_map);
+
+    for (int i = 0; i < g_tmp->nrows; i++) {
+        bc_cpu[i] = (float) (centrality_map[i]);
+    }
+
+    /*
+     * Count each edge only one time.
+     */
+    for (int k = 0; k < g_tmp->nrows; k++)
+        bc_cpu[k] /= 2;
+
+    double end_time = (float) get_time();
+    double elapsed_time = end_time - start_time;
+}
