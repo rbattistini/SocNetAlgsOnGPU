@@ -123,7 +123,6 @@ void print_gpu_overview(int device_id) {
     printf("\tCompute Capability: \t%d.%d\n",
            get_compute_capability_major(),
            get_compute_capability_minor());
-    printf("\tMemory bandwidth: \t%.2f GB/s\n", get_mem_bandwidth());
     printf("\tGlobal Memory size: \t%.2f GB\n",
            get_global_mem_size() / (double) (1 << 30));
     printf("\t# of SMs: \t\t%d\n", get_sm_count());

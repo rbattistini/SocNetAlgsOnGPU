@@ -106,6 +106,12 @@ int close_stream(FILE *stream) {
     return 0;
 }
 
+double get_time() {
+    struct timespec ts {};
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ts.tv_sec + (double) ts.tv_nsec / 1e9;
+}
+
 void print_int_array(const int *arr, int n) {
 
     if (arr == 0) {

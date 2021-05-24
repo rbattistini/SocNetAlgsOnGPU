@@ -49,6 +49,11 @@
 #include <stdio_ext.h>
 #include <vector>
 
+#if _XOPEN_SOURCE < 600
+#define _XOPEN_SOURCE 600
+#endif
+#include <ctime>
+
 #define LINE_LENGTH 79
 
 #ifndef __CUDACC__
@@ -94,6 +99,8 @@ int get_max_idx(const int *arr, int n);
  * @see https://stackoverflow.com/questions/4972994/how-to-close-stdout-and-stderr-in-c
  */
 int close_stream(FILE *stream);
+
+double get_time();
 
 void print_int_array(const int *arr, int n);
 

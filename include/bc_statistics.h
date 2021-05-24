@@ -46,11 +46,11 @@
  * and throughput.
  */
 typedef struct stats_t {
-    float *load_time = 0;
-    float *unload_time = 0;
-    float *bc_comp_time = 0;
-    float *total_time = 0;
-    unsigned int nedges_traversed = 0;
+    double *load_time = 0;
+    double *unload_time = 0;
+    double *bc_comp_time = 0;
+    double *total_time = 0;
+    unsigned long long nedges_traversed = 0;
     int nrun = 0;
 } stats_t;
 
@@ -72,6 +72,9 @@ int dump_stats(stats_t *stats, char *fname);
  * @note TEPS is defined as nedges / time, where nedges is computed as the
  * number of edges traversed during the forward propagation phase multiplied by
  * two.
+ *
+ * @note The Bfs performed during the forward propagation phase are
+ * non-idempotent. This means that each vertex is visited only one time.
  *
  * @param nedges number of edges traversed during both the forward and backward
  * propagation phases of the Brandes algorithm on the GPU
