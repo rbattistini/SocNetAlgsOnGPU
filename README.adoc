@@ -16,12 +16,13 @@ These are the dependencies needed to build the project:
 
 - GCC must be installed;
 - link:https://developer.nvidia.com/cuda-downloads[CUDA Toolkit 11+] must be installed;
-- link:https://cmake.org/download/[CMake 3.9+] to build the project.
+- link:https://cmake.org/download/[CMake 3.9+] to build the project;
+- The link:https://www.boost.org/users/history/version_1_75_0.html[Parallel Boost Graph Library] is used for the CPU reference implementation of the Betweenness Centrality algorithm;
+- link:
 
 There also some optional dependencies:
 
 - To launch the benchmarks with the script given, link:script/perf_eval.sh[perf-eval,sh], a Unix Shell must be available;
-- The link:https://www.boost.org/users/history/version_1_75_0.html[Boost Graph Library] is used for the CPU reference implementation of the Betweenness Centrality algorithm;
 - link:https://www.python.org/downloads/[Python 3] to execute the script that
 processes the result of the benchmarking;
 - link:https://www.ruby-lang.org/en/downloads/[Ruby] and some gems listed in the link:{docdir}/script/Gemfile[Gemfile] to generate the report;
@@ -46,22 +47,20 @@ To build this project with CMake:
 
 [source,shell]
 ----
-mkdir build
-cmake -Bbuild -DCMAKE_BUILD_TYPE=Release
+mkdir build-release && cd build-release
+cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CUDA_ARCHITECTURES=60
 ----
 
 Binary source file are available in `build/src` directory.
 
-Binary test files are available in `build/test` directory. All tests can be run by typing `make check` or `ctest` in the build directory. Alternatively they can be run one at a time.
+Binary test files are available in `build/test` directory. All tests can be run by typing `ctest` in the `build/test` directory.
 
 [TIP]
 ====
-To run all tests in parallel just issue the `ctest -j4` or `make test ARGS=-j4` in the `build/test` directory.
+To run all tests in parallel just issue the `ctest -j4` in the `build/test` directory.
 ====
 
 Detailed test log from `ctest` can be found in `/build/Testing/Temporary/LastTest.log`, alternatively tests can be run with the verbose option enabled, i.e. `ctest -v`.
-
-If the symbol `BENCHMARK` is defined the betweenness centrality will be computed also by the multi-threaded algorithm of the BGL, and the result will be compared to the one of the GPU.
 
 [NOTE]
 ====
@@ -81,9 +80,9 @@ To download them just type `make` in the `dataset` subdirectory. To only downloa
 
 === Libraries
 
-There is the SNAP library from the link:https://snap.stanford.edu/snap/index.html[SNAP System], used for random graph generation from the link:https://snap.stanford.edu/data/index.html[Stanford Large Network Dataset Collection].
+Included in the project there are the SNAP library from the link:https://snap.stanford.edu/snap/index.html[SNAP System], used for random graph generation from the link:https://snap.stanford.edu/data/index.html[Stanford Large Network Dataset Collection].
 
-There is the link:https://math.nist.gov/MatrixMarket/mmio-c.html[library for parsing Matrix Market files].
+In addition there is the link:https://math.nist.gov/MatrixMarket/mmio-c.html[library for parsing Matrix Market files].
 
 Finally, the link:https://github.com/onqtam/doctest[doctest] header file for testing {cpp} code and the link:https://github.com/wonder-mice/zf_log[zf_Log] library for logging.
 
@@ -91,9 +90,9 @@ Finally, the link:https://github.com/onqtam/doctest[doctest] header file for tes
 
 [example]
 ----
-./sna_bc    [-i|--input file] [-r|--nrun] [-b|--dump-scores file]
+ ./sna_bc   [-i|--input file] [-r|--nrun] [-b|--dump-scores file] 
             [-s|--dump-stats file] [-v|--verbose] [-c|--check]
-            [-wsl|--wself-loops] [-u|--usage] ][-h|--help]
+            [-wsl|--wself-loops] [-d|--device] [-u|--usage] ][-h|--help]
 ----
 
 == Hardware
@@ -102,7 +101,7 @@ The GPU used during the development of this project is a Quadro P620 with four S
 
 == Performance Analysis
 
-- Speedup in regard to the reference CPU algorithm of the BGl.
+- Speedup in regard to the reference parallel CPU algorithm of the PBGl.
 - Throughput, in terms of TEPS.
 - Runtime, measured in ms and related only to the GPU. This means that transfer times, either host to device and device to host, are ignored.
 - Memory bandwidth for comparing thread blocks sizes.
