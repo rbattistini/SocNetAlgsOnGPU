@@ -57,7 +57,9 @@ typedef struct components_t {
     int cc_count;
 } components_t;
 
-void print_gprops(gprops_t *gp);
+void print_graph_properties(gprops_t *gp);
+
+void print_graph_overview(matrix_pcsr_t *g, int *degree);
 
 void BFS_visit(matrix_pcsr_t *g, int *d, int s);
 

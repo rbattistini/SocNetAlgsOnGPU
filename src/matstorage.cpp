@@ -152,7 +152,7 @@ double check_bc(int nrows, const float *bc_cpu, const float *bc_gpu) {
     }
     error = error / (float) nrows;
     error = sqrt(error);
-    return error;// radice dell'errore quadratico medio
+    return error;
 }
 
 void expand_row_pointer(int nrows, const int *row_offsets, int *rows) {

@@ -36,11 +36,27 @@
 
 #include "graphs.h"
 #include <algorithm>
+#include <ecc.h>
 
 using std::queue;
 using std::stack;
 
-void print_gprops(gprops_t *gp) {
+void print_graph_overview(matrix_pcsr_t *g, int *degree) {
+
+    int nvertices = g->nrows;
+    int nedges = g->row_offsets[g->nrows];
+
+    printf("Graph overview:\n\n");
+    printf("\tVertices:\t\t%d\n", nvertices);
+    printf("\tEdges:\t\t\t%d\n", nedges);
+    printf("\tDensity:\t\t%.2f %%\n", get_density(nvertices, nedges) * 100);
+    printf("\tMax degree: \t\t%d\n", degree[get_max_idx(degree, nvertices)]);
+//    printf("\tDiameter: \t\t%d\n", get_diameter(g));
+
+    print_separator();
+}
+
+void print_graph_properties(gprops_t *gp) {
 
     printf("Graph properties:\n\n");
     printf("\tDirected: \t\t%s\n", (gp->is_directed == 1) ? "yes" : "no");

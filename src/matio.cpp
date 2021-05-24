@@ -57,7 +57,7 @@ static int has_extension(const char *name, const char *extension,
 static int get_line(FILE *f, char *buf) {
     buf[0] = '\0';
     buf[1] = '\0';
-    buf[BUFFER_SIZE] = '\0';
+    buf[BUFFER_SIZE - 1] = '\0';
     return (fgets(buf, BUFFER_SIZE, f) != 0);
 }
 

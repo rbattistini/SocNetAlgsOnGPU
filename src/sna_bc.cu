@@ -34,9 +34,10 @@
 #include "bc.h"
 #include "bc_kernels.cuh"
 #include "bc_kernels_pitched.cuh"
+#include "bc_par.h"
+#include "degree.h"
 #include "matio.h"
-#include "timing.cuh"
-#include <cli.h>
+#include <cli.cuh>
 
 int main(int argc, char *argv[]) {
 
@@ -83,7 +84,6 @@ int main(int argc, char *argv[]) {
     matrix_pcsr_t m_csr;
     matrix_pcoo_t m_coo;
     gprops_t gp;
-    EventTimer chrono;
 
     gp.has_self_loops = params.self_loops_allowed;
 
@@ -96,11 +96,8 @@ int main(int argc, char *argv[]) {
         ZF_LOGF("Could not read matrix %s", params.input_file);
         return EXIT_FAILURE;
     }
-    chrono.start();
     coo_to_csr(&m_coo, &m_csr);
-    chrono.stop();
 
-    chrono.log("COO to CSR");
 
     /*
      * Extract the subgraph induced by vertices of the largest cc.
@@ -108,30 +105,22 @@ int main(int argc, char *argv[]) {
     matrix_pcsr_t g;
     components_t ccs;
 
-    chrono.start();
     get_cc(&m_csr, &ccs);
-    chrono.stop();
-
     gp.is_connected = (ccs.cc_count == 1);
 
-    chrono.log("Get cc");
-
-    if (params.verbose) {
-        print_separator();
-    }
-    print_gprops(&gp);
-
     if (!gp.is_connected) {
-        chrono.start();
         get_largest_cc(&m_csr, &g, &ccs);
-        chrono.stop();
         free_matrix_pcsr(&m_csr);
     } else {
         g = m_csr;
     }
     free_ccs(&ccs);
 
-    chrono.log("Extract largest cc");
+    auto degree = (int*) malloc(g.nrows * sizeof(int));
+    compute_degrees_undirected(&g, degree);
+
+    print_graph_properties(&gp);
+    print_graph_overview(&g, degree);
 
     /*
      * Allocate memory on the host.
@@ -155,41 +144,31 @@ int main(int argc, char *argv[]) {
      * stored.
      */
     stats_t stats;
-    if (params.dump_stats != 0) {
-
-        stats.total_time = (float*) malloc(stats.nrun * sizeof(float));
-        stats.bc_comp_time = (float*) malloc(stats.nrun * sizeof(float));
-        stats.unload_time = (float*) malloc(stats.nrun * sizeof(float));
-        stats.load_time = (float*) malloc(stats.nrun * sizeof(float));
-
-        if(stats.total_time == 0 || stats.bc_comp_time == 0 ||
-            stats.unload_time == 0 || stats.load_time == 0) {
-            ZF_LOGF("Could not allocate memory");
-            return EXIT_FAILURE;
-        }
-    }
+//    if (params.dump_stats != 0) {
+//
+//        stats.total_time = (float*) malloc(stats.nrun * sizeof(float));
+//        stats.bc_comp_time = (float*) malloc(stats.nrun * sizeof(float));
+//        stats.unload_time = (float*) malloc(stats.nrun * sizeof(float));
+//        stats.load_time = (float*) malloc(stats.nrun * sizeof(float));
+//
+//        if(stats.total_time == 0 || stats.bc_comp_time == 0 ||
+//            stats.unload_time == 0 || stats.load_time == 0) {
+//            ZF_LOGF("Could not allocate memory");
+//            return EXIT_FAILURE;
+//        }
+//    }
 
     /*
      * BC computation on the GPU.
      */
     for (int run = 0; run < params.nrun; run++) {
 
-        chrono.start();
         compute_bc_gpu(&g, bc_gpu);
-        chrono.stop();
-
-        float time_elapsed = chrono.elapsed();
-        ZF_LOGI("BC on GPU: %f", time_elapsed);
-
-        chrono.start();
         compute_bc_gpu_wpitched(&g, bc_gpu);
-        chrono.stop();
-        time_elapsed = chrono.elapsed();
-        ZF_LOGI("BC on GPU with pitched memory: %f", time_elapsed);
 
-        if (params.dump_stats != 0) {
-            stats.total_time[run] = time_elapsed;
-        }
+//        if (params.dump_stats != 0) {
+//            stats.total_time[run] = time_elapsed;
+//        }
     }
 
     /*
@@ -202,11 +181,7 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
 
-        chrono.start();
         compute_par_bc_cpu(&g, bc_cpu);
-        chrono.stop();
-
-        chrono.log("BC on CPU");
 
         double error = check_bc(g.nrows, bc_cpu, bc_gpu);
         printf("RMSE error: %g\n", error);
