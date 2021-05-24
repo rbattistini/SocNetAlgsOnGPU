@@ -1,11 +1,13 @@
-lib/snap-core/
-lib/glib-core/
+lib/snap/*
+build/
+build-*/
 cmake-build-*/
 .idea/
 doc/.asciidoctor
 doc/images
 samples/*
 *.mtx
+!dataset/examples/*.mtx
 *.lock
 *.tar.gz
 *.png
