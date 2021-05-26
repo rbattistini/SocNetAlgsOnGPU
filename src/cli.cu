@@ -46,13 +46,14 @@ typedef struct commands_t {
 static void print_usage(char *app_name) {
     printf("Usage:\n %s\t[-i|--input file] [-r|--nrun] [-b|--dump-scores file] \n"
            "\t\t[-s|--dump-stats file] [-v|--verbose] [-c|--check]\n"
-           "\t\t[-wsl|--wself-loops] [-d|--device] [-u|--usage] ][-h|--help]\n",
+           "\t\t[-p|--compress] [-wsl|--wself-loops] [-d|--device]\n"
+           "\t\t[-q|--quiet] [-u|--usage] ][-h|--help]\n",
            app_name);
 }
 
 static void print_help() {
 
-    const int nopt = 10;
+    const int nopt = 12;
     static struct commands_t cmds[nopt] = {
             {"input \t\t= <filename>\t",
                     "input matrix market file"},
@@ -62,8 +63,12 @@ static void print_help() {
                     "dump stats of the GPU algorithm to <filename>"},
             {"verbose\t\t\t\t",
                     "print info messages and errors"},
+            {"quiet\t\t\t\t",
+                    "print only errors if they occur"},
             {"check\t\t\t\t",
                     "compare GPU and CPU parallel algorithms"},
+            {"compress\t\t\t",
+                    "optimize bc computation by removing degree-1 vertices"},
             {"wself-loops\t\t\t",
                     "don't remove self loops from the input graph"},
             {"runs\t\t\t\t",
@@ -132,13 +137,14 @@ static long strtol_wcheck(const char *p, char *endp, int base) {
  */
 static char *concat(const char *src, const char *dest) {
 
-    char *result = (char *) malloc(strlen(src) + strlen(dest) + 1);
+    size_t res_length = strlen(src) + strlen(dest) + 1;
+    char *result = (char *) malloc(res_length * sizeof(char));
 
     if (result == 0)
         ZF_LOGF("Could not allocate memory");
 
-    strcpy(result, src);
-    strcat(result, dest);
+    strncpy(result, src, res_length);
+    snprintf(&result[strlen(result)], res_length, "%s", dest);
     return result;
 }
 
@@ -149,6 +155,8 @@ int parse_args(params_t *params, int argc, char *argv[]) {
     int show_help = 0;
     int self_loops_allowed = 0;
     int show_usage = 0;
+    int compress = 0;
+    int quiet = 0;
 
     char *dump_scores = 0;
     char *dump_stats = 0;
@@ -161,9 +169,11 @@ int parse_args(params_t *params, int argc, char *argv[]) {
     static struct option long_options[] =
             {
                     {"verbose",     no_argument,       0, 'v'},
+                    {"quiet",       no_argument,       0, 'q'},
                     {"check",       no_argument,       0, 'c'},
                     {"help",        no_argument,       0, 'h'},
                     {"wself-loops", no_argument,       0, 'l'},
+                    {"compress",    no_argument,       0, 'p'},
                     {"runs",        required_argument, 0, 'r'},
                     {"usage",       no_argument,       0, 'u'},
                     {"device",      no_argument,       0, 'd'},
@@ -176,7 +186,7 @@ int parse_args(params_t *params, int argc, char *argv[]) {
     while (true) {
 
         int option_index = 0;
-        cmd = getopt_long(argc, argv, "r:b:s:i:d:uvchl", long_options,
+        cmd = getopt_long(argc, argv, "r:b:s:i:d:uvchqlp", long_options,
                           &option_index);
 
         /*
@@ -192,11 +202,17 @@ int parse_args(params_t *params, int argc, char *argv[]) {
             case 'u':
                 show_usage = 1;
                 break;
+            case 'q':
+                quiet = 1;
+                break;
             case 'l':
                 self_loops_allowed = 1;
                 break;
             case 'v':
                 verbose = 1;
+                break;
+            case 'p':
+                compress = 1;
                 break;
             case 'c':
                 run_check = 1;
@@ -247,6 +263,13 @@ int parse_args(params_t *params, int argc, char *argv[]) {
     params->verbose = verbose;
 
     /*
+     * Whether to print overview and info messages regarding the device, the
+     * input graph given and logger messages with level
+     * other than ERROR.
+     */
+    params->quiet = quiet;
+
+    /*
      * Whether the reference CPU algorithm should be run and compared to the
      * GPU one in terms of runtime and RMSE error on the bc scores obtained.
      */
@@ -285,6 +308,12 @@ int parse_args(params_t *params, int argc, char *argv[]) {
             (dump_stats == 0) ? dump_stats : concat(dump_stats, ".csv");
 
     /*
+     * Whether to compress the graph removing degree-1 vertices from the
+     * largest connected component.
+     */
+    params->compress = compress;
+
+    /*
      * Input file.
      */
     params->input_file = input_file;
@@ -313,32 +342,12 @@ int parse_args(params_t *params, int argc, char *argv[]) {
     return EXIT_SUCCESS;
 }
 
-int dump_run_config(params_t *p, char *fname) {
-
-    if (fname == 0) {
-        ZF_LOGE("No filename given");
-        return EXIT_FAILURE;
-    }
-
-    FILE *f = fopen(strcat(fname, ".yml"), "w");
-
-    fprintf(f, "# Run configuration dump\n");
-    fprintf(f, "input_graph: \"%s\"\n", p->input_file);
-    fprintf(f, "statistic_file: \"%s\"\n", p->dump_stats);
-    fprintf(f, "bc_scores_file: \"%s\"\n", p->dump_scores);
-    fprintf(f, "number_of_runs: %d\n", p->nrun);
-    fprintf(f, "device_id: %d\n", p->device_id);
-    fprintf(f, "verbose: %s\n",
-            (p->verbose) ? "true" : "false");
-    fprintf(f, "with_verification: %s\n",
-            (p->run_check) ? "true" : "false");
-
-    return close_stream(f);
-}
-
 void print_run_config(params_t *p) {
 
     print_separator();
+
+    const char *output =
+            (p->verbose) ? "verbose" : (p->quiet) ? "quiet" : "normal";
 
     printf("Run configuration:\n\n");
     printf("\tInput graph: \t\t%s\n", p->input_file);
@@ -346,7 +355,9 @@ void print_run_config(params_t *p) {
     printf("\tBC scores file: \t%s\n", p->dump_scores);
     printf("\tNumber of runs: \t%d\n", p->nrun);
     printf("\tDevice id: \t\t%d\n", p->device_id);
-    printf("\tOutput: \t\t%s\n", (p->verbose) ? "verbose" : "quiet");
+    printf("\tOutput: \t\t%s\n", output);
+    printf("\tWith compression: \t%s\n",
+           (p->compress) ? "enabled" : "disabled");
     printf("\tWith verification: \t%s\n",
            (p->run_check) ? "enabled" : "disabled");
 

@@ -56,9 +56,11 @@
 typedef struct params_t {
     int run_check;
     int verbose;
+    int quiet;
     int nrun;
     int self_loops_allowed;
     int device_id;
+    int compress;
     char *dump_scores;
     char *dump_stats;
     char *input_file;
@@ -67,15 +69,13 @@ typedef struct params_t {
 int parse_args(params_t *p, int argc, char *argv[]);
 
 /**
- * @brief Dump parameters for the current program configuration.
+ * @brief Dump parameters for the current program configuration to stdout.
  *
  * @param p structure with running configuration parameters
  * @param fname file where the dump happens
  * @return 0 if successful, -1 if the stream was not closed correctly,
  * 1 if another error occurred
  */
-int dump_run_config(params_t *p, char *fname);
-
 void print_run_config(params_t *p);
 
 void free_params(params_t *p);
