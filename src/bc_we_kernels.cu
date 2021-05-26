@@ -34,7 +34,7 @@
  *
  ****************************************************************************/
 
-#include "bc_kernels.cuh"
+#include "bc_we_kernels.cuh"
 
 __device__ void bfs_update_ds(int *qcurr_len,
                               int *qcurr,

@@ -75,13 +75,3 @@ font:
       bold: firacode-bold.ttf
       italic: firacode-italic.ttf
       bold_italic: firacode-bold_italic.ttf
-    Merriweather:
-      normal: merriweather-regular.ttf
-      bold: merriweather-bold.ttf
-      italic: merriweather-italic.ttf
-      bold_italic: merriweather-bold_italic.ttf
-    Open Sans:
-      normal: opensans-regular.ttf
-      bold: opensans-bold.ttf
-      italic: opensans-italic.ttf
-      bold_italic: opensans-bold_italic.ttf

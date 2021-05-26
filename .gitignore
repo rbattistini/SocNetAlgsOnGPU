@@ -3,8 +3,7 @@ build/
 build-*/
 cmake-build-*/
 .idea/
-doc/.asciidoctor
-doc/images
+doc/
 samples/*
 *.mtx
 !dataset/examples/*.mtx

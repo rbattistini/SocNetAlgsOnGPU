@@ -35,8 +35,8 @@
  ****************************************************************************/
 
 #pragma once
-#ifndef SOCNETALGSONGPU_BC_KERNELS_CUH
-#define SOCNETALGSONGPU_BC_KERNELS_CUH
+#ifndef SOCNETALGSONGPU_BC_WE_KERNELS_CUH
+#define SOCNETALGSONGPU_BC_WE_KERNELS_CUH
 
 #ifdef __CUDACC__
 
@@ -62,4 +62,4 @@ void compute_bc_gpu(matrix_pcsr_t *g, float *bc);
 
 #endif
 
-#endif//SOCNETALGSONGPU_BC_KERNELS_CUH
+#endif//SOCNETALGSONGPU_BC_WE_KERNELS_CUH
