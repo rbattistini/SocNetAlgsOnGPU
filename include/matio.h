@@ -55,10 +55,7 @@
 #include "matstorage.h"
 #include <climits>
 #include <cstring>
-
-extern "C" {
 #include "mmio.h"
-}
 
 int query_gprops(const char *fname, gprops_t *gp);
 

@@ -35,8 +35,8 @@
  ****************************************************************************/
 
 #pragma once
-#ifndef SOCNETALGSONGPU_BC_PAR_H
-#define SOCNETALGSONGPU_BC_PAR_H
+#ifndef BC_PAR_H
+#define BC_PAR_H
 
 #include "bc_statistics.h"
 #include "common.h"
@@ -50,4 +50,4 @@
 
 void compute_par_bc_cpu(matrix_pcsr_t *g_tmp, float *bc_cpu);
 
-#endif //SOCNETALGSONGPU_BC_PAR_H
+#endif //BC_PAR_H

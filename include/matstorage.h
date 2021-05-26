@@ -94,22 +94,6 @@ void print_matrix_pcoo(matrix_pcoo_t *matrix);
 void print_matrix_pcsr(matrix_pcsr_t *matrix);
 
 /**
- * @brief Computes the RMSE (Root-Mean-Square Error) of the bc scores obtained
- * by the CPU and the GPU.
- *
- * @note The RMSE describes the standard deviation of the differences
- * between the predicted bc scores of the CPU and the observed bc scores on
- * the GPU. This result can be used to evaluate the correctness of the GPU
- * algorithm compared to the reference implementation of the PBGL.
- *
- * @param nnz
- * @param bc_cpu
- * @param bc_gpu
- * @return
- */
-double check_bc(int nnz, const float *bc_cpu, const float *bc_gpu);
-
-/**
  * @brief Expand a compressed row pointer into a row array.
  *
  * @note Output array Bi must be preallocated

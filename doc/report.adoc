@@ -176,7 +176,7 @@ L'algoritmo SPVB, illustrato in <<alg-spvb>>, può essere eseguito su grafi disc
 
 <<<
 
-[source, pseudocode, id="alg-spvb"]
+[source, python, id="alg-spvb"]
 .Pseudocodice della Shortest Path Vertex Betweenneess
 ----
 procedure SPVB(G)
@@ -219,7 +219,7 @@ end
 
 <<<
 
-[source, pseudocode, id="alg-brandes-mod"]
+[source, python, id="alg-brandes-mod"]
 .Algoritmo modificato per il calcolo della betweenness centrality di Brandes
 ----
 procedure BC_Mod_Computation(G)
@@ -389,7 +389,7 @@ In alternativa si può assegnare un thread a ogni arco del grafo. Come si può v
 
 Per applicazioni nel campo delle reti sociali è stato dimostrato che l'approccio _edge-parallel_ è il più adatto in quanto ha un throughput maggiore rispetto all'approccio _vertex_parallel_ e ha una più bassa divergenza dei thread.
 
-[source, pseudocode, id="alg-vtxp"]
+[source, python, id="alg-vtxp"]
 .Pseudocodice della tecnica vertex-parallel (calcolo visita in ampiezza)
 ----
 for v in G.V on wavefront in parallel do
@@ -404,7 +404,7 @@ for v in G.V on wavefront in parallel do
 end
 ----
 
-[source, pseudocode, id="alg-edgp"]
+[source, python, id="alg-edgp"]
 .Pseudocodice della tecnica edge-parallel (calcolo visita in ampiezza)
 ----
 for e in G.E incident to wavefront in parallel do
@@ -421,7 +421,7 @@ McLaughlin e Bader cite:[mclaughlin_scalable_2014] introducono una terza strateg
 
 Nell'approccio cooperativo si assegnano i thread ai vertici che si trovano nella lista di adiacenza di ciascun vertice della frontiera una alla volta. In questo modo si ha un carico di lavoro bilanciato se la lunghezza media della lista di adiacenza di ciascun vertice è maggiore della dimensione di un warp.
 
-[source, pseudocode, id="alg-wkef"]
+[source, python, id="alg-wkef"]
 .Pseudocodice della tecnica work-efficient
 ----
 while True do
@@ -500,7 +500,7 @@ Impiegando l'algoritmo di DIjstra nel caso di pesi positivi o di Bellman Ford ne
 
 <<<
 
-[bibliography]
 == Riferimenti bibliografici
 
-bibliography::[]
+[.normalize]
+bibliography::bibliography.bib[ieee]

@@ -17,8 +17,8 @@ DOCS       := clgraphs graphs cldoc doc
 doc: ./*.adoc clgraphs
 	asciidoctor-pdf -r asciidoctor-diagram -r asciidoctor-bibtex \
  -r asciidoctor-mathematical ./*.adoc \
- -a pdf-themesdir=. -a pdf-theme=custom \
- -a pdf-fontsdir="fonts;GEM_FONTS_DIR"
+ -a pdf-themesdir=. -a pdf-theme=report \
+ -a pdf-fontsdir="fonts/FiraCode;GEM_FONTS_DIR"
 
 graphs: $(SCRIPT_DIR)/*.plot $(DATA_DIR)/*.dat
 	gnuplot $(SCRIPT_DIR)/*.plot

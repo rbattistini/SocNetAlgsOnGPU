@@ -97,10 +97,6 @@ void compute_ser_bc_cpu(matrix_pcsr_t *g, float *bc_scores, bool directed) {
             }
         }
 
-        //        printf("s: %d\n", s);
-        //        print_int_array(sigma, g->nrows - 1);
-        //        print_int_array(d, g->nrows - 1);
-
         while (!S.empty()) {
 
             int w = S.top();
@@ -109,7 +105,6 @@ void compute_ser_bc_cpu(matrix_pcsr_t *g, float *bc_scores, bool directed) {
             for (int i = g->row_offsets[w]; i < g->row_offsets[w + 1]; i++) {
                 int v = g->cols[i];
                 if (d[v] == (d[w] - 1)) {
-                    printf("v: %d, delta[v]: %.1f\n", v, delta[v]);
                     delta[v] +=
                             (sigma[v] / (double) sigma[w]) * (1.0f + delta[w]);
                 }
@@ -119,9 +114,6 @@ void compute_ser_bc_cpu(matrix_pcsr_t *g, float *bc_scores, bool directed) {
                 bc_scores[w] += delta[w];
             }
         }
-
-        //        print_double_array(delta, g->nrows - 1);
-        //        print_float_array(bc_scores, g->nrows - 1);
 
         free(sigma);
         free(d);

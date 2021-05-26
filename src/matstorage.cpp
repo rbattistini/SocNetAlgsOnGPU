@@ -137,24 +137,6 @@ void print_matrix_pcsr(matrix_pcsr_t *matrix) {
     print_int_array(matrix->cols, nnz - 1);
 }
 
-double check_bc(int nrows, const float *bc_cpu, const float *bc_gpu) {
-    double error = 0;
-    double max_error = 0;
-
-    for (int i = 0; i < nrows; i++) {
-
-        double current_error = abs(bc_cpu[i] - bc_gpu[i]);
-        error += current_error * current_error;
-
-        if (current_error > max_error) {
-            max_error = current_error;
-        }
-    }
-    error = error / (float) nrows;
-    error = sqrt(error);
-    return error;
-}
-
 void expand_row_pointer(int nrows, const int *row_offsets, int *rows) {
 
     for (int i = 0; i < nrows; i++) {

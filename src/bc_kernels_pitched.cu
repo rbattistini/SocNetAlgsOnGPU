@@ -1,8 +1,8 @@
 /****************************************************************************
- * @file gkernels.cu
+ * @file bc_kernels_pitched.cu
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Kernels for computing Betweenness centrality on a Nvidia GPUs.
+ * Kernels for computing Betweenness centrality on a Nvidia GPU.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -98,25 +98,25 @@ __device__ void bfs_update_ds_wpitched(int *qcurr_len,
     }
 }
 
-__global__ void bc_gpu_opt_wpitched(float *bc,
-                                    const int *row_offsets,
-                                    const int *cols,
-                                    int nvertices,
-                                    int *d,
-                                    unsigned long long *sigma,
-                                    float *delta,
-                                    int *curr_queue,
-                                    int *next_queue,
-                                    int *stack,
-                                    int *endpoints,
-                                    int *next_source,
-                                    size_t pitch_d,
-                                    size_t pitch_sigma,
-                                    size_t pitch_delta,
-                                    size_t pitch_qcurr,
-                                    size_t pitch_qnext,
-                                    size_t pitch_stack,
-                                    size_t pitch_endpoints) {
+__global__ void get_vertex_betweenness_p(float *bc,
+                                         const int * row_offsets,
+                                         const int * cols,
+                                         int nvertices,
+                                         int *d,
+                                         unsigned long long *sigma,
+                                         float *delta,
+                                         int *curr_queue,
+                                         int *next_queue,
+                                         int *stack,
+                                         int *endpoints,
+                                         int *next_source,
+                                         size_t pitch_d,
+                                         size_t pitch_sigma,
+                                         size_t pitch_delta,
+                                         size_t pitch_qcurr,
+                                         size_t pitch_qnext,
+                                         size_t pitch_stack,
+                                         size_t pitch_endpoints) {
     __shared__ int ind;
     __shared__ int s;
 
@@ -151,7 +151,6 @@ __global__ void bc_gpu_opt_wpitched(float *bc,
      * For each vertex...
      */
     while (ind < nvertices) {
-
         for (int k = (int) threadIdx.x; k < nvertices; k += (int) blockDim.x) {
             if (k == s) {
                 d_row[k] = 0;
@@ -313,7 +312,6 @@ __global__ void bc_gpu_opt_wpitched(float *bc,
             }
             __syncthreads();
         }
-
         for (int i = (int) threadIdx.x; i < nvertices; i += (int) blockDim.x) {
             atomicAdd(&bc[i], delta_row[i]);
         }
@@ -326,14 +324,16 @@ __global__ void bc_gpu_opt_wpitched(float *bc,
     }
 }
 
-void compute_bc_gpu_wpitched(matrix_pcsr_t *g, float *bc) {
+void compute_bc_gpu_p(matrix_pcsr_t *g, float *bc, stats_t *stats) {
 
-    //    int ntry = 0;
+    double tstart, tend, first_tstart, last_tend;
+    int n = stats->nrun;
+
+    first_tstart = get_time();
     const unsigned int sm_count = get_sm_count();
     int next_source = (int) sm_count;
 
     unsigned long long *d_sigma;
-    //    unsigned int *d_nedges;
     float *d_bc, *d_delta;
     int *d_row_offsets,
             *d_cols,
@@ -404,49 +404,40 @@ void compute_bc_gpu_wpitched(matrix_pcsr_t *g, float *bc) {
     /*
      * Load single-variables.
      */
-    //    cudaCalloc((void **) &d_nedges, 1, sizeof(unsigned int));
     cudaSafeCall(cudaMalloc((void **) &d_next_source, sizeof(int)));
     cudaSafeCall(cudaMemcpy(d_next_source, &next_source,
                             sizeof(int),
                             cudaMemcpyHostToDevice));
 
-    //    statistics->load_time[ntry] = chrono.elapsed();
+    tend = get_time();
+    stats->load_time[n] = tend - first_tstart;
 
     /*
      * Execute the bc computation.
      */
-    bc_gpu_opt_wpitched<<<grid, block>>>(d_bc,
-                                         d_row_offsets,
-                                         d_cols,
-                                         g->nrows,
-                                         d_dist,
-                                         d_sigma,
-                                         d_delta,
-                                         d_qcurr,
-                                         d_qnext,
-                                         d_stack,
-                                         d_ends,
-                                         d_next_source,
-                                         pitch_d,
-                                         pitch_sigma,
-                                         pitch_delta,
-                                         pitch_qcurr,
-                                         pitch_qnext,
-                                         pitch_stack,
-                                         pitch_ends);
+    tstart = get_time();
+    get_vertex_betweenness_p<<<grid, block>>>(d_bc,
+                                              d_row_offsets,
+                                              d_cols,
+                                              g->nrows,
+                                              d_dist,
+                                              d_sigma,
+                                              d_delta,
+                                              d_qcurr,
+                                              d_qnext,
+                                              d_stack,
+                                              d_ends,
+                                              d_next_source,
+                                              pitch_d,
+                                              pitch_sigma,
+                                              pitch_delta,
+                                              pitch_qcurr,
+                                              pitch_qnext,
+                                              pitch_stack,
+                                              pitch_ends);
 
     cudaCheckError();
 
-    //    statistics->bc_comp_time[ntry] = chrono.elapsed();
-
-    //    unsigned int nedges;
-
-    //    cudaSafeCall(cudaMemcpy(&nedges, d_nedges,
-    //                            sizeof(unsigned int),
-    //                            cudaMemcpyDeviceToHost));
-    //    cudaSafeCall(cudaMemcpy(&next_source, d_next_source,
-    //                            sizeof(int),
-    //                            cudaMemcpyDeviceToHost));
     cudaSafeCall(cudaMemcpy(bc, d_bc,
                             g->nrows * sizeof(float),
                             cudaMemcpyDeviceToHost));
@@ -457,12 +448,17 @@ void compute_bc_gpu_wpitched(matrix_pcsr_t *g, float *bc) {
     for (int k = 0; k < g->nrows; k++)
         bc[k] /= 2;
 
+
+    tend = get_time();
+    stats->bc_comp_time[n] = tend - tstart;
+
+    tstart = get_time();
+
     /*
      * Device resource deallocation.
      */
     cudaSafeCall(cudaFree(d_row_offsets));
     cudaSafeCall(cudaFree(d_cols));
-    //    cudaSafeCall(cudaFree(d_nedges));
     cudaSafeCall(cudaFree(d_next_source));
     cudaSafeCall(cudaFree(d_bc));
     cudaSafeCall(cudaFree(d_sigma));
@@ -473,6 +469,7 @@ void compute_bc_gpu_wpitched(matrix_pcsr_t *g, float *bc) {
     cudaSafeCall(cudaFree(d_qnext));
     cudaSafeCall(cudaFree(d_ends));
 
-    //    statistics->unload_time[ntry] = chrono.elapsed();
-    //    statistics.nedges_traversed = nedges;
+    last_tend = get_time();
+    stats->unload_time[n] = last_tend - tstart;
+    stats->total_time[n] = last_tend - first_tstart;
 }

@@ -1,8 +1,8 @@
 /****************************************************************************
- * @file gkernels.cu
+ * @file bc_kernels_pitched.cuh
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Kernels for computing Betweenness centrality on a Nvidia GPUs.
+ * Kernels for computing Betweenness centrality on a Nvidia GPU.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -35,38 +35,38 @@
  ****************************************************************************/
 
 #pragma once
-#ifndef SOCNETALGSONGPU_BC_KERNELS_PITCHED_CUH
-#define SOCNETALGSONGPU_BC_KERNELS_PITCHED_CUH
+#ifndef BC_KERNELS_PITCHED_CUH
+#define BC_KERNELS_PITCHED_CUH
 
 #ifdef __CUDACC__
 
 #include "device_props.cuh"
 #include "matstorage.h"
+#include <bc_statistics.h>
 #include <common.h>
-#include <stdio.h>
 
-__global__ void bc_gpu_opt_wpitched(float *bc,
-                                    const int *row_offsets,
-                                    const int *cols,
-                                    int nvertices,
-                                    int *d,
-                                    unsigned long long *sigma,
-                                    float *delta,
-                                    int *curr_queue,
-                                    int *next_queue,
-                                    int *stack,
-                                    int *endpoints,
-                                    int *next_source,
-                                    size_t pitch_d,
-                                    size_t pitch_sigma,
-                                    size_t pitch_delta,
-                                    size_t pitch_qcurr,
-                                    size_t pitch_qnext,
-                                    size_t pitch_stack,
-                                    size_t pitch_endpoints);
+__global__ void get_vertex_betweenness_p(float *bc,
+                                         const int *row_offsets,
+                                         const int *cols,
+                                         int nvertices,
+                                         int *d,
+                                         unsigned long long *sigma,
+                                         float *delta,
+                                         int *curr_queue,
+                                         int *next_queue,
+                                         int *stack,
+                                         int *endpoints,
+                                         int *next_source,
+                                         size_t pitch_d,
+                                         size_t pitch_sigma,
+                                         size_t pitch_delta,
+                                         size_t pitch_qcurr,
+                                         size_t pitch_qnext,
+                                         size_t pitch_stack,
+                                         size_t pitch_endpoints);
 
-void compute_bc_gpu_wpitched(matrix_pcsr_t *g, float *bc);
+void compute_bc_gpu_p(matrix_pcsr_t *g, float *bc, stats_t *stats);
 
 #endif
 
-#endif//SOCNETALGSONGPU_BC_KERNELS_PITCHED_CUH
+#endif//BC_KERNELS_PITCHED_CUH

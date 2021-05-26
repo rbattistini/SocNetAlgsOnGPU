@@ -41,12 +41,13 @@ void compute_par_bc_cpu(matrix_pcsr_t *g_tmp, float *bc_cpu) {
     /*
      * Build the Boost graph from the pattern CSR matrix given in input.
      */
+    int nvertices = g_tmp->nrows;
+    int nnz = g_tmp->row_offsets[nvertices];
     typedef boost::adjacency_list<> graph;
-    int nnz = g_tmp->row_offsets[g_tmp->nrows];
-    graph g((unsigned long) g_tmp->nrows);
+    graph g((unsigned long) nvertices);
 
     auto rows = (int *) malloc(nnz * sizeof(int));
-    expand_row_pointer(g_tmp->nrows, g_tmp->row_offsets, rows);
+    expand_row_pointer(nvertices, g_tmp->row_offsets, rows);
 
     for (int i = 0; i < nnz; i++) {
         boost::add_edge((unsigned long) rows[i], (unsigned long) g_tmp->cols[i],
@@ -56,23 +57,20 @@ void compute_par_bc_cpu(matrix_pcsr_t *g_tmp, float *bc_cpu) {
     /*
      * Compute BC with the algorithm that uses multithreading of the BGL.
      */
-    double start_time = get_time();
     boost::shared_array_property_map<double, boost::property_map<graph,
             boost::vertex_index_t>::const_type>
             centrality_map(num_vertices(g), get(boost::vertex_index, g));
 
     boost::brandes_betweenness_centrality(g, centrality_map);
 
-    for (int i = 0; i < g_tmp->nrows; i++) {
+    for (int i = 0; i < nvertices; i++) {
         bc_cpu[i] = (float) (centrality_map[i]);
     }
 
     /*
      * Count each edge only one time.
      */
-    for (int k = 0; k < g_tmp->nrows; k++)
+    for (int k = 0; k < nvertices; k++)
         bc_cpu[k] /= 2;
 
-    double end_time = (float) get_time();
-    double elapsed_time = end_time - start_time;
 }
