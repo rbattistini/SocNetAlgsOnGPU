@@ -36,9 +36,47 @@
 
 #include "bc_statistics.h"
 
-/*
- * REVIEW
- */
+double check_score(int nrows,
+                   const float *score_cpu,
+                   const float *score_gpu) {
+    double error = 0;
+    double max_error = 0;
+
+    for (int i = 0; i < nrows; i++) {
+
+        double current_error = abs(score_cpu[i] - score_gpu[i]);
+        error += current_error * current_error;
+
+        if (current_error > max_error) {
+            max_error = current_error;
+        }
+    }
+    error = error / (float) nrows;
+    error = sqrt(error);
+    return error;
+}
+
+void print_stats(stats_t *s) {
+
+    print_separator();
+
+    printf("%15s|%15s|%15s|%15s|%15s|\n", "Total Time", "Load Time",
+           "Unload Time", "BC Comp Time", "Teps");
+
+    print_separator();
+
+    for (int i = 0; i < s->nrun; i++) {
+        double teps = get_bc_teps(s->nedges_traversed, s->total_time[i]);
+
+        printf("%15g|%15g|%15g|%15g|%15g|\n",
+               s->total_time[i],
+               s->load_time[i],
+               s->unload_time[i],
+               s->bc_comp_time[i],
+               teps);
+    }
+}
+
 int dump_stats(stats_t *stats, char *fname) {
 
     if (fname == 0) {
@@ -81,10 +119,11 @@ int dump_stats(stats_t *stats, char *fname) {
     return close_stream(f);
 }
 
-/*
- * REVIEW
- */
-int dump_bc_scores(int nvertices, const float *bc_scores, char *fname) {
+int dump_scores(int nvertices,
+                const int *degree_scores,
+                const float *bc_scores,
+                const float *cl_scores,
+                char *fname) {
 
     if (fname == 0) {
         ZF_LOGE("No filename given");
@@ -93,16 +132,30 @@ int dump_bc_scores(int nvertices, const float *bc_scores, char *fname) {
 
     FILE *f = fopen(fname, "w");
 
+    if (degree_scores == 0) {
+        ZF_LOGE("Degree centrality scores not initialized");
+        return EXIT_FAILURE;
+    }
+
     if (bc_scores == 0) {
-        ZF_LOGE("Bc scores not initialized");
+        ZF_LOGE("Betweenness centrality scores not initialized");
+        return EXIT_FAILURE;
+    }
+
+    if (cl_scores == 0) {
+        ZF_LOGE("Closeness centrality scores not initialized");
         return EXIT_FAILURE;
     }
 
     if (f != 0) {
-        fprintf(f, "\"Vertex Id\", \"Bc score\"\n");
+        fprintf(f, "\"Vertex Id\", \"Degree\", \"Betweenness\","
+                   " \"Closeness\"\n");
 
         for (int i = 0; i < nvertices; i++) {
-            fprintf(f, "%d, %.2f\n", i, bc_scores[i]);
+            fprintf(f, "%d, %d, %.2f, %.2f\n", i,
+                    degree_scores[i],
+                    bc_scores[i],
+                    cl_scores[i]);
         }
 
     } else {
@@ -118,6 +171,7 @@ void free_stats(stats_t *s) {
     free(s->load_time);
     free(s->unload_time);
     free(s->bc_comp_time);
+    free(s->compression_time);
     s->nrun = 0;
     s->nedges_traversed = 0;
 }

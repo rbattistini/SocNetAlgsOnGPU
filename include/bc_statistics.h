@@ -50,9 +50,29 @@ typedef struct stats_t {
     double *unload_time = 0;
     double *bc_comp_time = 0;
     double *total_time = 0;
+    double cpu_time = 0;
+    double *compression_time = 0;
     unsigned long long nedges_traversed = 0;
     int nrun = 0;
 } stats_t;
+
+/**
+ * @brief Computes the RMSE (Root-Mean-Square Error) of the bc scores obtained
+ * by the CPU and the GPU.
+ *
+ * @note The RMSE describes the standard deviation of the differences
+ * between the predicted bc scores of the CPU and the observed bc scores on
+ * the GPU. This result can be used to evaluate the correctness of the GPU
+ * algorithm compared to the reference implementation of the PBGL.
+ *
+ * @param nrows
+ * @param score_cpu
+ * @param score_gpu
+ * @return
+ */
+double check_score(int nrows, const float *score_cpu, const float *score_gpu);
+
+void print_stats(stats_t *s);
 
 /**
  * @brief Dump runtime and throughput of the GPU algorithm to a file for each
@@ -87,15 +107,20 @@ double inline get_bc_teps(unsigned int nedges, double time_elapsed) {
 }
 
 /**
- * @brief Dump bc scores of the GPU algorithm to a file.
+ * @brief Dump scores to a file.
  *
  * @param nvertices
- * @param bc_scores array that stores the scores to be dumped
+ * @param scores array that stores the scores to be dumped
  * @param fname file where the dump happens
+ * @param score_name the name of the score to be dumped
  * @return 0 if successful, -1 if the stream was not closed correctly,
  * 1 if another error occurred
  */
-int dump_bc_scores(int nvertices, const float *bc_scores, char *fname);
+int dump_scores(int nvertices,
+                const int *degree_scores,
+                const float *bc_scores,
+                const float *cl_scores,
+                char *fname);
 
 void free_stats(stats_t *s);
 
