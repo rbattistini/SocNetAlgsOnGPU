@@ -10,6 +10,3 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 add_library(mmio ${HEADERS} ${SOURCES})
 target_include_directories(mmio PUBLIC $<BUILD_INTERFACE:${HEADERS_DIR}>)
-
-# from https://developer.nvidia.com/blog/building-cuda-applications-cmake/
-set_target_properties(mmio PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
