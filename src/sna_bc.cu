@@ -32,11 +32,10 @@
  ****************************************************************************/
 
 #include "bc.h"
-#include "bc_kernels_compressed.cuh"
-#include "bc_kernels_pitched.cuh"
-#include "bc_par.h"
 #include "bc_statistics.h"
+#include "bc_vp_kernels.cuh"
 #include "bc_we_kernels.cuh"
+#include "bc_we_kernels_pitched.cuh"
 #include "cl.h"
 #include "cl_kernels.cuh"
 #include "degree.h"
@@ -51,9 +50,6 @@ int main(int argc, char *argv[]) {
     if (err_code == EXIT_FAILURE) {
         return EXIT_FAILURE;
     } else if (err_code == EXIT_WHELP_OR_USAGE) {
-        close_stream(stdin);
-        close_stream(stdout);
-        close_stream(stderr);
         return EXIT_SUCCESS;
     }
 
@@ -62,11 +58,6 @@ int main(int argc, char *argv[]) {
      */
     if (params.input_file == 0) {
         ZF_LOGF("Input file required");
-        return EXIT_FAILURE;
-    }
-
-    if (params.nrun <= 0) {
-        ZF_LOGF("Number of runs required");
         return EXIT_FAILURE;
     }
 
@@ -119,7 +110,6 @@ int main(int argc, char *argv[]) {
         tstart_sub_ex = get_time();
         get_largest_cc(&m_csr, &g, &ccs);
         tend_sub_ex = get_time();
-
         free_matrix_pcsr(&m_csr);
     } else {
         g = m_csr;
@@ -173,37 +163,34 @@ int main(int argc, char *argv[]) {
      * stored.
      */
     stats_t stats;
-    stats.total_time = (double *) malloc(params.nrun * sizeof(double));
-    stats.bc_comp_time = (double *) malloc(params.nrun * sizeof(double));
-    stats.unload_time = (double *) malloc(params.nrun * sizeof(double));
-    stats.load_time = (double *) malloc(params.nrun * sizeof(double));
-    stats.compression_time = (double *) malloc(params.nrun * sizeof(double));
-
-    if (stats.total_time == 0 || stats.bc_comp_time == 0 ||
-        stats.unload_time == 0 || stats.load_time == 0
-        || stats.compression_time == 0) {
-        ZF_LOGF("Could not allocate memory");
-        return EXIT_FAILURE;
-    }
-
-    stats.nrun = 0;
     stats.nedges_traversed = g.nrows * g.row_offsets[g.nrows];
 
     /*
-     * BC and CLC computation on the GPU.
+     * BC computation on the GPU.
      */
-    for (int run = 0; run < params.nrun; run++) {
-        if (params.compress) {
-            compute_bc_gpu_pc(&g, bc_gpu, &stats, degree);
-        } else {
-            compute_bc_gpu_p(&g, bc_gpu, &stats);
-        }
-//        compute_cl_gpu_p(&g, cl_gpu, &stats);
-        stats.nrun++;
+    ParStrategy technique = params.technique;
+
+    switch (technique) {
+        case work_efficient:
+            compute_bc_gpu_wep(&g, bc_gpu, &stats);
+            break;
+        case vertex_parallel:
+            compute_bc_gpu_vpp(&g, bc_gpu);
+            break;
+        case edge_parallel:
+//            compute_bc_gpu_epp(&g, bc_gpu);
+            break;
+        default:
+            ZF_LOGE("Invalid technique Id, cannot compute betweenness");
     }
 
     /*
-     * BC and CLC computation on the CPU.
+     * Closeness centrality computation on the GPU.
+     */
+    compute_cl_gpu_p(&g, cl_gpu, &stats);
+
+    /*
+     * BC and Closeness centrality computation on the CPU.
      */
     if (params.run_check) {
         auto bc_cpu = (float *) malloc(g.nrows * sizeof(float));
@@ -213,32 +200,30 @@ int main(int argc, char *argv[]) {
         }
 
         tstart = get_time();
-        compute_par_bc_cpu(&g, bc_cpu);
+        compute_ser_bc_cpu(&g, bc_cpu, gp.is_directed);
         tend = get_time();
         stats.cpu_time = tend - tstart;
 
         double bc_error = check_score(g.nrows, bc_cpu, bc_gpu);
-//        print_float_array(bc_gpu, g.nrows);
-//        print_float_array(bc_cpu, g.nrows);
 
-//        auto cl_cpu = (float *) malloc(g.nrows * sizeof(float));
-//        if (cl_cpu == 0) {
-//            ZF_LOGF("Could not allocate memory");
-//            return EXIT_FAILURE;
-//        }
+        auto cl_cpu = (float *) malloc(g.nrows * sizeof(float));
+        if (cl_cpu == 0) {
+            ZF_LOGF("Could not allocate memory");
+            return EXIT_FAILURE;
+        }
 
-//        tstart = get_time();
-//        compute_cl_cpu(&g, cl_cpu);
-//        tend = get_time();
-//        stats.cpu_time = tend - tstart;
+        tstart = get_time();
+        compute_cl_cpu(&g, cl_cpu);
+        tend = get_time();
+        stats.cpu_time = tend - tstart;
 
-//        double cl_error = check_score(g.nrows, cl_cpu, cl_gpu);
+        double cl_error = check_score(g.nrows, cl_cpu, cl_gpu);
 
         if(!params.quiet) {
-            printf("Betweenness RMSE bc_error: %g\n", bc_error);
-//            printf("Closeness RMSE bc_error: %g\n", cl_error);
+            printf("Betweenness RMSE error: %g\n", bc_error);
+            printf("Closeness RMSE error: %g\n", cl_error);
             free(bc_cpu);
-//            free(cl_cpu);
+            free(cl_cpu);
         }
     }
 
@@ -251,7 +236,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (params.dump_stats != 0) {
-        dump_stats(&stats, params.dump_stats);
+        append_stats(&stats, params.dump_stats);
     } else if(!params.quiet){
         print_stats(&stats);
     }
@@ -263,16 +248,10 @@ int main(int argc, char *argv[]) {
     free(dist);
     free(delta);
     free(bc_gpu);
-    free_stats(&stats);
 
     if (!gp.is_connected)
         free_matrix_pcsr(&g);
 
     cudaSafeCall(cudaDeviceReset());
-
-    close_stream(stdin);
-    close_stream(stdout);
-    close_stream(stderr);
-
     return EXIT_SUCCESS;
 }

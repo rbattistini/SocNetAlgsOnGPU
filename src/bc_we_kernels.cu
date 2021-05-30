@@ -84,18 +84,19 @@ __device__ void bfs_update_ds(int *qcurr_len,
     }
 }
 
-__global__ void bc_gpu_opt(float *bc,
-                           const int *row_offsets,
-                           const int *cols,
-                           int nvertices,
-                           int *d,
-                           unsigned long long *sigma,
-                           float *delta,
-                           int *qcurr,
-                           int *qnext,
-                           int *stack,
-                           int *ends,
-                           int *next_source) {
+__global__ void get_vertex_betweenness_we(float *bc,
+                                          const int *row_offsets,
+                                          const int *cols,
+                                          int nvertices,
+                                          int *d,
+                                          unsigned long long *sigma,
+                                          float *delta,
+                                          int *qcurr,
+                                          int *qnext,
+                                          int *stack,
+                                          int *ends,
+                                          int *next_source,
+                                          bool normalized) {
 
     __shared__ int ind;
     __shared__ int s;
@@ -106,8 +107,6 @@ __global__ void bc_gpu_opt(float *bc,
         ind = (int) blockIdx.x;
         s = ind;
     }
-
-    //    d[blockIdx.x * Ncols + tidx] = d_row[tidx]
 
     __syncthreads();
 
@@ -289,9 +288,18 @@ __global__ void bc_gpu_opt(float *bc,
             __syncthreads();
         }
 
-        for (int i = (int) threadIdx.x; i < nvertices; i += (int) blockDim.x) {
-            atomicAdd(&bc[i], delta[blockIdx.x * nvertices + i]);
+        if(normalized) {
+            for (int i = (int) threadIdx.x; i < nvertices; i += (int) blockDim.x) {
+                atomicAdd(&bc[i],
+                          (2 * delta[blockIdx.x * nvertices + i]) /
+                          (float) (nvertices * nvertices - 3 * nvertices + 2));
+            }
+        } else {
+            for (int i = (int) threadIdx.x; i < nvertices; i += (int) blockDim.x) {
+                atomicAdd(&bc[i], delta[blockIdx.x * nvertices + i]);
+            }
         }
+
 
         if (tid == 0) {
             ind = atomicAdd(next_source, 1);
@@ -301,14 +309,12 @@ __global__ void bc_gpu_opt(float *bc,
     }
 }
 
-void compute_bc_gpu(matrix_pcsr_t *g, float *bc) {
+void compute_bc_gpu_we(matrix_pcsr_t *g, float *bc, bool normalized) {
 
-    //    int ntry = 0;
     const unsigned int sm_count = get_sm_count();
     int next_source = (int) sm_count;
 
     unsigned long long *d_sigma;
-    //    unsigned int *d_nedges;
     float *d_bc, *d_delta;
     int *d_row_offsets,
             *d_cols,
@@ -382,18 +388,19 @@ void compute_bc_gpu(matrix_pcsr_t *g, float *bc) {
     /*
      * Execute the bc computation.
      */
-    bc_gpu_opt<<<grid, block>>>(d_bc,
-                                d_row_offsets,
-                                d_cols,
-                                g->nrows,
-                                d_dist,
-                                d_sigma,
-                                d_delta,
-                                d_qcurr,
-                                d_qnext,
-                                d_stack,
-                                d_endpoints,
-                                d_next_source);
+    get_vertex_betweenness_we<<<grid, block>>>(d_bc,
+                                               d_row_offsets,
+                                               d_cols,
+                                               g->nrows,
+                                               d_dist,
+                                               d_sigma,
+                                               d_delta,
+                                               d_qcurr,
+                                               d_qnext,
+                                               d_stack,
+                                               d_endpoints,
+                                               d_next_source,
+                                               normalized);
 
     cudaCheckError();
 

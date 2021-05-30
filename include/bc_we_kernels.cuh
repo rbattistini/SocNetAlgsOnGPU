@@ -41,24 +41,25 @@
 #ifdef __CUDACC__
 
 #include "device_props.cuh"
-#include "matstorage.h"
+#include "matds.h"
 #include <common.h>
 #include <stdio.h>
 
-__global__ void bc_gpu_opt(float *bc,
-                           const int *row_offsets,
-                           const int *cols,
-                           int nvertices,
-                           int *d,
-                           unsigned long long *sigma,
-                           float *delta,
-                           int *qcurr,
-                           int *qnext,
-                           int *stack,
-                           int *ends,
-                           int *next_source);
+__global__ void get_vertex_betweenness_we(float *bc,
+                                          const int *row_offsets,
+                                          const int *cols,
+                                          int nvertices,
+                                          int *d,
+                                          unsigned long long *sigma,
+                                          float *delta,
+                                          int *qcurr,
+                                          int *qnext,
+                                          int *stack,
+                                          int *ends,
+                                          int *next_source,
+                                          bool normalized);
 
-void compute_bc_gpu(matrix_pcsr_t *g, float *bc);
+void compute_bc_gpu_we(matrix_pcsr_t *g, float *bc, bool normalized);
 
 #endif
 
