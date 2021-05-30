@@ -1,9 +1,8 @@
 /****************************************************************************
- * @file bc_par.cpp
+ * @file bc_vp_kernels.cu
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * @brief Function to compute the betweenness centrality using the parallel
- * algorithm of the Parallel Boost Graph Library.
+ * Kernels for computing Betweenness centrality on a Nvidia GPU.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -34,43 +33,31 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 
-#include "bc_par.h"
+#pragma once
+#ifndef BC_VP_KERNELS_CUH
+#define BC_VP_KERNELS_CUH
 
-void compute_par_bc_cpu(matrix_pcsr_t *g_tmp, float *bc_cpu) {
+#ifdef __CUDACC__
 
-    /*
-     * Build the Boost graph from the pattern CSR matrix given in input.
-     */
-    int nvertices = g_tmp->nrows;
-    int nnz = g_tmp->row_offsets[nvertices];
-    typedef boost::adjacency_list<> graph;
-    graph g((unsigned long) nvertices);
+#include "device_props.cuh"
+#include "matds.h"
+#include <bc_statistics.h>
+#include <common.h>
 
-    auto rows = (int *) malloc(nnz * sizeof(int));
-    expand_row_pointer(nvertices, g_tmp->row_offsets, rows);
+__global__ void get_vertex_betweenness_vpp(float *bc,
+                                           const int *row_offsets,
+                                           const int *cols,
+                                           int nvertices,
+                                           int *d,
+                                           unsigned long long *sigma,
+                                           float *delta,
+                                           int *next_source,
+                                           size_t pitch_d,
+                                           size_t pitch_sigma,
+                                           size_t pitch_delta);
 
-    for (int i = 0; i < nnz; i++) {
-        boost::add_edge((unsigned long) rows[i], (unsigned long) g_tmp->cols[i],
-                        g);
-    }
+void compute_bc_gpu_vpp(matrix_pcsr_t *g, float *bc);
 
-    /*
-     * Compute BC with the algorithm that uses multithreading of the BGL.
-     */
-    boost::shared_array_property_map<double, boost::property_map<graph,
-            boost::vertex_index_t>::const_type>
-            centrality_map(num_vertices(g), get(boost::vertex_index, g));
+#endif
 
-    boost::brandes_betweenness_centrality(g, centrality_map);
-
-    for (int i = 0; i < nvertices; i++) {
-        bc_cpu[i] = (float) (centrality_map[i]);
-    }
-
-    /*
-     * Count each edge only one time.
-     */
-    for (int k = 0; k < nvertices; k++)
-        bc_cpu[k] /= 2;
-
-}
+#endif//BC_VP_KERNELS_CUH
