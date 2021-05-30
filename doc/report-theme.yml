@@ -46,6 +46,8 @@ heading:
   font-family: Noto Serif
   h1-font-color: #949494
   h1-font-size: 21
+  h2-font-size: 16
+  h3-font-size: 15
   h1-align: right
   h1-margin-bottom: 280
   h1-margin-page-top: 70
