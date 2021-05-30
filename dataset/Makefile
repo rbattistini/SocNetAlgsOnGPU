@@ -10,7 +10,7 @@
 # make veryclean
 
 # Each graph lives in its own directory
-SUBDIRS := ca-AstroPh ca-CondMat ca-GrQc ca-HepPh ca-HepTh roadnet-PA
+SUBDIRS := ca-AstroPh ca-CondMat ca-GrQc ca-HepPh ca-HepTh
 
 .PHONY: $(GRAPHS)
 

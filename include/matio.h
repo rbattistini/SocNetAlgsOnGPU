@@ -52,10 +52,10 @@
 #define BUFFER_SIZE 1030
 
 #include "graphs.h"
-#include "matstorage.h"
+#include "matds.h"
+#include "mmio.h"
 #include <climits>
 #include <cstring>
-#include "mmio.h"
 
 int query_gprops(const char *fname, gprops_t *gp);
 

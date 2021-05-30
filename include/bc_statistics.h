@@ -38,7 +38,7 @@
 #ifndef BC_STATISTICS_H
 #define BC_STATISTICS_H
 
-#include "matstorage.h"
+#include "matds.h"
 #include <cstring>
 
 /**
@@ -46,14 +46,12 @@
  * and throughput.
  */
 typedef struct stats_t {
-    double *load_time = 0;
-    double *unload_time = 0;
-    double *bc_comp_time = 0;
-    double *total_time = 0;
+    double load_time = 0;
+    double unload_time = 0;
+    double bc_comp_time = 0;
+    double total_time = 0;
     double cpu_time = 0;
-    double *compression_time = 0;
     unsigned long long nedges_traversed = 0;
-    int nrun = 0;
 } stats_t;
 
 /**
@@ -83,7 +81,7 @@ void print_stats(stats_t *s);
  * @return 0 if successful, -1 if the stream was not closed correctly,
  * 1 if another error occurred
  */
-int dump_stats(stats_t *stats, char *fname);
+int append_stats(stats_t *stats, char *fname);
 
 /**
  * @brief Compute Traversed Edges Per Second for the BC algorithm on the GPU
@@ -121,7 +119,5 @@ int dump_scores(int nvertices,
                 const float *bc_scores,
                 const float *cl_scores,
                 char *fname);
-
-void free_stats(stats_t *s);
 
 #endif//BC_STATISTICS_H

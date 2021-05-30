@@ -38,11 +38,13 @@
 #define GRAPHS_H
 
 #include "common.h"
-#include "matstorage.h"
+#include "matds.h"
 #include "spmatops.h"
 #include <climits>
 #include <queue>
 #include <stack>
+#include <algorithm>
+#include <ecc.h>
 
 typedef struct gprops_t {
     int is_directed;

@@ -40,9 +40,9 @@
 #ifdef __CUDACC__
 
 #include "device_props.cuh"
-#include "matstorage.h"
-#include <common.h>
+#include "matds.h"
 #include <bc_statistics.h>
+#include <common.h>
 
 __global__ void get_closeness_p(float *bc,
                                 float *p_bc,

@@ -32,9 +32,9 @@
  *
  ****************************************************************************/
 
-#include <matstorage.h>
-#include "tests.h"
 #include "spmatops.h"
+#include "tests.h"
+#include <matds.h>
 
 static matrix_pcsr_t A;
 static matrix_pcsr_t B;

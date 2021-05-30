@@ -40,7 +40,7 @@
 #define SPMATOPS_H
 
 #include "common.h"
-#include "matstorage.h"
+#include "matds.h"
 
 /**
  * @brief Implements the Gustavson’s row-wise sparse general matrix-matrix

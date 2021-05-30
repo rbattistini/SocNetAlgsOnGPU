@@ -39,7 +39,7 @@
 #define ECC_H
 
 #include "graphs.h"
-#include "matstorage.h"
+#include "matds.h"
 #include <climits>
 
 /**

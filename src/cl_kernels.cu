@@ -150,11 +150,11 @@ __global__ void get_closeness_p(float *cl,
 
             __shared__ int next_index;
             if (tid == 0) {
-                next_index = blockDim.x;
+                next_index = (int) blockDim.x;
             }
             __syncthreads();
 
-            int k = threadIdx.x;
+            int k = (int) threadIdx.x;
 
             /*
              * For each vertex in the current frontier.
@@ -237,7 +237,6 @@ __global__ void get_closeness_p(float *cl,
 void compute_cl_gpu_p(matrix_pcsr_t *g, float *cl, stats_t *stats) {
 
     double tstart, tend, first_tstart, last_tend;
-    int n = stats->nrun;
 
     first_tstart = get_time();
     const unsigned int sm_count = get_sm_count();
@@ -304,7 +303,7 @@ void compute_cl_gpu_p(matrix_pcsr_t *g, float *cl, stats_t *stats) {
                             cudaMemcpyHostToDevice));
 
     tend = get_time();
-    stats->load_time[n] = tend - first_tstart;
+    stats->load_time = tend - first_tstart;
 
     /*
      * Execute the cl computation.
@@ -336,7 +335,7 @@ void compute_cl_gpu_p(matrix_pcsr_t *g, float *cl, stats_t *stats) {
     }
 
     tend = get_time();
-    stats->bc_comp_time[n] = tend - tstart;
+    stats->bc_comp_time = tend - tstart;
 
     tstart = get_time();
 
@@ -352,6 +351,6 @@ void compute_cl_gpu_p(matrix_pcsr_t *g, float *cl, stats_t *stats) {
     cudaSafeCall(cudaFree(d_qnext));
 
     last_tend = get_time();
-    stats->unload_time[n] = last_tend - tstart;
-    stats->total_time[n] = last_tend - first_tstart;
+    stats->unload_time = last_tend - tstart;
+    stats->total_time = last_tend - first_tstart;
 }

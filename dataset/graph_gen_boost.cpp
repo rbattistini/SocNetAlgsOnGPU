@@ -41,7 +41,7 @@
  * ---------------------------------------------------------------------------
  *
  * Compile with:
- * g++ -I/usr/include/boost graph_gen_boost.cpp -o graph_gen_boost
+ * g++ -I/usr/include/boost -I../lib/mmio graph_gen_boost.cpp -o graph_gen_boost
  *
  * Run with:
  * ./graph_gen_boost [filename] [graph_type] [number_vertices]
@@ -158,7 +158,7 @@ int main( int argc, char *argv[] ) {
      * Basic configuration parameters.
      */
     const int min_vertices = 20;
-    const int max_vertices = 1000;
+    const int max_vertices = 5000;
 
     if (argc != 4) {
         fprintf(stderr, "Usage: %s [filename] [graph_type] [number_vertices]\n",
@@ -171,21 +171,21 @@ int main( int argc, char *argv[] ) {
     v = (int) strtol_wcheck(argv[3], nullptr, 10);
 
     if (v < min_vertices || v > max_vertices) {
-        fprintf(stderr, "A graph must have at least 20 nodes and no more "
-                "than 1000 nodes");
+        fprintf(stderr, "A graph must have at least %d vertices and no more "
+                "than %d vertices\n", min_vertices, max_vertices);
         return EXIT_FAILURE;
     }
 
     switch (gtype) {
         case Random: {
             // probability of an edge between a pair of nodes
-            const float p = 0.05;
+            const float p = 0.02;
             g = Graph(ERGen(gen, v, p), ERGen(), v);
             break;
         }
         case SmallWorld: {
             // number of neighbours to which each node is connected
-            const int k = 17 * v;
+            const int k = 6;
             // rewiring probability
             const float p = 0.03;
             g = Graph(SWGen(gen, v, k, p), SWGen(), v);

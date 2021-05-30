@@ -65,51 +65,46 @@ void print_stats(stats_t *s) {
 
     print_separator();
 
-    for (int i = 0; i < s->nrun; i++) {
-        double teps = get_bc_teps(s->nedges_traversed, s->total_time[i]);
+    double teps = get_bc_teps(s->nedges_traversed, s->total_time);
 
-        printf("%15g|%15g|%15g|%15g|%15g|\n",
-               s->total_time[i],
-               s->load_time[i],
-               s->unload_time[i],
-               s->bc_comp_time[i],
-               teps);
-    }
+    printf("%15g|%15g|%15g|%15g|%15g|\n",
+           s->total_time,
+           s->load_time,
+           s->unload_time,
+           s->bc_comp_time,
+           teps);
 }
 
-int dump_stats(stats_t *stats, char *fname) {
+int append_stats(stats_t *stats, char *fname) {
 
     if (fname == 0) {
         ZF_LOGE("No filename given");
         return EXIT_FAILURE;
     }
 
-    FILE *f = fopen(fname, "w");
+    FILE *f = fopen(fname, "a");
 
     if (stats->total_time == 0 || stats->load_time == 0 ||
         stats->bc_comp_time == 0 || stats->unload_time == 0 ||
-        stats->nedges_traversed == 0 || stats->nrun == 0) {
+        stats->nedges_traversed == 0) {
         ZF_LOGE("Statistics not completely initialized");
         return EXIT_FAILURE;
     }
 
     if (f != 0) {
 
-        fprintf(f, "\"Total Time\", \"Load Time\", \"Unload Time\","
-                   " \"BC Comp Time\", \"Teps\"\n");
+//        fprintf(f, "\"Total Time\", \"Load Time\", \"Unload Time\","
+//                   " \"BC Comp Time\", \"Teps\"\n");
 
-        for (int i = 0; i < stats->nrun; i++) {
+        double teps = get_bc_teps(stats->nedges_traversed,
+                                  stats->total_time);
 
-            double teps = get_bc_teps(stats->nedges_traversed,
-                                      stats->total_time[i]);
-
-            fprintf(f, "%.2f, %.2f, %.2f, %.2f, %.2f\n",
-                    stats->total_time[i],
-                    stats->load_time[i],
-                    stats->unload_time[i],
-                    stats->bc_comp_time[i],
-                    teps);
-        }
+        fprintf(f, "%.2f, %.2f, %.2f, %.2f, %.2f\n",
+                stats->total_time,
+                stats->load_time,
+                stats->unload_time,
+                stats->bc_comp_time,
+                teps);
 
     } else {
         ZF_LOGE("Failed to dump statistics");
@@ -164,14 +159,4 @@ int dump_scores(int nvertices,
     }
 
     return close_stream(f);
-}
-
-void free_stats(stats_t *s) {
-    free(s->total_time);
-    free(s->load_time);
-    free(s->unload_time);
-    free(s->bc_comp_time);
-    free(s->compression_time);
-    s->nrun = 0;
-    s->nedges_traversed = 0;
 }

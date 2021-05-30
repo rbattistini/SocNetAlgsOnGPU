@@ -33,8 +33,8 @@
  ****************************************************************************/
 
 #include "graphs.h"
+#include "matds.h"
 #include "matio.h"
-#include "matstorage.h"
 #include "tests.h"
 
 #define MM_HEADER 51

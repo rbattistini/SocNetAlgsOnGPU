@@ -117,7 +117,7 @@ void print_gpu_overview(int device_id) {
     cudaDeviceProp prop{};
     cudaSafeCall(cudaGetDeviceProperties(&prop, device_id));
 
-    printf("GPU Overview:\n\n");
+    printf("GPU overview:\n\n");
     printf("\tDevice: \t\t%s\n", prop.name);
     printf("\tCUDA Runtime version: \t%d\n", get_runtime_version());
     printf("\tCompute Capability: \t%d.%d\n",

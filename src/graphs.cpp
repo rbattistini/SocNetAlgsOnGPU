@@ -35,8 +35,6 @@
  ****************************************************************************/
 
 #include "graphs.h"
-#include <algorithm>
-#include <ecc.h>
 
 using std::queue;
 using std::stack;
@@ -51,6 +49,10 @@ void print_graph_overview(matrix_pcsr_t *g, int *degree) {
     printf("\tEdges:\t\t\t%d\n", nedges);
     printf("\tDensity:\t\t%.2f %%\n", get_density(nvertices, nedges) * 100);
     printf("\tMax degree: \t\t%d\n", degree[get_max_idx(degree, nvertices)]);
+
+    /*
+     * Exact serial unoptimized slow diameter computation.
+     */
 //    printf("\tDiameter: \t\t%d\n", get_diameter(g));
 
     print_separator();

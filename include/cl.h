@@ -38,10 +38,10 @@
 #ifndef CL_CPU_H
 #define CL_CPU_H
 
-#include "graphs.h"
 #include "bc_statistics.h"
 #include "common.h"
-#include "matstorage.h"
+#include "graphs.h"
+#include "matds.h"
 #include <climits>
 
 void compute_cl_cpu(matrix_pcsr_t *g, float *cl_cpu);

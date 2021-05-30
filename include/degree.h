@@ -38,7 +38,7 @@
 #ifndef DEGREE_H
 #define DEGREE_H
 
-#include "matstorage.h"
+#include "matds.h"
 
 void compute_degrees_undirected(matrix_pcsr_t *g, int *degree);
 

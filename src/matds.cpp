@@ -35,7 +35,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 
-#include "matstorage.h"
+#include "matds.h"
 
 int check_matrix_pcoo(matrix_pcoo_t *matrix) {
     return (matrix->cols != 0) &&
