@@ -1,8 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="All in test_matrix_io" type="CMakeDoctestTestRunConfigurationType" factoryName="doctest Test" nameIsGenerated="true" REDIRECT_INPUT="false" ELEVATE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="SocNetAlgsOnGPU" TARGET_NAME="test_matrix_io" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="SocNetAlgsOnGPU" RUN_TARGET_NAME="test_matrix_io" TEST_MODE="SUITE_TEST">
-    <method v="2">
-      <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      <option name="BeforeTestRunTask" enabled="true" />
-    </method>
-  </configuration>
-</component>
