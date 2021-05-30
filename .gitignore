@@ -11,3 +11,5 @@ samples/*
 *.tar.gz
 *.png
 *.pdf
+*.o
+*.a
