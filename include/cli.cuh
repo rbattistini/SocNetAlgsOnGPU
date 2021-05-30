@@ -44,23 +44,31 @@
 #include <unistd.h>
 
 #define EXIT_WHELP_OR_USAGE 2
-#define MAX_RUNS 10
+#define NTECHNIQUES 3
+
+/**
+ * List all technique used for computing BC on the GPU.
+ */
+enum ParStrategy {
+    work_efficient  = 1,
+    vertex_parallel = 2,
+    edge_parallel   = 3
+};
 
 /**
  * Lists all accepted command line arguments.
  *
  * verify, vf (pbgl run and RMSE error reporting)
  * dump_scores, ds (.csv file, vertex id and score)
- * dump_stats, dst (.csv file, ph 1, 2, 3, runtime, teps)
+ * append_stats, dst (.csv file, ph 1, 2, 3, runtime, teps)
  */
 typedef struct params_t {
     int run_check;
     int verbose;
     int quiet;
-    int nrun;
     int self_loops_allowed;
     int device_id;
-    int compress;
+    ParStrategy technique;
     char *dump_scores;
     char *dump_stats;
     char *input_file;

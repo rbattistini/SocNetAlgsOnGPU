@@ -1,9 +1,8 @@
 /****************************************************************************
- * @file bc_par.h
+ * @file bc_kernels_pitched.cuh
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * @brief Function to compute the betweenness centrality using the parallel
- * algorithm of the Parallel Boost Graph Library.
+ * Kernels for computing Betweenness centrality on a Nvidia GPU.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -32,22 +31,42 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  ****************************************************************************/
 
 #pragma once
-#ifndef BC_PAR_H
-#define BC_PAR_H
+#ifndef BC_KERNELS_PITCHED_CUH
+#define BC_KERNELS_PITCHED_CUH
 
-#include "bc_statistics.h"
-#include "common.h"
-#include "matstorage.h"
-#include <boost/graph/use_mpi.hpp>
-#include <boost/graph/distributed/adjacency_list.hpp>
-#include <boost/graph/distributed/betweenness_centrality.hpp>
-#include <boost/graph/distributed/mpi_process_group.hpp>
-#include <boost/graph/use_mpi.hpp>
-#include <climits>
+#ifdef __CUDACC__
 
-void compute_par_bc_cpu(matrix_pcsr_t *g_tmp, float *bc_cpu);
+#include "device_props.cuh"
+#include "matds.h"
+#include <bc_statistics.h>
+#include <common.h>
 
-#endif //BC_PAR_H
+__global__ void get_vertex_betweenness_wep(float *bc,
+                                           const int *row_offsets,
+                                           const int *cols,
+                                           int nvertices,
+                                           int *d,
+                                           unsigned long long *sigma,
+                                           float *delta,
+                                           int *curr_queue,
+                                           int *next_queue,
+                                           int *stack,
+                                           int *endpoints,
+                                           int *next_source,
+                                           size_t pitch_d,
+                                           size_t pitch_sigma,
+                                           size_t pitch_delta,
+                                           size_t pitch_qcurr,
+                                           size_t pitch_qnext,
+                                           size_t pitch_stack,
+                                           size_t pitch_endpoints);
+
+void compute_bc_gpu_wep(matrix_pcsr_t *g, float *bc, stats_t *stats);
+
+#endif
+
+#endif//BC_KERNELS_PITCHED_CUH
