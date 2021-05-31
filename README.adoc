@@ -17,14 +17,14 @@ Currently, only undirected and unweighted graphs are supported. For unconnected 
 These are the dependencies needed to build the project:
 
 - A compiler for C and C++ must be installed;
-- link:https://developer.nvidia.com/cuda-downloads[CUDA Toolkit 11+] must be installed;
-- link:https://cmake.org/download/[CMake 3.9+] to build the project or link:https://www.gnu.org/software/make/[GNU Make];
+- link:https://developer.nvidia.com/cuda-downloads[CUDA Toolkit] must be installed;
+- link:https://cmake.org/download/[CMake 3.9+];
 - The link:http://snap-graph.sourceforge.net/[Snap] library is used for benchmarking GPU algorithms with an optimized parallel CPU implementation of the Betweenness Centrality algorithm. A script for downloading, building and installing it under `lib/` is available in the `script/` directory.
 - The link:https://www.boost.org/users/history/version_1_75_0.html[Boost Graph Library] is used for generating random graphs.
 
 [WARNING]
 ====
-During the development of the project only GCC 10.3.0 on Ubuntu 18.04 has been tested.
+During the development of the project only GCC 10.3.0 and CUDA Toolkit 11.2 on Ubuntu 18.04 has been tested.
 ====
 
 === Compilation
@@ -84,7 +84,7 @@ There are three libraries included in the project:
 
 - the link:https://github.com/onqtam/doctest[doctest] header file for writing unit tests of {cpp} code;
 
-- link:https://github.com/wonder-mice/zf_log[zf_Log] C library for logging.
+- link:https://github.com/wonder-mice/zf_log[zf_log] C library for logging.
 
 == Usage
 
@@ -105,11 +105,11 @@ Some examples:
  ./sna_bc -i ../../dataset/ca-GrQc/ca-GrQc.mtx -t 1
 ----
 
-- Compute centrality metrics of a random Small World graph using the Edge Parallel technique for computing the BC, allowing self-loops and dumping the computed scores in a .csv file called `scores`.
+- Compute centrality metrics of a random Small World graph using the Edge Parallel technique for computing the BC, allowing self-loops and dumping the computed scores in a .csv file called `scores`. Then run a serial CPU algorithm and check if the result of the CPU and GPU algorithms are the same.
 
 [example]
 ----
- ./sna_bc -i ../../dataset/synthetic/rnd-sw.mtx -t 2 -p -b "scores"
+ ./sna_bc -i ../../dataset/synthetic/rnd-sw.mtx -t 2 -p -b "scores" -c
 ----
 
 - Compute centrality metrics of a graph representing the power grid of the USA using the Work Efficient technique, appending statistics like runtime and MTEPS to a .csv file called `stats`. In addition, show output from the logger and use a (Nvidia) GPU with device id equal to 1.
