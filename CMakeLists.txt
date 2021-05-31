@@ -8,6 +8,11 @@ if(NOT DEFINED CMAKE_CUDA_STANDARD)
     set(CMAKE_CUDA_STANDARD_REQUIRED True)
 endif()
 
+if(NOT DEFINED ${CMAKE_CUDA_ARCHITECTURES})
+    set(CMAKE_CUDA_ARCHITECTURES 61)
+endif()
+message(STATUS "CUDA architectures set to ${CMAKE_CUDA_ARCHITECTURES}")
+
 if(NOT DEFINED CMAKE_CXX_STANDARD)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
     set(CMAKE_CXX_STANDARD 11)
@@ -15,30 +20,25 @@ if(NOT DEFINED CMAKE_CXX_STANDARD)
 endif()
 
 find_package(OpenMP REQUIRED)
-find_package(MPI REQUIRED)
-find_package(Boost REQUIRED COMPONENTS system filesystem regex graph)
 
 add_subdirectory(lib/mmio)
 add_subdirectory(lib/zf_log)
-include_directories(lib/snap/snap-core)
-include_directories(lib/snap/glib-core)
+include_directories(lib/snap/lib)
+include_directories(lib/snap/include)
 include_directories(lib/doctest)
 include_directories(include)
 
-set(Boost_USE_STATIC_LIBS OFF)
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
+add_library(snap SHARED IMPORTED)
+set_property(TARGET snap PROPERTY IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/lib/snap/lib/libsnap.so")
 
 add_subdirectory(src)
 add_subdirectory(test)
 add_subdirectory(dataset)
 
-# overwrote on purpose
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wpedantic -Wextra")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-
-set(CMAKE_CUDA_FLAGS_DEBUG "${CMAKE_CUDA_FLAGS_DEBUG} -G")
-set(CMAKE_CUDA_FLAGS_RELEASE "${CMAKE_CUDA_FLAGS_RELEASE} -03")
+set(CMAKE_CUDA_FLAGS_DEBUG "-g -lineinfo")
+set(CMAKE_CUDA_FLAGS_RELEASE "-O3")
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     message("-- CMAKE_CXX_FLAGS_DEBUG is ${CMAKE_CXX_FLAGS_DEBUG}")

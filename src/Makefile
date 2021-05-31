@@ -36,7 +36,7 @@ $(PROJECT_NAME): $(OBJ_CPP) $(OBJ_CUDA) libmmio.a libzf_log.a
 	$(NVCC) $(ALLCFLAGS) $(LDFLAGS) $(LDLIBS) $(NV_SRC) $(OBJ_CPP) -o $(PROJECT_NAME)
 
 $(OBJ_CUDA): $(NV_SRC)
-	 $(NVCC) -I../include -I../lib/zf_log -g -c $< -o $@
+	 $(NVCC) $(NVCFLAGS) -I../include -I../lib/zf_log -g -c $< -o $@
 
 libs: libmmio.a libzf_log.a
 
@@ -46,7 +46,7 @@ libmmio.a:
 libzf_log.a:
 	cd $(LIB_DIR)/zf_log && $(MAKE)
 
-.PHONY: all libs clean pre
+.PHONY: all libs clean
 
 clean:
 	\rm -f $(EXE) *.o *~

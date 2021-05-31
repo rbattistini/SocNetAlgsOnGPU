@@ -29,3 +29,19 @@ add_executable(test_spmatops test_spmatops.cpp
 target_link_libraries(test_spmatops PRIVATE zf_log)
 
 add_test(NAME test_spmatops COMMAND test_spmatops)
+
+add_executable(bench benchmark_bc.cpp
+        ../src/common.cpp
+        ../src/graphs.cpp
+        ../src/matds.cpp
+        ../src/matio.cpp
+        ../src/spmatops.cpp
+        ../src/ecc.cpp)
+
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(bench PRIVATE OpenMP::OpenMP_CXX)
+endif()
+
+target_link_libraries(bench PRIVATE snap)
+target_link_libraries(bench PRIVATE zf_log)
+target_link_libraries(bench PRIVATE mmio)
