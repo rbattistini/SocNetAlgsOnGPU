@@ -38,7 +38,7 @@
 
 int get_diameter(matrix_pcsr_t *g) {
 
-    int max_diameter = 0;
+    int max_distance;
     int *eccentricity = (int *) malloc(g->nrows * sizeof(*eccentricity));
 
     if (eccentricity == 0) {
@@ -47,24 +47,28 @@ int get_diameter(matrix_pcsr_t *g) {
     }
 
     get_vertices_eccentricity(g, eccentricity);
-    max_diameter = eccentricity[get_max_idx(eccentricity, g->nrows)];
+    max_distance = eccentricity[argmax(eccentricity, g->nrows)];
     free(eccentricity);
 
-    return max_diameter;
+    return max_distance;
 }
 
 int get_vertices_eccentricity(matrix_pcsr_t *g, int *eccentricity) {
 
     auto *d = (int *) malloc(g->nrows * sizeof(int));
-    assert(d);
+    if(d == 0) {
+        ZF_LOGF("Could not allocate memory");
+        return EXIT_FAILURE;
+    }
 
     for (int i = 0; i < g->nrows; i++) {
         fill(d, g->nrows, INT_MAX);
         BFS_visit(g, d, i);
-        eccentricity[i] = d[get_max_idx(d, g->nrows)];
+        eccentricity[i] = d[argmax(d, g->nrows)];
     }
 
     free(d);
+    return EXIT_SUCCESS;
 }
 
 double get_density(double nvertices, double nedges) {

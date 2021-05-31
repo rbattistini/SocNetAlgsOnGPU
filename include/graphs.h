@@ -2,7 +2,7 @@
  * @file graphs.h
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * @brief Algorithms for graphs manipulation.
+ * @brief Algorithms for undirected unweighted graphs manipulation.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -54,8 +54,8 @@ typedef struct gprops_t {
 } gprops_t;
 
 typedef struct components_t {
-    int *array;  // vertices ids of each cc
-    int *cc_size;// size of the i-th cc at index i
+    int *array;     // vertices ids of each cc
+    int *cc_size;   // size of the i-th cc at index i
     int cc_count;
 } components_t;
 
@@ -70,9 +70,9 @@ int *DFS_visit(matrix_pcsr_t *g, bool *visited, int s, int *cc_size);
 /**
  * @brief Get the largest cc and extract a subgraph from it.
  *
- * @param A
- * @param C
- * @param ccs
+ * @param[in] A input disconnected graph
+ * @param[out] C output connected graph
+ * @param ccs[out] structure that hold ids of the vertices of each cc
  */
 void get_largest_cc(matrix_pcsr_t *A,
                     matrix_pcsr_t *C,

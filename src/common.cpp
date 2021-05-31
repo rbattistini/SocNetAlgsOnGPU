@@ -33,7 +33,6 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  ****************************************************************************/
 
 #include "common.h"
@@ -63,7 +62,7 @@ void fill(int *arr, int n, int v) {
         arr[i] = v;
 }
 
-int get_max_idx(const int *arr, int n) {
+int argmax(const int *arr, int n) {
 
     if (arr == 0) {
         ZF_LOGF("Uninitialized array given!");

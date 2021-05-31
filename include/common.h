@@ -91,7 +91,7 @@ void fill(int *arr, int n, int v);
  * @param n size of the array
  * @return -1 if unsuccessful, otherwise the index where the maximum is located
  */
-int get_max_idx(const int *arr, int n);
+int argmax(const int *arr, int n);
 
 /**
  * @brief Properly close a file with error checking.

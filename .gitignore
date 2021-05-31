@@ -7,6 +7,7 @@ doc/
 samples/*
 *.mtx
 !dataset/examples/*.mtx
+!dataset/synthetic/*.mtx
 *.lock
 *.tar.gz
 *.png

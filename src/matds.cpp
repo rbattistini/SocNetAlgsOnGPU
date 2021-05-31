@@ -1,10 +1,10 @@
 /****************************************************************************
- * @file matstorage.h
+ * @file matds.cpp
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
  * @brief Functions to convert from the COOrdinate format to the Compressed
- * Sparse Rows. In addition it provides a way of representing adjacency
- * matrices with structures of arrays.
+ * Sparse Rows. It provides a way of representing adjacency matrices with
+ * structures of arrays in main memory.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -154,9 +154,9 @@ int coo_to_csr(matrix_pcoo_t *A, matrix_pcsr_t *B) {
     }
 
     int *row_offsets, *cols;
-    int *rows = A->rows; // row indices of A
-    int nnz = A->nnz;    // number of nnz in A
-    int nrows = A->nrows;// number of rows in A
+    int *rows = A->rows;
+    int nnz = A->nnz;
+    int nrows = A->nrows;
     int ncols = A->ncols;
 
     row_offsets = (int *) calloc((nrows + 1), sizeof(*row_offsets));

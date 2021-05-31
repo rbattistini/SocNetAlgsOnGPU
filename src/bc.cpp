@@ -2,9 +2,7 @@
  * @file bc.cpp
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * @brief Functions to compute the betweenness centrality of the vertices of an
- * undirected and unweighted graph stored as a sparse pattern matrix in CSR
- * format.
+ * @brief Function to compute the Betweenness Centrality on the CPU serially.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *

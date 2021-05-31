@@ -51,8 +51,7 @@
  * Executes C = A * B.
  *
  * @note The operation is performed only on patterns. It works with sorted or
- * unsorted matrices and symmetric or unsymmetric ones. It is slightly
- * optimized and does not exploit the symmetry of a matrix.
+ * unsorted matrices and symmetric or unsymmetric ones.
  *
  * @param A p x q sparse pattern matrix in CSR format
  * @param B q x r sparse pattern matrix in CSR format
@@ -72,8 +71,7 @@ int spgemm(matrix_pcsr_t *A,
  * Executes R * A * Q = C.
  *
  * @note The operation is performed only on patterns. It works with sorted or
- * unsorted matrices and symmetric or unsymmetric ones. It is not optimized and
- * does not exploit the symmetry of a matrix.
+ * unsorted matrices and symmetric or unsymmetric ones.
  *
  * @param R sparse pattern matrix in CSR format
  * @param A sparse pattern matrix in CSR format

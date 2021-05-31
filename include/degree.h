@@ -3,7 +3,7 @@
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
  * @brief Functions to compute the degree of the vertices of an undirected and
- * unweighted graph stored as a sparse pattern matrix in CSR format.
+ * unweighted graph.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -41,8 +41,6 @@
 #include "matds.h"
 
 void compute_degrees_undirected(matrix_pcsr_t *g, int *degree);
-
-void compute_degrees_undirected(matrix_pcoo_t *g, int *degree);
 
 void compute_degrees_directed(matrix_pcoo_t *g,
                               int *in_degree,

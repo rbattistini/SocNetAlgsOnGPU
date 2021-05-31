@@ -3,7 +3,7 @@
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
  * @brief Program to generate synthetic undirected and unweighted graphs
- * dataset using the Boost Graph Library. Based on examples available in the
+ * using the Boost Graph Library. Based on examples available in the
  * BGL documentation.
  *
  * @see https://www.boost.org/doc/libs/1_76_0/libs/graph/doc/erdos_renyi_generator.html

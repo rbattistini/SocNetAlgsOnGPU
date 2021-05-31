@@ -50,7 +50,7 @@
  * vertex and by iterating over the eccentricities' array to find the maximum.
  *
  * @param g input graph in CSR format stored as sparse pattern matrix
- * @return 0 if successful, 1 otherwise
+ * @return the diameter if successful, -1 otherwise
  */
 int get_diameter(matrix_pcsr_t *g);
 

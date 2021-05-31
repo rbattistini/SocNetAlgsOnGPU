@@ -141,7 +141,9 @@ int main(int argc, char *argv[]) {
         ZF_LOGI("Degree computation executed in: %g s",
                 tend - tstart);
     } else {
-        printf("File: %s, Technique: %d\n", params.input_file, params.technique);
+        printf("File: %s, Technique: %d\n",
+               params.input_file,
+               params.technique);
     }
 
     /*
@@ -181,6 +183,7 @@ int main(int argc, char *argv[]) {
     switch (technique) {
         case work_efficient:
             compute_bc_gpu_wep(&g, bc_gpu, &stats);
+//            compute_bc_gpu_we(&g, bc_gpu, &stats);
             break;
         case vertex_parallel:
             compute_bc_gpu_vpp(&g, bc_gpu, &stats);

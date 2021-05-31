@@ -32,7 +32,6 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  ****************************************************************************/
 
 #include "bc_we_kernel.cuh"
@@ -68,7 +67,7 @@ __device__ void bfs_update_ds_wpitched(int *qcurr_len,
      * Update the stack with the element that will be visited in
      * the current frontier.
      */
-    for (int i = (int) threadIdx.x; i < *qnext_len; i += (int) blockDim.x) {
+    for (int i = tid; i < *qnext_len; i += (int) blockDim.x) {
         qcurr[i] = qnext[i];
         stack[i + *stack_len] = qnext[i];
     }
@@ -125,8 +124,7 @@ __global__ void get_vertex_betweenness_wep(double *bc,
     int *d_row = (int *) ((char *) d + blockIdx.x * pitch_d);
     auto *delta_row = (double *) ((char *) delta + blockIdx.x * pitch_delta);
     auto *sigma_row = (unsigned long long *) ((char *) sigma +
-                                              blockIdx.x *
-                                                      pitch_sigma);
+                                              blockIdx.x * pitch_sigma);
 
     __shared__ int *qcurr_row;
     __shared__ int *qnext_row;
@@ -148,7 +146,7 @@ __global__ void get_vertex_betweenness_wep(double *bc,
      * For each vertex...
      */
     while (s < nvertices) {
-        for (int k = (int) threadIdx.x; k < nvertices; k += (int) blockDim.x) {
+        for (int k = tid; k < nvertices; k += (int) blockDim.x) {
             if (k == s) {
                 d_row[k] = 0;
                 sigma_row[k] = 1;
@@ -194,7 +192,7 @@ __global__ void get_vertex_betweenness_wep(double *bc,
             }
             __syncthreads();
 
-            int k = (int) threadIdx.x;
+            int k = tid;
 
             /*
              * For each vertex in the current frontier.
@@ -244,8 +242,6 @@ __global__ void get_vertex_betweenness_wep(double *bc,
             __syncthreads();
         }
 
-        //The elements at the end of the stack will have the largest distance from the source
-        //Using the successor method, we can start from one depth earlier
         if (tid == 0) {
             depth = d_row[stack_row[stack_len - 1]] - 1;
         }
@@ -256,7 +252,7 @@ __global__ void get_vertex_betweenness_wep(double *bc,
          */
         while (depth > 0) {
 
-            int start = (int) threadIdx.x + ends_row[depth];
+            int start = tid + ends_row[depth];
             int end = ends_row[depth + 1];
             for (int i = start; i < end; i += (int) blockDim.x) {
                 int w = stack_row[i];
@@ -265,8 +261,7 @@ __global__ void get_vertex_betweenness_wep(double *bc,
                 for (int z = row_offsets[w]; z < row_offsets[w + 1]; z++) {
                     int v = cols[z];
                     if (d_row[v] == (d_row[w] + 1)) {
-                        dsw += (sw / (float) sigma_row[v]) *
-                               (1.0f + delta_row[v]);
+                        dsw += (sw / sigma_row[v]) * (1.0f + delta_row[v]);
                     }
                 }
                 delta_row[w] = dsw;
@@ -282,7 +277,7 @@ __global__ void get_vertex_betweenness_wep(double *bc,
         /*
          * Compute betweenness centrality.
          */
-        for (int i = (int) threadIdx.x; i < nvertices; i += (int) blockDim.x) {
+        for (int i = tid; i < nvertices; i += (int) blockDim.x) {
             atomicAdd(&bc[i], delta_row[i]);
         }
 
@@ -369,9 +364,6 @@ void compute_bc_gpu_wep(matrix_pcsr_t *g, double *bc, stats_t *stats) {
     cudaSafeCall(cudaMallocPitch((void **) &d_ends, &pitch_ends,
                                  (g->nrows + 1) * sizeof(int), grid.x));
 
-    /*
-     * Load single-variables.
-     */
     cudaSafeCall(cudaMalloc((void **) &d_next_source, sizeof(int)));
     cudaSafeCall(cudaMemcpy(d_next_source, &next_source,
                             sizeof(int),

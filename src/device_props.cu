@@ -33,14 +33,13 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 
-#include <zf_log.h>
 #include "device_props.cuh"
 
 #ifndef DEVICE_ID
 #define DEVICE_ID 0
 #endif
 
-inline void print_separator() {
+void print_separator() {
     for (int i = 0; i < LINE_LENGTH; i++)
         printf("-");
 
@@ -89,17 +88,6 @@ unsigned int get_sm_count() {
     cudaSafeCall(cudaDeviceGetAttribute(&numProcs,
                                         cudaDevAttrMultiProcessorCount, devId));
     return (unsigned int) numProcs;
-}
-
-double get_mem_bandwidth() {
-    int devId, clock_rate, mem_bus_width;
-    cudaSafeCall(cudaGetDevice(&devId));
-    cudaSafeCall(cudaDeviceGetAttribute(&clock_rate,
-                                        cudaDevAttrClockRate, devId));
-    cudaSafeCall(cudaDeviceGetAttribute(&mem_bus_width,
-                                        cudaDevAttrGlobalMemoryBusWidth, devId));
-
-    return (clock_rate * 1000.0) * (mem_bus_width / 8 * 2) / 1.0e9;
 }
 
 void set_device(int device_id) {

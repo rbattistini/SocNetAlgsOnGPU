@@ -2,8 +2,7 @@
  * @file bc_statistics.h
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * @brief Compute and store statistics such as runtime and teps for the
- * GPU BC computation algorithm.
+ * @brief Compute and store statistics such as runtime and teps.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -60,13 +59,12 @@ typedef struct stats_t {
  *
  * @note The RMSE describes the standard deviation of the differences
  * between the predicted bc scores of the CPU and the observed bc scores on
- * the GPU. This result can be used to evaluate the correctness of the GPU
- * algorithm compared to the reference implementation of the PBGL.
+ * the GPU.
  *
- * @param nrows
+ * @param nrows number of vertices
  * @param score_cpu
  * @param score_gpu
- * @return
+ * @return the maximum value of the RMSE
  */
 double check_score(int nrows, const double *score_cpu, const double *score_gpu);
 

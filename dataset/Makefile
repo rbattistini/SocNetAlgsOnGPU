@@ -1,6 +1,6 @@
 ## Makefile to fetch and install graph data
 #
-# Inspired by the Makefile used to build dataset in Gunrock
+# Based on the makefile used to build the dataset in Gunrock
 #
 # Targets defined are:
 #
@@ -10,7 +10,7 @@
 # make veryclean
 
 # Each graph lives in its own directory
-SUBDIRS := ca-AstroPh ca-CondMat ca-GrQc ca-HepPh ca-HepTh
+SUBDIRS := ca-AstroPh ca-GrQc ca-HepPh ca-HepTh Erdos02 as-22july06 USpowerGrid delaunay_n14
 
 .PHONY: $(GRAPHS)
 

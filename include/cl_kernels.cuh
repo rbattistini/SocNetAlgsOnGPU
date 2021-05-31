@@ -1,8 +1,8 @@
 /****************************************************************************
- * @file gkernels.cu
+ * @file cl_kernels.cuh
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Kernels for computing Betweenness centrality on a Nvidia GPUs.
+ * @brief Kernel for computing Closeness centrality.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -31,8 +31,8 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  ****************************************************************************/
+
 #pragma once
 #ifndef CL_KERNELS_CUH
 #define CL_KERNELS_CUH
@@ -44,6 +44,23 @@
 #include <bc_statistics.h>
 #include <common.h>
 
+/**
+ * @brief Computes Closeness Centrality using pitched memory and exploiting
+ * two levels of parallelism:
+ *
+ * - coarse grained because a parallel BFS is assigned to each Streaming
+ * Multiprocessor;
+ * - fine grained because each in each BFS work is distributed among threads.
+ *
+ * @param[out] cl
+ * @param[in] rows
+ * @param[in] cols
+ * @param[in] nvertices
+ * @param[in] nnz
+ * @param[in, out] d
+ * @param[in] next_source
+ * @param[in] pitch_d
+ */
 __global__ void get_closeness_p(double *cl,
                                 const int *rows,
                                 const int *cols,

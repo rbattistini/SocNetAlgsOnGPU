@@ -240,10 +240,6 @@ void compute_bc_gpu_vpp(matrix_pcsr_t *g, double *bc, stats_t *stats) {
                                  grid.x));
     cudaSafeCall(cudaMallocPitch((void **) &d_delta, &pitch_delta,
                                  g->nrows * sizeof(double), grid.x));
-
-    /*
-     * Load single-variables.
-     */
     cudaSafeCall(cudaMalloc((void **) &d_next_source, sizeof(int)));
     cudaSafeCall(cudaMemcpy(d_next_source, &next_source,
                             sizeof(int),

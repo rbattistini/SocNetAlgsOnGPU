@@ -160,7 +160,8 @@ __global__ void get_vertex_betweenness_epp(double *bc,
                         if(sigma_row[w] != 0) {
                             atomicAdd(&delta_row[v],
                                       (1.0f + delta_row[w]) *
-                                      ((double) sigma_row[v] / (double) sigma_row[w]));
+                                      ((double) sigma_row[v] /
+                                               (double) sigma_row[w]));
                         }
                     }
                 }

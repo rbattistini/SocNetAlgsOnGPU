@@ -38,7 +38,7 @@ add_subdirectory(dataset)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wpedantic -Wextra")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_CUDA_FLAGS_DEBUG "-g -lineinfo")
-set(CMAKE_CUDA_FLAGS_RELEASE "-O3")
+set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -DCUDA_NDEBUG")
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     message("-- CMAKE_CXX_FLAGS_DEBUG is ${CMAKE_CXX_FLAGS_DEBUG}")

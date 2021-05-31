@@ -1,9 +1,8 @@
 /****************************************************************************
- * @file bc_par.cpp
+ * @file cl.h
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * @brief Function to compute the betweenness centrality using the parallel
- * algorithm of the Parallel Boost Graph Library.
+ * @brief Function to compute the closeness centrality on the CPU serially.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *

@@ -1,8 +1,9 @@
 /****************************************************************************
- * @file gkernels.cuh
+ * @file bc_we_kernel_nopitch.cuh
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * @brief Kernels for computing Betweenness centrality on a Nvidia GPUs.
+ * @brief Kernel for computing Betweenness centrality on a Nvidia GPU without
+ * pitched memory.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -31,36 +32,49 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  ****************************************************************************/
 
 #pragma once
-#ifndef SOCNETALGSONGPU_BC_WE_KERNELS_CUH
-#define SOCNETALGSONGPU_BC_WE_KERNELS_CUH
+#ifndef BC_WE_KERNEL_NOPITCH_CUH
+#define BC_WE_KERNEL_NOPITCH_CUH
 
 #ifdef __CUDACC__
 
 #include "device_props.cuh"
+#include <bc_statistics.h>
 #include "matds.h"
 #include <common.h>
-#include <stdio.h>
 
-__global__ void get_vertex_betweenness_we(float *bc,
+/**
+ *
+ * @param bc
+ * @param row_offsets
+ * @param cols
+ * @param nvertices
+ * @param d
+ * @param sigma
+ * @param delta
+ * @param qcurr
+ * @param qnext
+ * @param stack
+ * @param ends
+ * @param next_source
+ */
+__global__ void get_vertex_betweenness_we(double *bc,
                                           const int *row_offsets,
                                           const int *cols,
                                           int nvertices,
                                           int *d,
                                           unsigned long long *sigma,
-                                          float *delta,
+                                          double *delta,
                                           int *qcurr,
                                           int *qnext,
                                           int *stack,
                                           int *ends,
-                                          int *next_source,
-                                          bool normalized);
+                                          int *next_source);
 
-void compute_bc_gpu_we(matrix_pcsr_t *g, float *bc, bool normalized);
+void compute_bc_gpu_we(matrix_pcsr_t *g, double *bc, stats_t *stats);
 
 #endif
 
-#endif//SOCNETALGSONGPU_BC_WE_KERNELS_CUH
+#endif//BC_WE_KERNEL_NOPITCH_CUH

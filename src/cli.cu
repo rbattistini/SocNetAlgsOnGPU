@@ -1,5 +1,5 @@
 /****************************************************************************
- * @file cli.cpp
+ * @file cli.cu
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
  * @brief Command line argument parsing functions using getopt
@@ -34,9 +34,6 @@
  ****************************************************************************/
 
 #include "cli.cuh"
-#include <bc_statistics.h>
-#include <device_props.cuh>
-#include <getopt.h>
 
 typedef struct commands_t {
     const char *cmd_name;
@@ -251,7 +248,7 @@ int parse_args(params_t *params, int argc, char *argv[]) {
     }
 
     /*
-     * Whether to print an print_help screen and terminate execution.
+     * Whether to print usage and terminate execution.
      */
     if (show_usage) {
         print_usage(argv[0]);
@@ -259,7 +256,7 @@ int parse_args(params_t *params, int argc, char *argv[]) {
     }
 
     /*
-     * Whether to print an print_help screen and terminate execution.
+     * Whether to print an help screen and terminate execution.
      */
     if (show_help) {
         print_help();
@@ -274,8 +271,7 @@ int parse_args(params_t *params, int argc, char *argv[]) {
 
     /*
      * Whether to print overview and info messages regarding the device, the
-     * input graph given and logger messages with level
-     * other than ERROR.
+     * input graph given and logger messages with level other than ERROR.
      */
     params->quiet = quiet;
 
@@ -306,13 +302,13 @@ int parse_args(params_t *params, int argc, char *argv[]) {
     }
 
     /*
-     * Whether to dump bc scores and whether to stdout or to a file.
+     * Whether to dump bc scores to a file.
      */
     params->dump_scores =
             (dump_scores == 0) ? dump_scores : concat(dump_scores, ".csv");
 
     /*
-     * Whether to dump statistics and whether to stdout or to a file.
+     * Whether to dump statistics to stdout or to a file.
      */
     params->dump_stats =
             (dump_stats == 0) ? dump_stats : concat(dump_stats, ".csv");
@@ -338,7 +334,7 @@ int parse_args(params_t *params, int argc, char *argv[]) {
     params->input_file = input_file;
 
     /*
-     * Print any remaining command line arguments (not options).
+     * Print any remaining command line arguments (not valid options).
      */
     for (index = optind; index < argc; index++)
         ZF_LOGW("Non-recognized argument %s", argv[index]);

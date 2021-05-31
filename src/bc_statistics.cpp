@@ -2,8 +2,7 @@
  * @file bc_statistics.cpp
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * @brief Compute and store statistics such as runtime and teps for the
- * GPU BC computation algorithm.
+ * @brief Compute and store statistics such as runtime and teps.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *

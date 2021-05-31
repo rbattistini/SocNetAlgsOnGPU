@@ -43,7 +43,7 @@ static matrix_pcoo_t coo;
 static matrix_pcsr_t csr;
 static gprops_t gprops;
 
-static void write_tmp_file(FILE *tmp, char *tmp_mm_header, int *tmp_header,
+void write_tmp_file(FILE *tmp, char *tmp_mm_header, int *tmp_header,
                     int *tmp_row, int *tmp_col, int *tmp_wgh) {
 
     fprintf(tmp, "%s\n", tmp_mm_header);
@@ -60,21 +60,21 @@ static void write_tmp_file(FILE *tmp, char *tmp_mm_header, int *tmp_header,
     }
 }
 
-static inline unsigned random_letter() {
+unsigned random_letter() {
     long l;
     do { l = random(); } while (l>=(RAND_MAX/26)*26);
     return (unsigned)(l % 26);
 }
 
-static inline char gen_random_char() {
+char gen_random_char() {
     return "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[random_letter () % 26];
 }
 
-static inline unsigned gen_random_in_range(unsigned lower, unsigned upper) {
+unsigned gen_random_in_range(unsigned lower, unsigned upper) {
     return (rand() % (upper - lower + 1)) + lower;
 }
 
-static void write_random_char_to_file(FILE *f, int nit) {
+void write_random_char_to_file(FILE *f, int nit) {
 
     fseek(f, 0, SEEK_END);
     unsigned file_length = ftell(f);

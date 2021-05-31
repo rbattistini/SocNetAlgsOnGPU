@@ -45,40 +45,18 @@ int main(int argc, char **argv) {
     FILE *fp;
     graph_t *g;
     double *bc_scores;
-    int curArgIndex;
 
     /* Step 1: Parse command line arguments */
-    if (argc < 3) {
-        fprintf(stdout, "\nUsage: %s -infile <graph filename>"
-                        " (-graph <graph type> -outfile <output filename>)\n\n",
-                "eval_vertex_betweenness");
-
-        usage_graph_options();
+    if (argc != 2) {
+        fprintf(stdout, "Usage: %s [inputfile]\n", argv[0]);
         exit(-1);
     }
 
-    curArgIndex = 0;
-    infilename = (char *) calloc(500, sizeof(char));
+    infilename = argv[1];
     outfilename = (char *) calloc(500, sizeof(char));
     graph_type = (char *) calloc(500, sizeof(char));
 
     strcpy(outfilename, "output.csv");
-
-    while (curArgIndex < argc) {
-
-        if (strcmp(argv[curArgIndex], "-infile") == 0) {
-            strcpy(infilename, argv[++curArgIndex]);
-        }
-
-        if (strcmp(argv[curArgIndex], "-outfile") == 0) {
-            strcpy(outfilename, argv[++curArgIndex]);
-        }
-
-        if (strcmp(argv[curArgIndex], "-graph") == 0) {
-            strcpy(graph_type, argv[++curArgIndex]);
-        }
-        curArgIndex++;
-    }
 
     fp = fopen(infilename, "r");
     if (fp == NULL) {
@@ -93,8 +71,6 @@ int main(int argc, char **argv) {
         exit(-1);
     }
     fclose(fp);
-
-    graph_ext_check(infilename, graph_type);
 
     fprintf(stdout, "\n");
     fprintf(stdout, "Input Graph File    : %s\n", infilename);
@@ -144,8 +120,13 @@ int main(int argc, char **argv) {
     g->zero_indexed = 1;
 
     /* Step 3: Run algorithm */
+    double tstart, tend;
     bc_scores = (double *) calloc(g->n, sizeof(double));
+    tstart = get_time();
     vertex_betweenness_centrality(g, bc_scores, g->n);
+    tend = get_time();
+
+    fprintf(stdout, "Elapsed Time: %f\n", tend - tstart);
 
     /* Step 4: Write results to output file */
     for (int k = 0; k < g->n; k++)
@@ -155,7 +136,6 @@ int main(int argc, char **argv) {
 
     /* Step 5: Clean up */
     free(bc_scores);
-    free(infilename);
     free(outfilename);
     free(graph_type);
 

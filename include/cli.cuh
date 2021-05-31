@@ -1,5 +1,5 @@
 /****************************************************************************
- * @file cli.h
+ * @file cli.cuh
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
  * @brief Command line argument parsing functions using getopt
@@ -42,12 +42,15 @@
 #include <cstdio>
 #include <cstdlib>
 #include <unistd.h>
+#include <bc_statistics.h>
+#include <device_props.cuh>
+#include <getopt.h>
 
 #define EXIT_WHELP_OR_USAGE 2
 #define NTECHNIQUES 3
 
 /**
- * List all technique used for computing BC on the GPU.
+ * List all parallelization strategies used for computing BC on the GPU.
  */
 enum ParStrategy {
     vertex_parallel = 1,
@@ -55,13 +58,6 @@ enum ParStrategy {
     work_efficient  = 3
 };
 
-/**
- * Lists all accepted command line arguments.
- *
- * verify, vf (pbgl run and RMSE error reporting)
- * dump_scores, ds (.csv file, vertex id and score)
- * append_stats, dst (.csv file, ph 1, 2, 3, runtime, teps)
- */
 typedef struct params_t {
     int run_check;
     int verbose;
@@ -81,8 +77,6 @@ int parse_args(params_t *p, int argc, char *argv[]);
  *
  * @param p structure with running configuration parameters
  * @param fname file where the dump happens
- * @return 0 if successful, -1 if the stream was not closed correctly,
- * 1 if another error occurred
  */
 void print_run_config(params_t *p);
 

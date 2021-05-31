@@ -34,12 +34,20 @@
  *
  * ---------------------------------------------------------------------------
  *
- * TODO allow directed -> undirected transformation on demand
+ *  * Here is an example of the matrix market format:
  *
- * TODO handle duplicated entries
- *
- * TODO check for too big numbers (strtol)
- *
+ * +----------------------------------------------+
+ * |%%MatrixMarket matrix coordinate real general | <--- header line
+ * |%                                             | <--+
+ * |% comments                                    |    |-- 0 or more comments
+ * |%                                             | <--+
+ * |  M N L                                       | <--- rows, columns, entries
+ * |  I1 J1 A(I1, J1)                             | <--+
+ * |  I2 J2 A(I2, J2)                             |    |
+ * |  I3 J3 A(I3, J3)                             |    |-- L lines
+ * |     . . .                                    |    |
+ * |  IL JL A(IL, JL)                             | <--+
+ * +----------------------------------------------+
  ****************************************************************************/
 
 #pragma once
@@ -60,34 +68,17 @@
 int query_gprops(const char *fname, gprops_t *gp);
 
 /**
- * @brief Reads a MARKET graph from an input-log_file into COOrdinate format.
+ * @brief Reads a graph stored in a Matrix Market file and stores it in a
+ * COOrdinate format matrix.
  *
- * Here is an example of the matrix market format:
+ * Lacks duplicated entries elimination.
+ * Undirected graphs must be stored as unsymmetric matrices to be recognized.
+ * Converts one-based indexing to zero-based indexing.
  *
- * +----------------------------------------------+
- * |%%MatrixMarket matrix coordinate real general | <--- header line
- * |%                                             | <--+
- * |% comments                                    |    |-- 0 or more comment lines
- * |%                                             | <--+
- * |  M N L                                       | <--- rows, columns, entries
- * |  I1 J1 A(I1, J1)                             | <--+
- * |  I2 J2 A(I2, J2)                             |    |
- * |  I3 J3 A(I3, J3)                             |    |-- L lines
- * |     . . .                                    |    |
- * |  IL JL A(IL, JL)                             | <--+
- * +----------------------------------------------+
- *
- * Read a matrix market file. Removes self-loops.
- * Guaranteed ordered cols. Lacks duplicated entries (edges) elimination.
- * Symmetric graphs are meant to be undirected. Non-symmetric matrices are not
- * converted to undirected graphs. Converts one-based to zero-based. Validates
- * indices' ranges.
- *
- * @param fname
- * @param m_coo
- * @return
+ * @param[in] fname
+ * @param[out] m_coo
+ * @return 0 if successful, 1 otherwise
  */
-
 int read_mm_pattern(FILE *f, matrix_pcoo_t *m_coo, gprops_t *gp);
 
 int read_mm_real(FILE *f, matrix_rcoo_t *m_coo, gprops_t *gp);

@@ -1,5 +1,5 @@
 /****************************************************************************
- * @file spmatops.h
+ * @file spmatops.cpp
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
  * @brief Functions for handling sparse matrix-matrix multiplication and
@@ -44,7 +44,7 @@ int spgemm(matrix_pcsr_t *A, matrix_pcsr_t *B, matrix_pcsr_t *C) {
     if (!check_matrix_pcsr(A) &&
         !check_matrix_pcsr(B) &&
         A->ncols != B->nrows) {
-        ZF_LOGF("Input matrices not initialized or mismatched");
+        ZF_LOGF("Input matrices not initialized or with mismatched shapes");
         return EXIT_FAILURE;
     }
 

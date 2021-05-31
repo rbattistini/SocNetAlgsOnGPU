@@ -10,7 +10,6 @@ INC_DIR      := ../include
 LIB_DIR      := ../lib
 
 CPPCC        := g++
-MPICC        := mpic++
 NVCC         := nvcc
 
 NV_SRC       := $(wildcard $(SRC_DIR)/*.cu)
@@ -18,9 +17,8 @@ CPP_SRC      := $(wildcard $(SRC_DIR)/*.cpp)
 OBJ_CPP      := $(patsubst %.cpp,%.o,$(CPP_SRC))
 OBJ_CUDA     := $(patsubst %.cu,%.o,$(NV_SRC))
 
-LDLIBS       := -lmmio -lzf_log -lboost_system
+LDLIBS       := -lmmio -lzf_log
 LDFLAGS      := -L$(LIB_DIR)/mmio -L$(LIB_DIR)/zf_log
-LDFLAGS      += -L/usr/include/boost
 
 CFLAGS       := -g
 

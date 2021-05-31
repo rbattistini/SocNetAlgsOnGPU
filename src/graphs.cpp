@@ -1,8 +1,8 @@
 /****************************************************************************
- * @file graphs.h
+ * @file graphs.cpp
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * @brief Algorithms for graphs manipulation.
+ * @brief Algorithms for undirected unweighted graphs manipulation.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -31,7 +31,6 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  ****************************************************************************/
 
 #include "graphs.h"
@@ -48,7 +47,7 @@ void print_graph_overview(matrix_pcsr_t *g, int *degree) {
     printf("\tVertices:\t\t%d\n", nvertices);
     printf("\tEdges:\t\t\t%d\n", nedges);
     printf("\tDensity:\t\t%f %%\n", get_density(nvertices, nedges) * 100);
-    printf("\tMax degree: \t\t%d\n", degree[get_max_idx(degree, nvertices)]);
+    printf("\tMax degree: \t\t%d\n", degree[argmax(degree, nvertices)]);
 
     /*
      * Exact serial unoptimized slow diameter computation.
@@ -71,9 +70,6 @@ void print_graph_properties(gprops_t *gp) {
 
 int *DFS_visit(matrix_pcsr_t *g, bool *visited, int s, int *cc_size) {
 
-    /*
-     * Let the STL vector manage memory allocation.
-     */
     std::stack<int> S;
     std::vector<int> subgraph_vertices;
     S.push(s);
@@ -89,7 +85,7 @@ int *DFS_visit(matrix_pcsr_t *g, bool *visited, int s, int *cc_size) {
 
         /*
          * Get all adjacent vertices of the vertex s.
-         * If a adjacent has not been visited, then push it to the S.
+         * If a adjacent has not been visited, then push it to the stack.
          */
         for (int i = g->row_offsets[s]; i < g->row_offsets[s + 1]; i++) {
             int v = g->cols[i];
@@ -111,7 +107,11 @@ int *DFS_visit(matrix_pcsr_t *g, bool *visited, int s, int *cc_size) {
 void get_cc(matrix_pcsr_t *g, components_t *ccs) {
 
     auto visited = (bool *) malloc(g->nrows * sizeof(bool));
-    assert(visited);
+    if(visited == 0) {
+        ZF_LOGF("Could not allocate memory");
+        return;
+    }
+
     int cc_count = 0;
     std::vector<int> ccs_array, ccs_size;
 
@@ -184,12 +184,15 @@ void extract_subgraph(const int *vertices,
 
 void get_largest_cc(matrix_pcsr_t *A, matrix_pcsr_t *C, components_t *ccs) {
 
-    int max_idx = get_max_idx(ccs->cc_size, ccs->cc_count);
+    int max_idx = argmax(ccs->cc_size, ccs->cc_count);
     int largest_cc_size = ccs->cc_size[max_idx];
 
     int *largest_cc_vertices =
             (int *) malloc(largest_cc_size * sizeof(*largest_cc_vertices));
-    assert(largest_cc_vertices);
+    if(largest_cc_vertices == 0) {
+        ZF_LOGF("Could not allocate memory");
+        return;
+    }
 
     int start, end;
 

@@ -130,5 +130,3 @@ The GPU used during the development of this project is a Quadro P620 with four S
 For GPU's algorithms only:
 
 - Throughput, in terms of MTEPS (Million Traversed Edges Per Second).
-
-To gather statistics a shell script, `gstats.sh`, is used.

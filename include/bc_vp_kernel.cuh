@@ -2,7 +2,8 @@
  * @file bc_vp_kernels.cu
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Kernels for computing Betweenness centrality on a Nvidia GPU.
+ * @brief Kernel for computing Betweenness centrality on a Nvidia GPU using
+ * the vertex parallel technique.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -44,6 +45,34 @@
 #include <bc_statistics.h>
 #include <common.h>
 
+/**
+ * @brief Computes Betweenness Centrality exploiting two levels of
+ * parallelism:
+ *
+ * - coarse grained because a parallel BFS or dependency accumulation is
+ * assigned to each Streaming Multiprocessor;
+ * - fine grained because each in each BFS or dependency accumulation work
+ * is distributed among threads according to a certain strategy.
+ *
+ * Computes dependency accumulation and bc scores using Brandes' recursive
+ * formula.
+ *
+ * @cite jia_chapter_2012
+ *
+ * @note Uses pitched memory.
+ *
+ * @param[out] bc
+ * @param[in] row_offsets
+ * @param[in] cols
+ * @param[in] nvertices
+ * @param[in] d
+ * @param[in] sigma
+ * @param[out] delta
+ * @param[in] next_source
+ * @param[in] pitch_d
+ * @param[in] pitch_sigma
+ * @param[in] pitch_delta
+ */
 __global__ void get_vertex_betweenness_vpp(double *bc,
                                            const int *row_offsets,
                                            const int *cols,

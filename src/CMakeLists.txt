@@ -17,7 +17,6 @@ add_executable(sna_bc sna_bc.cu
         cl.cpp
         graphs.cpp)
 
-set_target_properties(sna_bc PROPERTIES CUDA_ARCHITECTURES 61)
 set_target_properties(sna_bc PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 target_link_libraries(sna_bc PRIVATE mmio)

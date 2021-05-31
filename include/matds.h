@@ -1,10 +1,10 @@
 /****************************************************************************
- * @file matstorage.h
+ * @file matds.h
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
  * @brief Functions to convert from the COOrdinate format to the Compressed
- * Sparse Rows. In addition it provides a way of representing adjacency
- * matrices with structures of arrays.
+ * Sparse Rows. It provides a way of representing adjacency matrices with
+ * structures of arrays in main memory.
  *
  * @see https://github.com/scipy/scipy/tree/master/scipy/sparse/sparsetools
  *
@@ -35,11 +35,6 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * --------------------------------------------------------------------------
- *
- * TODO: Handling duplicated edges by removing them
- *
  ****************************************************************************/
 
 #pragma once
@@ -53,8 +48,8 @@ typedef struct matrix_pcoo_t {
     int nrows;
     int ncols;
     int nnz;
-    int *rows;// row index for each non-zero value
-    int *cols;// column index for each non-zero value
+    int *rows;  // row index for each non-zero value
+    int *cols;  // column index for each non-zero value
 } matrix_pcoo_t;
 
 typedef struct matrix_rcoo_t : matrix_pcoo_t {
@@ -109,7 +104,7 @@ void expand_row_pointer(int nrows, const int *row_offsets, int *rows);
  *
  * @note Duplicate entries in the COO matrix are not merged.
  * @note Row and column indices are not assumed to be ordered.
- * @note Row_offsets and cols fields *must not* be preallocated.
+ * @note Row_offsets and cols fields must not be preallocated.
  * @note As long as the average number of non-zeroes per row is > 1, this
  * format saves space relative to COO.
  *
@@ -120,10 +115,9 @@ void expand_row_pointer(int nrows, const int *row_offsets, int *rows);
 int coo_to_csr(matrix_pcoo_t *A, matrix_pcsr_t *B);
 
 /**
- * @brief Computes A^T, in which A is an m x n CSR format sparse pattern A.
+ * @brief Computes A^T, in which A is an m x n CSR format sparse pattern matrix.
  *
  * @note Assumes that A is not stored to exploit symmetry.
- *
  * @note Transposition of a CSR A is the equivalent of converting the
  * A to the CSC format.
  *

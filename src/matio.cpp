@@ -37,8 +37,6 @@
 
 /**
  * @brief Check if a filename has a given extension.
- *
- * @see https://stackoverflow.com/questions/4849986/how-can-i-check-the-file-extensions-in-c
  */
 static int has_extension(const char *name, const char *extension,
                          size_t length) {
@@ -51,8 +49,8 @@ static int has_extension(const char *name, const char *extension,
     return 0;
 }
 
-/*
- * Read one line of the file, return TRUE if successful, FALSE if EOF.
+/**
+ * @brief Read one line of the file, return TRUE if successful, FALSE if EOF.
  */
 static int get_line(FILE *f, char *buf) {
     buf[0] = '\0';
@@ -91,7 +89,7 @@ int query_gprops(const char *fname, gprops_t *gp) {
     }
 
     /*
-     * Undirected graphs must be stored as symmetric matrices.
+     * Undirected graphs are stored on disk as symmetric matrices.
      */
     if (mm_is_symmetric(matcode)) {
         gp->is_directed = false;

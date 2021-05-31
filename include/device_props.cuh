@@ -54,8 +54,6 @@ unsigned int get_max_threads_per_block();
 
 unsigned int get_sm_count();
 
-double get_mem_bandwidth();
-
 void set_device(int device_id);
 
 int get_device_count();

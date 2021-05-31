@@ -3,7 +3,7 @@
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
  * @brief Functions to compute the degree of the vertices of an undirected and
- * unweighted graph stored as a sparse pattern matrix in CSR format.
+ * unweighted graph.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -43,8 +43,8 @@ void compute_degrees_undirected(matrix_pcsr_t *g, int *degree) {
         return;
     }
 
-    int *rows = g->row_offsets;        // row indices of A
-    int nrows = g->nrows;              // number of rows in A
+    int *rows = g->row_offsets;
+    int nrows = g->nrows;
 
     fill(degree, nrows, 0);
 
@@ -56,27 +56,6 @@ void compute_degrees_undirected(matrix_pcsr_t *g, int *degree) {
     }
 }
 
-void compute_degrees_undirected(matrix_pcoo_t *g, int *degree) {
-
-    if (!check_matrix_pcoo(g)) {
-        ZF_LOGF("The graph is not initialized");
-        return;
-    }
-
-    int *rows = g->rows;   // row indices of A
-    int nnz = g->nnz;      // number of nnz in A
-    int nrows = g->nrows;  // number of rows in A
-
-    fill(degree, nrows, 0);
-
-    /*
-     * Compute number of non-zero entries per row of A.
-     */
-    for (int n = 0; n < nnz; n++) {
-        degree[rows[n]]++;
-    }
-}
-
 void compute_degrees_directed(matrix_pcoo_t *g, int *in_degree,
                               int *out_degree) {
 
@@ -85,12 +64,11 @@ void compute_degrees_directed(matrix_pcoo_t *g, int *in_degree,
         return;
     }
 
-    int *rows = g->rows;  // row indices of A
-    int nnz = g->nnz;     // number of nnz in A
-    int length = g->nrows;// number of rows and columns in A
-    int *cols = g->cols;  // column indices of A
+    int *rows = g->rows;
+    int nnz = g->nnz;
+    int length = g->nrows;
+    int *cols = g->cols;
 
-    //    offsets = (int *) malloc((length + 1) * sizeof(*offsets));
     fill(in_degree, length, 0);
     fill(out_degree, length, 0);
 

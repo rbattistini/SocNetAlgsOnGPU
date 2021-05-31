@@ -1,8 +1,8 @@
 /****************************************************************************
- * @file gkernels.cu
+ * @file cl_kernels.cu
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Kernels for computing Betweenness centrality on a Nvidia GPUs.
+ * @brief Kernel for computing Closeness centrality.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -31,7 +31,6 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  ****************************************************************************/
 
 #include "cl_kernels.cuh"
@@ -125,7 +124,7 @@ __global__ void get_closeness_p(double *cl,
         /*
          * Compute closeness centrality.
          */
-        for (int i = (int) threadIdx.x; i < nvertices; i += (int) blockDim.x) {
+        for (int i = tid; i < nvertices; i += (int) blockDim.x) {
             atomicAdd(&cl[i], (double) d_row[i]);
         }
 
@@ -186,10 +185,6 @@ void compute_cl_gpu_p(matrix_pcsr_t *g, double *cl, stats_t *stats) {
      */
     cudaSafeCall(cudaMallocPitch((void **) &d_dist, &pitch_d,
                                  g->nrows * sizeof(int), grid.x));
-
-    /*
-     * Load single-variables.
-     */
     cudaSafeCall(cudaMalloc((void **) &d_next_source, sizeof(int)));
     cudaSafeCall(cudaMemcpy(d_next_source, &next_source,
                             sizeof(int),
