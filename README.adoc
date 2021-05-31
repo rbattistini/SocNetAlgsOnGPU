@@ -6,7 +6,9 @@ ifdef::env-github[]
 :warning-caption: :warning:
 endif::[]
 
-A command-line GPU-accelerated application for computing Betweenness Centrality of sparse graphs that represent social networks.
+A command-line GPU-accelerated application for computing the most important centrality metrics of sparse graphs that represent social networks.
+
+Currently, only undirected and unweighted graphs are supported. For unconnected graphs only the largest connected component is extracted and analyzed. Self-loops are disallowed by default, but they can be enabled. Duplicated edges are not expected and won't be removed.
 
 == Installation
 
@@ -14,19 +16,11 @@ A command-line GPU-accelerated application for computing Betweenness Centrality 
 
 These are the dependencies needed to build the project:
 
-- GCC must be installed;
+- A compiler for C and C++ must be installed;
 - link:https://developer.nvidia.com/cuda-downloads[CUDA Toolkit 11+] must be installed;
-- link:https://cmake.org/download/[CMake 3.9+] to build the project;
-- The link:https://www.boost.org/users/history/version_1_75_0.html[Parallel Boost Graph Library] is used for the CPU reference implementation of the Betweenness Centrality algorithm;
-- link:
-
-There also some optional dependencies:
-
-- To launch the benchmarks with the script given, link:script/perf_eval.sh[perf-eval,sh], a Unix Shell must be available;
-- link:https://www.python.org/downloads/[Python 3] to execute the script that
-processes the result of the benchmarking;
-- link:https://www.ruby-lang.org/en/downloads/[Ruby] and some gems listed in the link:{docdir}/script/Gemfile[Gemfile] to generate the report;
-- `clang-format` for formatting the source code and `clang-tidy` for static code analysis;
+- link:https://cmake.org/download/[CMake 3.9+] to build the project or link:https://www.gnu.org/software/make/[GNU Make];
+- The link:http://snap-graph.sourceforge.net/[Snap] library is used for benchmarking GPU algorithms with an optimized parallel CPU implementation of the Betweenness Centrality algorithm. A script for downloading, building and installing it under `lib/` is available in the `script/` directory.
+- The link:https://www.boost.org/users/history/version_1_75_0.html[Boost Graph Library] is used for generating random graphs.
 
 [WARNING]
 ====
@@ -43,56 +37,85 @@ git clone https://github.com/Da3dalu2/SocNetAlgsOnGPU.git
 cd SocNetAlgsOnGPU
 ----
 
+To build this project (not test, nor the SNAP algorithm for benchmarking) with GNU Make:
+
+[source,shell]
+----
+cd src
+make
+----
+
 To build this project with CMake:
 
 [source,shell]
 ----
 mkdir build-release && cd build-release
-cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CUDA_ARCHITECTURES=60
+cmake .. -DCMAKE_BUILD_TYPE=Release
 ----
 
-Binary source file are available in `build/src` directory.
+Optionally the symbol ` -DCMAKE_CUDA_ARCHITECTURES=x` can be specified to compile for a specific architectures.
 
-Binary test files are available in `build/test` directory. All tests can be run by typing `ctest` in the `build/test` directory.
-
-[TIP]
+[WARNING]
 ====
-To run all tests in parallel just issue the `ctest -j4` in the `build/test` directory.
+Only GPUs with at least compute capability 6.x are supported because atomics with double precision have been used.
 ====
 
-Detailed test log from `ctest` can be found in `/build/Testing/Temporary/LastTest.log`, alternatively tests can be run with the verbose option enabled, i.e. `ctest -v`.
+If the project is built with cmake, binary source file are available in `build/src` directory. Binary test files are available in `build/test` directory. All tests can be run by typing `ctest` in the `build/test` directory.
 
 [NOTE]
 ====
 There are two build types available, Release and Debug. Release builds
-with optimization flags enabled (`-O2`) and Debug uses both debug symbols (`-g`) for ease of use of GBD and Valgrind and `-Wall -Werror -Wpedantic`.
+with optimization flags enabled (`-O3`) and Debug uses both debug symbols (`-g`) and `-Wall -Werror -Wpedantic`.
 ====
 
 === Generating Datasets
 
 All dataset-related code is under the `dataset` subdirectory. Only link:https://math.nist.gov/MatrixMarket/formats.html[Matrix-market] coordinate-formatted graph format is supported.
 
-A script for generating random graphs is given, `dataset/graph_gen`.
-
-Currently, only undirected and unweighted graphs are supported.
+A program for generating random graphs is given, `dataset/graph_gen`. Instructions for compiling the script are given in the file.
 
 To download them just type `make` in the `dataset` subdirectory. To only download one specific dataset step into its subdirectory and type `make` there.
 
-=== Libraries
+=== Included libraries
 
-Included in the project there are the SNAP library from the link:https://snap.stanford.edu/snap/index.html[SNAP System], used for random graph generation from the link:https://snap.stanford.edu/data/index.html[Stanford Large Network Dataset Collection].
+There are three libraries included in the project:
 
-In addition there is the link:https://math.nist.gov/MatrixMarket/mmio-c.html[library for parsing Matrix Market files].
+- link:https://math.nist.gov/MatrixMarket/mmio-c.html[mmio for parsing Matrix Market files];
 
-Finally, the link:https://github.com/onqtam/doctest[doctest] header file for testing {cpp} code and the link:https://github.com/wonder-mice/zf_log[zf_Log] library for logging.
+- the link:https://github.com/onqtam/doctest[doctest] header file for writing unit tests of {cpp} code;
+
+- link:https://github.com/wonder-mice/zf_log[zf_Log] C library for logging.
 
 == Usage
 
 [example]
 ----
- ./sna_bc   [-i|--input file] [-r|--nrun] [-b|--dump-scores file] 
+ ./sna_bc   [-i|--input file] [-r|--nrun] [-b|--dump-scores file]
             [-s|--dump-stats file] [-v|--verbose] [-c|--check]
             [-wsl|--wself-loops] [-d|--device] [-u|--usage] ][-h|--help]
+----
+
+Some examples:
+
+- Compute centrality metrics (Betweeness Centrality, Closeness Centrality and Degree) of the collaboration network `ca-GrQc` using the Vertex Parallel technique for computing the BC.
+
+[example]
+----
+ ./sna_bc -i ../../dataset/ca-GrQc/ca-GrQc.mtx -t 1
+----
+
+- Compute centrality metrics of a random Small World graph using the Edge Parallel technique for computing the BC, allowing self-loops and dumping the computed scores in a .csv file called `scores`.
+
+[example]
+----
+ ./sna_bc -i ../../dataset/synthetic/rnd-sw.mtx -t 2 -p -b "scores"
+----
+
+- Compute centrality metrics of the power grid of the USA using the Work Efficient technique, appending statistics like runtime and MTEPS to a .csv file called `stats`. In addition, show output from the logger and use a (Nvidia) GPU with device id equal to 1.
+
+[example]
+----
+ ./sna_bc -i ../../dataset/USpowerGrid/USpowerGrid.mtx -t 3 -s "stats" -v -d 1
 ----
 
 == Hardware
@@ -101,13 +124,11 @@ The GPU used during the development of this project is a Quadro P620 with four S
 
 == Performance Analysis
 
-- Speedup in regard to the reference parallel CPU algorithm of the PBGl.
-- Throughput, in terms of TEPS.
-- Runtime, measured in ms and related only to the GPU. This means that transfer times, either host to device and device to host, are ignored.
-- Memory bandwidth for comparing thread blocks sizes.
-- Vertex frontier evolution for comparing techniques.
-- Impact of degree-1 reduction.
+- Speedup, among different techniques for the GPU's algorithms and between GPU and CPU.
+- Runtime, measured in ms. For the GPU's algorithms this includes memory transfer times and computation time.
 
-For gathering results the test is run multiple times, then the average runtime and std deviation is reported and the average MTEPS is computed from that average runtime.
+For GPU's algorithms only:
 
-To calculate TEPS, we require the number of edges traversed (touched), which we count dynamically. For traversal primitives, we note that non-connected components will not be visited, so the number of visited edges may be fewer than the number of edges in the graph.
+- Throughput, in terms of MTEPS (Million Traversed Edges Per Second).
+
+To gather statistics a shell script, `gstats.sh`, is used.
