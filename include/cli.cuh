@@ -50,9 +50,9 @@
  * List all technique used for computing BC on the GPU.
  */
 enum ParStrategy {
-    work_efficient  = 1,
-    vertex_parallel = 2,
-    edge_parallel   = 3
+    vertex_parallel = 1,
+    edge_parallel   = 2,
+    work_efficient  = 3
 };
 
 /**

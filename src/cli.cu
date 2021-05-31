@@ -55,38 +55,41 @@ static void print_help() {
 
     const int nopt = 11;
     static struct commands_t cmds[nopt] = {
-            {"input \t\t= <filename>\t",
+            {"(i) input \t= <filename>\t",
                     "input matrix market file"},
-            {"dump-scores \t= <filename>\t",
+            {"(b) dump-scores = <filename>\t",
                     "dump computed bc scores to <filename>"},
-            {"dump-stats \t= <filename>\t",
+            {"(s) dump-stats \t= <filename>\t",
                     "dump stats of the GPU algorithm to <filename>"},
-            {"verbose\t\t\t\t",
+            {"(v) verbose\t\t\t",
                     "print info messages and errors"},
-            {"quiet\t\t\t\t",
+            {"(q) quiet\t\t\t",
                     "print only errors if they occur"},
-            {"check\t\t\t\t",
+            {"(c) check\t\t\t",
                     "compare GPU and CPU parallel algorithms"},
-            {"wself-loops\t\t\t",
+            {"(l) wself-loops\t\t\t",
                     "don't remove self loops from the input graph"},
-            {"technique\t\t\t",
+            {"(t) technique\t\t\t",
                     "technique used to distribute work among GPU threads"},
-            {"device\t\t\t\t",
+            {"(d) device\t\t\t",
                     "set the device id of the GPU, 0 is the default"},
-            {"usage\t\t\t\t",
+            {"(u) usage\t\t\t",
                     "print usage of the command"},
-            {"help\t\t\t\t",
+            {"(h) help\t\t\t",
                     "print a summary of available commands"}
     };
 
-    fprintf(stdout, "Available options:\n");
-    for (int i = 0; i < LINE_LENGTH; i++)
-        printf("-");
-
-    printf("\n");
+    printf("Available options:\n\n");
 
     for (int i = 0; i < nopt; i++)
-        fprintf(stdout, "%s%s\n", cmds[i].cmd_name, cmds[i].cmd_descr);
+        printf("%s%s\n", cmds[i].cmd_name, cmds[i].cmd_descr);
+
+    print_separator();
+
+    printf("Available techniques are: \n\n");
+    printf("(1) Vertex Parallel\n");
+    printf("(2) Edge Parallel\n");
+    printf("(3) Work efficient\n");
 }
 
 /**
