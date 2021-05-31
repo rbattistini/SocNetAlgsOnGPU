@@ -41,7 +41,7 @@
 
 #include "bc_statistics.h"
 #include "common.h"
-#include "matstorage.h"
+#include "matds.h"
 #include <climits>
 #include <queue>
 #include <stack>
@@ -50,6 +50,6 @@
 using std::queue;
 using std::stack;
 
-void compute_ser_bc_cpu(matrix_pcsr_t *g, float *bc_scores, bool directed);
+void compute_ser_bc_cpu(matrix_pcsr_t *g, double *bc_scores, bool directed);
 
 #endif//SOCNETALGSONGPU_BC_H

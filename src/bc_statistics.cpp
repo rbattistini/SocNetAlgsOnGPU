@@ -37,8 +37,8 @@
 #include "bc_statistics.h"
 
 double check_score(int nrows,
-                   const float *score_cpu,
-                   const float *score_gpu) {
+                   const double *score_cpu,
+                   const double *score_gpu) {
     double error = 0;
     double max_error = 0;
 
@@ -51,7 +51,7 @@ double check_score(int nrows,
             max_error = current_error;
         }
     }
-    error = error / (float) nrows;
+    error = error / (double) nrows;
     error = sqrt(error);
     return error;
 }
@@ -75,7 +75,7 @@ void print_stats(stats_t *s) {
            teps);
 }
 
-int append_stats(stats_t *stats, char *fname) {
+int append_stats(stats_t *stats, char *fname, int technique_id) {
 
     if (fname == 0) {
         ZF_LOGE("No filename given");
@@ -93,13 +93,11 @@ int append_stats(stats_t *stats, char *fname) {
 
     if (f != 0) {
 
-//        fprintf(f, "\"Total Time\", \"Load Time\", \"Unload Time\","
-//                   " \"BC Comp Time\", \"Teps\"\n");
-
         double teps = get_bc_teps(stats->nedges_traversed,
                                   stats->total_time);
 
-        fprintf(f, "%.2f, %.2f, %.2f, %.2f, %.2f\n",
+        fprintf(f, "%d %f, %f, %f, %f, %f\n",
+                technique_id,
                 stats->total_time,
                 stats->load_time,
                 stats->unload_time,
@@ -116,8 +114,8 @@ int append_stats(stats_t *stats, char *fname) {
 
 int dump_scores(int nvertices,
                 const int *degree_scores,
-                const float *bc_scores,
-                const float *cl_scores,
+                const double *bc_scores,
+                const double *cl_scores,
                 char *fname) {
 
     if (fname == 0) {

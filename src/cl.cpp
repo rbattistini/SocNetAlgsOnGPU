@@ -36,7 +36,7 @@
 
 #include "cl.h"
 
-void compute_cl_cpu(matrix_pcsr_t *g, float *cl_cpu) {
+void compute_cl_cpu(matrix_pcsr_t *g, double *cl_cpu) {
 
     int nvertices = g->nrows;
 
@@ -51,7 +51,7 @@ void compute_cl_cpu(matrix_pcsr_t *g, float *cl_cpu) {
         for(int j = 0; j < nvertices; j++)
             tot_d += d[j];
 
-        float res = ((float) nvertices - 1.0f) / (float) tot_d;
+        double res = ((double) nvertices - 1.0) / (double) tot_d;
         cl_cpu[i] = res;
         fill(d, g->nrows, INT_MAX);
     }

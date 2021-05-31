@@ -1,9 +1,9 @@
 /****************************************************************************
- * @file bc_vp_kernels.cu
+ * @file bc_vp_kernel.cu
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Kernel for computing Betweenness centrality on a Nvidia GPU using the vertex
- * parallel technique.
+ * @brief Kernel for computing Betweenness centrality on a Nvidia GPU using
+ * the vertex parallel technique.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -34,15 +34,15 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 
-#include "bc_vp_kernels.cuh"
+#include "bc_vp_kernel.cuh"
 
-__global__ void get_vertex_betweenness_vpp(float *bc,
+__global__ void get_vertex_betweenness_vpp(double *bc,
                                            const int *row_offsets,
                                            const int *cols,
                                            int nvertices,
                                            int *d,
                                            unsigned long long *sigma,
-                                           float *delta,
+                                           double *delta,
                                            int *next_source,
                                            size_t pitch_d,
                                            size_t pitch_sigma,
@@ -59,12 +59,12 @@ __global__ void get_vertex_betweenness_vpp(float *bc,
     if (tid == 0) {
         s = (int) blockIdx.x;
     }
-    __syncthreads();
 
     int *d_row = (int *) ((char *) d + blockIdx.x * pitch_d);
-    auto *delta_row = (float *) ((char *) delta + blockIdx.x * pitch_delta);
+    auto *delta_row = (double *) ((char *) delta + blockIdx.x * pitch_delta);
     auto *sigma_row = (unsigned long long *) ((char *) sigma +
                                               blockIdx.x * pitch_sigma);
+    __syncthreads();
 
     /*
      * For each vertex...
@@ -137,7 +137,6 @@ __global__ void get_vertex_betweenness_vpp(float *bc,
             __syncthreads();
             if (tid == 0)
                 depth++;
-            __syncthreads();
         }
 
         /*
@@ -164,7 +163,7 @@ __global__ void get_vertex_betweenness_vpp(float *bc,
                         if (d_row[w] == (d_row[v] + 1)) {
                             if (sigma_row[w] != 0) {
                                 delta_row[v] += (1.0f + delta_row[w]) *
-                                                ((float) sigma_row[v] / (float) sigma_row[w]);
+                                                ((double) sigma_row[v] / (double) sigma_row[w]);
                             }
                         }
                     }
@@ -176,11 +175,10 @@ __global__ void get_vertex_betweenness_vpp(float *bc,
         /*
          * Compute betweenness centrality.
          */
-        for (int i = (int) threadIdx.x; i < nvertices; i += (int) blockDim.x) {
+        for (int i = (int) tid; i < nvertices; i += (int) blockDim.x) {
             if (i != s)
                 atomicAdd(&bc[i], delta_row[i]);
         }
-        __syncthreads();
 
         if(tid == 0)
             s = atomicAdd(next_source, 1);
@@ -188,10 +186,13 @@ __global__ void get_vertex_betweenness_vpp(float *bc,
     }
 }
 
-void compute_bc_gpu_vpp(matrix_pcsr_t *g, float *bc) {
+void compute_bc_gpu_vpp(matrix_pcsr_t *g, double *bc, stats_t *stats) {
 
+    double tstart, tend, first_tstart, last_tend;
+
+    first_tstart = get_time();
     unsigned long long *d_sigma;
-    float *d_bc, *d_delta;
+    double *d_bc, *d_delta;
     int *d_row_offsets, *d_cols, *d_dist, *d_next_source;
     size_t pitch_d, pitch_sigma, pitch_delta;
 
@@ -226,8 +227,8 @@ void compute_bc_gpu_vpp(matrix_pcsr_t *g, float *bc) {
     /*
      * Load bc.
      */
-    cudaSafeCall(cudaMalloc((void **) &d_bc, g->nrows * sizeof(float)));
-    cudaSafeCall(cudaMemset(d_bc, 0, g->nrows * sizeof(float)));
+    cudaSafeCall(cudaMalloc((void **) &d_bc, g->nrows * sizeof(double)));
+    cudaSafeCall(cudaMemset(d_bc, 0, g->nrows * sizeof(double)));
 
     /*
      * Load auxiliary arrays for bc.
@@ -238,7 +239,7 @@ void compute_bc_gpu_vpp(matrix_pcsr_t *g, float *bc) {
                                  g->nrows * sizeof(unsigned long long),
                                  grid.x));
     cudaSafeCall(cudaMallocPitch((void **) &d_delta, &pitch_delta,
-                                 g->nrows * sizeof(float), grid.x));
+                                 g->nrows * sizeof(double), grid.x));
 
     /*
      * Load single-variables.
@@ -248,9 +249,13 @@ void compute_bc_gpu_vpp(matrix_pcsr_t *g, float *bc) {
                             sizeof(int),
                             cudaMemcpyHostToDevice));
 
+    tend = get_time();
+    stats->load_time = tend - first_tstart;
+
     /*
      * Execute the bc computation.
      */
+    tstart = get_time();
     get_vertex_betweenness_vpp<<<grid, block>>>(d_bc,
                                                 d_row_offsets,
                                                 d_cols,
@@ -266,7 +271,7 @@ void compute_bc_gpu_vpp(matrix_pcsr_t *g, float *bc) {
     cudaCheckError();
 
     cudaSafeCall(cudaMemcpy(bc, d_bc,
-                            g->nrows * sizeof(float),
+                            g->nrows * sizeof(double),
                             cudaMemcpyDeviceToHost));
 
     /*
@@ -275,13 +280,24 @@ void compute_bc_gpu_vpp(matrix_pcsr_t *g, float *bc) {
     for (int k = 0; k < g->nrows; k++)
         bc[k] /= 2;
 
+    cudaSafeCall(cudaDeviceSynchronize());
+    tend = get_time();
+    stats->bc_comp_time = tend - tstart;
+
+    tstart = get_time();
+
     /*
      * Device resource deallocation.
      */
     cudaSafeCall(cudaFree(d_row_offsets));
+    cudaSafeCall(cudaFree(d_next_source));
     cudaSafeCall(cudaFree(d_cols));
     cudaSafeCall(cudaFree(d_bc));
     cudaSafeCall(cudaFree(d_sigma));
     cudaSafeCall(cudaFree(d_dist));
     cudaSafeCall(cudaFree(d_delta));
+
+    last_tend = get_time();
+    stats->unload_time = last_tend - tstart;
+    stats->total_time = last_tend - first_tstart;
 }

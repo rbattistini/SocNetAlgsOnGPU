@@ -47,7 +47,7 @@ void print_graph_overview(matrix_pcsr_t *g, int *degree) {
     printf("Graph overview:\n\n");
     printf("\tVertices:\t\t%d\n", nvertices);
     printf("\tEdges:\t\t\t%d\n", nedges);
-    printf("\tDensity:\t\t%.2f %%\n", get_density(nvertices, nedges) * 100);
+    printf("\tDensity:\t\t%f %%\n", get_density(nvertices, nedges) * 100);
     printf("\tMax degree: \t\t%d\n", degree[get_max_idx(degree, nvertices)]);
 
     /*

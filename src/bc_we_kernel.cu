@@ -1,8 +1,9 @@
 /****************************************************************************
- * @file bc_kernels_pitched.cu
+ * @file bc_we_kernel.cu
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
- * Kernels for computing Betweenness centrality on a Nvidia GPU.
+ * @brief Kernel for computing Betweenness centrality on a Nvidia GPU using
+ * the work efficient technique.
  *
  * Copyright 2021 (c) 2021 by Riccardo Battistini
  *
@@ -34,7 +35,7 @@
  *
  ****************************************************************************/
 
-#include "bc_we_kernels_pitched.cuh"
+#include "bc_we_kernel.cuh"
 
 /**
  * Updates auxiliary data structures used for both bfs and the dependency
@@ -98,13 +99,13 @@ __device__ void bfs_update_ds_wpitched(int *qcurr_len,
     }
 }
 
-__global__ void get_vertex_betweenness_wep(float *bc,
+__global__ void get_vertex_betweenness_wep(double *bc,
                                            const int *row_offsets,
                                            const int *cols,
                                            int nvertices,
                                            int *d,
                                            unsigned long long *sigma,
-                                           float *delta,
+                                           double *delta,
                                            int *curr_queue,
                                            int *next_queue,
                                            int *stack,
@@ -122,7 +123,7 @@ __global__ void get_vertex_betweenness_wep(float *bc,
     int tid = (int) threadIdx.x;
 
     int *d_row = (int *) ((char *) d + blockIdx.x * pitch_d);
-    auto *delta_row = (float *) ((char *) delta + blockIdx.x * pitch_delta);
+    auto *delta_row = (double *) ((char *) delta + blockIdx.x * pitch_delta);
     auto *sigma_row = (unsigned long long *) ((char *) sigma +
                                               blockIdx.x *
                                                       pitch_sigma);
@@ -155,7 +156,7 @@ __global__ void get_vertex_betweenness_wep(float *bc,
                 d_row[k] = INT_MAX;
                 sigma_row[k] = 0;
             }
-            delta_row[k] = 0;
+            delta_row[k] = 0.0;
         }
 
         __syncthreads();
@@ -180,39 +181,6 @@ __global__ void get_vertex_betweenness_wep(float *bc,
             done = false;
         }
 
-        __syncthreads();
-
-        //Do first iteration separately since we already know the edges to traverse
-        int start = (int) threadIdx.x + row_offsets[s];
-        int end = row_offsets[s + 1];
-        for (int r = start; r < end; r += (int) blockDim.x) {
-            int w = cols[r];
-
-            if (d_row[w] == INT_MAX) {
-                d_row[w] = 1;
-                int t = atomicAdd(&qnext_len, 1);
-                qnext_row[t] = w;
-            }
-
-            if (d_row[w] == (d_row[s] + 1)) {
-                atomicAdd(&sigma_row[w], 1);
-            }
-        }
-        __syncthreads();
-
-        /*
-         * If the next frontier is empty the traversal is complete.
-         */
-        if (qnext_len == 0) {
-            done = true;
-        } else {
-            bfs_update_ds_wpitched(&qcurr_len, qcurr_row,
-                                   &qnext_len, qnext_row,
-                                   &stack_len, stack_row,
-                                   &ends_len, ends_row,
-                                   &depth,
-                                   tid);
-        }
         __syncthreads();
 
         /*
@@ -264,7 +232,7 @@ __global__ void get_vertex_betweenness_wep(float *bc,
              * If the next frontier is empty the traversal is complete.
              */
             if (qnext_len == 0) {
-                done = true;
+                break;
             } else {
                 bfs_update_ds_wpitched(&qcurr_len, qcurr_row,
                                        &qnext_len, qnext_row,
@@ -288,8 +256,8 @@ __global__ void get_vertex_betweenness_wep(float *bc,
          */
         while (depth > 0) {
 
-            start = (int) threadIdx.x + ends_row[depth];
-            end = ends_row[depth + 1];
+            int start = (int) threadIdx.x + ends_row[depth];
+            int end = ends_row[depth + 1];
             for (int i = start; i < end; i += (int) blockDim.x) {
                 int w = stack_row[i];
                 float dsw = 0;
@@ -325,7 +293,7 @@ __global__ void get_vertex_betweenness_wep(float *bc,
     }
 }
 
-void compute_bc_gpu_wep(matrix_pcsr_t *g, float *bc, stats_t *stats) {
+void compute_bc_gpu_wep(matrix_pcsr_t *g, double *bc, stats_t *stats) {
 
     double tstart, tend, first_tstart, last_tend;
 
@@ -334,7 +302,7 @@ void compute_bc_gpu_wep(matrix_pcsr_t *g, float *bc, stats_t *stats) {
     int next_source = (int) sm_count;
 
     unsigned long long *d_sigma;
-    float *d_bc, *d_delta;
+    double *d_bc, *d_delta;
     int *d_row_offsets,
             *d_cols,
             *d_dist,
@@ -379,8 +347,8 @@ void compute_bc_gpu_wep(matrix_pcsr_t *g, float *bc, stats_t *stats) {
     /*
      * Load bc.
      */
-    cudaSafeCall(cudaMalloc((void **) &d_bc, g->nrows * sizeof(float)));
-    cudaSafeCall(cudaMemset(d_bc, 0, g->nrows * sizeof(float)));
+    cudaSafeCall(cudaMalloc((void **) &d_bc, g->nrows * sizeof(double)));
+    cudaSafeCall(cudaMemset(d_bc, 0, g->nrows * sizeof(double)));
 
     /*
      * Load auxiliary arrays for bc.
@@ -391,7 +359,7 @@ void compute_bc_gpu_wep(matrix_pcsr_t *g, float *bc, stats_t *stats) {
                                  g->nrows * sizeof(unsigned long long),
                                  grid.x));
     cudaSafeCall(cudaMallocPitch((void **) &d_delta, &pitch_delta,
-                                 g->nrows * sizeof(float), grid.x));
+                                 g->nrows * sizeof(double), grid.x));
     cudaSafeCall(cudaMallocPitch((void **) &d_stack, &pitch_stack,
                                  g->nrows * sizeof(int), grid.x));
     cudaSafeCall(cudaMallocPitch((void **) &d_qcurr, &pitch_qcurr,
@@ -439,7 +407,7 @@ void compute_bc_gpu_wep(matrix_pcsr_t *g, float *bc, stats_t *stats) {
     cudaCheckError();
 
     cudaSafeCall(cudaMemcpy(bc, d_bc,
-                            g->nrows * sizeof(float),
+                            g->nrows * sizeof(double),
                             cudaMemcpyDeviceToHost));
 
     /*
@@ -448,7 +416,7 @@ void compute_bc_gpu_wep(matrix_pcsr_t *g, float *bc, stats_t *stats) {
     for (int k = 0; k < g->nrows; k++)
         bc[k] /= 2;
 
-
+    cudaSafeCall(cudaDeviceSynchronize());
     tend = get_time();
     stats->bc_comp_time = tend - tstart;
 

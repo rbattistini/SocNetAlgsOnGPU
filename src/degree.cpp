@@ -44,7 +44,6 @@ void compute_degrees_undirected(matrix_pcsr_t *g, int *degree) {
     }
 
     int *rows = g->row_offsets;        // row indices of A
-    int nnz = g->row_offsets[g->nrows];// number of nnz in A
     int nrows = g->nrows;              // number of rows in A
 
     fill(degree, nrows, 0);

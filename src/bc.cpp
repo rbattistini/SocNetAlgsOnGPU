@@ -37,11 +37,11 @@
 
 #include "bc.h"
 
-void compute_ser_bc_cpu(matrix_pcsr_t *g, float *bc_scores, bool directed) {
+void compute_ser_bc_cpu(matrix_pcsr_t *g, double *bc_scores, bool directed) {
 
     for (int i = 0; i < g->nrows; i++)
         bc_scores[i] = 0;
-    //    int cnt = 0;
+
     for (int j = 0; j < g->nrows; j++) {
 
         int s = j;
@@ -70,8 +70,7 @@ void compute_ser_bc_cpu(matrix_pcsr_t *g, float *bc_scores, bool directed) {
 
             int v = Q.front();
             Q.pop();
-            // update for the backward propagation phase
-            S.push(v);
+            S.push(v); // update for the backward propagation phase
 
             for (int k = g->row_offsets[v]; k < g->row_offsets[v + 1]; k++) {
 
@@ -87,10 +86,6 @@ void compute_ser_bc_cpu(matrix_pcsr_t *g, float *bc_scores, bool directed) {
                     d[w] = d[v] + 1;
                 }
 
-                /*
-                 * If the vertex is "safe" give him all the power v has
-                 * in terms of shortest paths crossing it.
-                 */
                 if (d[w] == (d[v] + 1)) {
                     sigma[w] += sigma[v];
                 }
@@ -106,7 +101,7 @@ void compute_ser_bc_cpu(matrix_pcsr_t *g, float *bc_scores, bool directed) {
                 int v = g->cols[i];
                 if (d[v] == (d[w] - 1)) {
                     delta[v] +=
-                            (sigma[v] / (double) sigma[w]) * (1.0f + delta[w]);
+                            (sigma[v] / (float) sigma[w]) * (1.0f + delta[w]);
                 }
             }
 

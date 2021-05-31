@@ -72,7 +72,6 @@ typedef struct matrix_rcsr_t : matrix_pcsr_t {
     int *weights;// value of each entry
 } matrix_rcsr_t;
 
-
 int check_matrix_pcoo(matrix_pcoo_t *matrix);
 
 int check_matrix_pcsr(matrix_pcsr_t *matrix);

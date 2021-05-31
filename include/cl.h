@@ -44,6 +44,6 @@
 #include "matds.h"
 #include <climits>
 
-void compute_cl_cpu(matrix_pcsr_t *g, float *cl_cpu);
+void compute_cl_cpu(matrix_pcsr_t *g, double *cl_cpu);
 
 #endif//CL_CPU_H

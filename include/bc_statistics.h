@@ -68,7 +68,7 @@ typedef struct stats_t {
  * @param score_gpu
  * @return
  */
-double check_score(int nrows, const float *score_cpu, const float *score_gpu);
+double check_score(int nrows, const double *score_cpu, const double *score_gpu);
 
 void print_stats(stats_t *s);
 
@@ -81,7 +81,7 @@ void print_stats(stats_t *s);
  * @return 0 if successful, -1 if the stream was not closed correctly,
  * 1 if another error occurred
  */
-int append_stats(stats_t *stats, char *fname);
+int append_stats(stats_t *stats, char *fname, int technique_id);
 
 /**
  * @brief Compute Traversed Edges Per Second for the BC algorithm on the GPU
@@ -116,8 +116,8 @@ double inline get_bc_teps(unsigned int nedges, double time_elapsed) {
  */
 int dump_scores(int nvertices,
                 const int *degree_scores,
-                const float *bc_scores,
-                const float *cl_scores,
+                const double *bc_scores,
+                const double *cl_scores,
                 char *fname);
 
 #endif//BC_STATISTICS_H

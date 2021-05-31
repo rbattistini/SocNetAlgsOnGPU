@@ -1,5 +1,5 @@
 /****************************************************************************
- * @file bc_vp_kernels.cu
+ * @file bc_kernels_pitched.cuh
  * @author Riccardo Battistini <riccardo.battistini2(at)studio.unibo.it>
  *
  * Kernels for computing Betweenness centrality on a Nvidia GPU.
@@ -31,11 +31,12 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  ****************************************************************************/
 
 #pragma once
-#ifndef BC_VP_KERNELS_CUH
-#define BC_VP_KERNELS_CUH
+#ifndef BC_KERNELS_PITCHED_CUH
+#define BC_KERNELS_PITCHED_CUH
 
 #ifdef __CUDACC__
 
@@ -44,20 +45,28 @@
 #include <bc_statistics.h>
 #include <common.h>
 
-__global__ void get_vertex_betweenness_vpp(float *bc,
+__global__ void get_vertex_betweenness_wep(double *bc,
                                            const int *row_offsets,
                                            const int *cols,
                                            int nvertices,
                                            int *d,
                                            unsigned long long *sigma,
-                                           float *delta,
+                                           double *delta,
+                                           int *curr_queue,
+                                           int *next_queue,
+                                           int *stack,
+                                           int *endpoints,
                                            int *next_source,
                                            size_t pitch_d,
                                            size_t pitch_sigma,
-                                           size_t pitch_delta);
+                                           size_t pitch_delta,
+                                           size_t pitch_qcurr,
+                                           size_t pitch_qnext,
+                                           size_t pitch_stack,
+                                           size_t pitch_endpoints);
 
-void compute_bc_gpu_vpp(matrix_pcsr_t *g, float *bc);
+void compute_bc_gpu_wep(matrix_pcsr_t *g, double *bc, stats_t *stats);
 
 #endif
 
-#endif//BC_VP_KERNELS_CUH
+#endif//BC_KERNELS_PITCHED_CUH
