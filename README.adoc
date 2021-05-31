@@ -57,7 +57,7 @@ Optionally the symbol `-DCMAKE_CUDA_ARCHITECTURES=x` can be specified to compile
 
 [WARNING]
 ====
-Only GPUs with at least compute capability 6.x are supported because atomics with double precision have been used.
+Only GPUs with at least compute capability 6.x are supported because link:https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#arithmetic-functions[atomics with double precision] have been used.
 ====
 
 If the project is built with cmake, binary source file are available in `build/src` directory. Binary test files are available in `build/test` directory. All tests can be run by typing `ctest` in the `build/test` directory.
