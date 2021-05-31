@@ -44,28 +44,16 @@
 #include <bc_statistics.h>
 #include <common.h>
 
-__global__ void get_closeness_p(float *bc,
-                                float *p_bc,
-                                const int *row_offsets,
+__global__ void get_closeness_p(double *cl,
+                                const int *rows,
                                 const int *cols,
                                 int nvertices,
+                                int nnz,
                                 int *d,
-                                unsigned long long *sigma,
-                                float *delta,
-                                int *curr_queue,
-                                int *next_queue,
-                                int *stack,
-                                int *endpoints,
                                 int *next_source,
-                                size_t pitch_d,
-                                size_t pitch_sigma,
-                                size_t pitch_delta,
-                                size_t pitch_qcurr,
-                                size_t pitch_qnext,
-                                size_t pitch_stack,
-                                size_t pitch_endpoints);
+                                size_t pitch_d);
 
-void compute_cl_gpu_p(matrix_pcsr_t *g, float *cl, stats_t *stats);
+void compute_cl_gpu_p(matrix_pcsr_t *g, double *cl, stats_t *stats);
 
 #endif
 
