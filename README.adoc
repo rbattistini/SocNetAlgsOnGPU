@@ -72,7 +72,7 @@ with optimization flags enabled (`-O3`) and Debug uses both debug symbols (`-g`)
 
 All dataset-related code is under the `dataset` subdirectory. Only link:https://math.nist.gov/MatrixMarket/formats.html[Matrix-market] coordinate-formatted graph format is supported.
 
-A program for generating random graphs is given, `dataset/graph_gen`. Instructions for compiling the script are given in the file.
+A program for generating random graphs is given, `dataset/graph_gen`. Instructions for compiling it are given in the file.
 
 To download them just type `make` in the `dataset` subdirectory. To only download one specific dataset step into its subdirectory and type `make` there.
 
