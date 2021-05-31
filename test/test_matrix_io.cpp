@@ -201,7 +201,7 @@ TEST_CASE("Test graph loading using mmio with some corner cases") {
         close_stream(tmp);
         tmp = fopen(gname, "r");
 
-        CHECK_UNARY_FALSE(read_mm_pattern(tmp, &coo, gprops.has_self_loops));
+        CHECK_UNARY_FALSE(read_mm_pattern(tmp, &coo, &gprops));
         CHECK_NE(coo.nnz, 18);
 
         close_stream(tmp);
@@ -222,7 +222,7 @@ TEST_CASE("Test graph loading using mmio with some corner cases") {
         close_stream(tmp);
         tmp = fopen(gname, "r");
 
-        CHECK_UNARY(read_mm_pattern(tmp, &coo, gprops.has_self_loops));
+        CHECK_UNARY(read_mm_pattern(tmp, &coo, &gprops));
 
         close_stream(tmp);
     }
@@ -242,7 +242,7 @@ TEST_CASE("Test graph loading using mmio with some corner cases") {
         close_stream(tmp);
         tmp = fopen(gname, "r");
 
-        CHECK_UNARY(read_mm_pattern(tmp, &coo, gprops.has_self_loops));
+        CHECK_UNARY(read_mm_pattern(tmp, &coo, &gprops));
 
         close_stream(tmp);
     }
@@ -263,7 +263,7 @@ TEST_CASE("Test graph loading using mmio with some corner cases") {
         close_stream(tmp);
         tmp = fopen(gname, "r");
 
-        CHECK_UNARY(read_mm_pattern(tmp, &coo, gprops.has_self_loops));
+        CHECK_UNARY(read_mm_pattern(tmp, &coo, &gprops));
 
         close_stream(tmp);
     }

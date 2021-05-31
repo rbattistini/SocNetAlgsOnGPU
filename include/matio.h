@@ -88,9 +88,9 @@ int query_gprops(const char *fname, gprops_t *gp);
  * @return
  */
 
-int read_mm_pattern(FILE *f, matrix_pcoo_t *m_coo, bool has_self_loops);
+int read_mm_pattern(FILE *f, matrix_pcoo_t *m_coo, gprops_t *gp);
 
-int read_mm_real(FILE *f, matrix_rcoo_t *m_coo, bool has_self_loops);
+int read_mm_real(FILE *f, matrix_rcoo_t *m_coo, gprops_t *gp);
 
 int read_matrix(const char *fname, matrix_pcoo_t *m_coo, gprops_t *gp);
 

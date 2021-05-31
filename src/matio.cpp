@@ -171,8 +171,9 @@ int read_header(FILE *f, MM_typecode *matcode, int *m, int *n, int *nnz) {
     return EXIT_SUCCESS;
 }
 
-int read_mm(FILE *f, MM_typecode *matcode, int *nnz, const int *m, const int *n,
-            int *rows, int *cols, int *weights, bool has_self_loops) {
+int read_mm(FILE *f, int *nnz, const int *m, const int *n,
+            int *rows, int *cols, int *weights, gprops_t *gp) {
+
     int rmax = 0, cmax = 0, i = 0, nitems;
     bool one_based = true;
     char buf[BUFFER_SIZE];
@@ -208,8 +209,8 @@ int read_mm(FILE *f, MM_typecode *matcode, int *nnz, const int *m, const int *n,
                 return EXIT_FAILURE;
             }
 
-            if (has_self_loops || tmp_col != tmp_row) {
-                if (mm_is_symmetric(*matcode)) {
+            if (gp->has_self_loops || tmp_col != tmp_row) {
+                if (!gp->is_directed && tmp_col != tmp_row) {
                     cols[i] = tmp_col;
                     rows[i] = tmp_row;
                     rmax = max(rows[i], rmax);
@@ -261,8 +262,8 @@ int read_mm(FILE *f, MM_typecode *matcode, int *nnz, const int *m, const int *n,
                 return EXIT_FAILURE;
             }
 
-            if (has_self_loops && tmp_col != tmp_row) {
-                if (mm_is_symmetric(*matcode)) {
+            if (gp->has_self_loops && tmp_col != tmp_row) {
+                if (!gp->is_directed) {
                     cols[i] = tmp_col;
                     rows[i] = tmp_row;
                     weights[i] = tmp_wgh;
@@ -297,8 +298,8 @@ int read_mm(FILE *f, MM_typecode *matcode, int *nnz, const int *m, const int *n,
      * If there are self-edges removed and the allocated space is not entirely
      * used reallocate memory.
      */
-    if ((mm_is_symmetric(*matcode) && (2 * *nnz != i)) ||
-        (!mm_is_symmetric(*matcode) && (*nnz != i))) {
+    if ((!gp->is_directed && (2 * *nnz != i)) ||
+        (gp->is_directed && (*nnz != i))) {
 
         *nnz = i;
         rows = (int *) realloc(rows, (*nnz) * sizeof(int));
@@ -324,7 +325,7 @@ int read_mm(FILE *f, MM_typecode *matcode, int *nnz, const int *m, const int *n,
     return EXIT_SUCCESS;
 }
 
-int read_mm_real(FILE *f, matrix_rcoo_t *m_coo, bool has_self_loops) {
+int read_mm_real(FILE *f, matrix_rcoo_t *m_coo, gprops_t *gp) {
 
     MM_typecode matcode;
     int nnz, m, n;
@@ -346,8 +347,7 @@ int read_mm_real(FILE *f, matrix_rcoo_t *m_coo, bool has_self_loops) {
     assert(cols);
     assert(weights);
 
-    if (read_mm(f, &matcode, &nnz, &m, &n, rows, cols, weights,
-                has_self_loops)) {
+    if (read_mm(f, &nnz, &m, &n, rows, cols, weights, gp)) {
         return EXIT_FAILURE;
     }
 
@@ -360,7 +360,7 @@ int read_mm_real(FILE *f, matrix_rcoo_t *m_coo, bool has_self_loops) {
     return 0;
 }
 
-int read_mm_pattern(FILE *f, matrix_pcoo_t *m_coo, bool has_self_loops) {
+int read_mm_pattern(FILE *f, matrix_pcoo_t *m_coo, gprops_t *gp) {
 
     MM_typecode matcode;
     int nnz, m, n;
@@ -380,8 +380,7 @@ int read_mm_pattern(FILE *f, matrix_pcoo_t *m_coo, bool has_self_loops) {
     assert(rows);
     assert(cols);
 
-    if (read_mm(f, &matcode, &nnz, &m, &n, rows, cols, weights,
-                has_self_loops)) {
+    if (read_mm(f, &nnz, &m, &n, rows, cols, weights, gp)) {
         return EXIT_FAILURE;
     }
 
@@ -411,7 +410,7 @@ int read_matrix(const char *fname, matrix_pcoo_t *m_coo, gprops_t *gp) {
                 return EXIT_FAILURE;
             }
 
-            if (read_mm_pattern(f, m_coo, gp->has_self_loops)) {
+            if (read_mm_pattern(f, m_coo, gp)) {
                 ZF_LOGF("Error reading matrix");
                 return EXIT_FAILURE;
             }
@@ -464,7 +463,6 @@ int write_mm_pattern(FILE *f, matrix_pcoo_t *m_coo, bool directed) {
 int write_mm_real(FILE *f, matrix_rcoo_t *m_coo, bool directed) {
 
     MM_typecode matcode;
-    int status;
 
     /*
      * Write the banner.
