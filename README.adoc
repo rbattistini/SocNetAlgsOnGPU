@@ -17,14 +17,14 @@ Currently, only undirected and unweighted graphs are supported. For unconnected 
 These are the dependencies needed to build the project:
 
 - A compiler for C and C++ must be installed;
-- link:https://developer.nvidia.com/cuda-downloads[CUDA Toolkit 11+] must be installed;
-- link:https://cmake.org/download/[CMake 3.9+] to build the project or link:https://www.gnu.org/software/make/[GNU Make];
+- link:https://developer.nvidia.com/cuda-downloads[CUDA Toolkit] must be installed;
+- link:https://cmake.org/download/[CMake 3.9+];
 - The link:http://snap-graph.sourceforge.net/[Snap] library is used for benchmarking GPU algorithms with an optimized parallel CPU implementation of the Betweenness Centrality algorithm. A script for downloading, building and installing it under `lib/` is available in the `script/` directory.
 - The link:https://www.boost.org/users/history/version_1_75_0.html[Boost Graph Library] is used for generating random graphs.
 
 [WARNING]
 ====
-During the development of the project only GCC 10.3.0 on Ubuntu 18.04 has been tested.
+During the development of the project only GCC 10.3.0 and CUDA Toolkit 11.2 on Ubuntu 18.04 has been tested.
 ====
 
 === Compilation
@@ -53,11 +53,11 @@ mkdir build-release && cd build-release
 cmake .. -DCMAKE_BUILD_TYPE=Release
 ----
 
-Optionally the symbol ` -DCMAKE_CUDA_ARCHITECTURES=x` can be specified to compile for a specific architectures.
+Optionally the symbol `-DCMAKE_CUDA_ARCHITECTURES=x` can be specified to compile for a specific architecture.
 
 [WARNING]
 ====
-Only GPUs with at least compute capability 6.x are supported because atomics with double precision have been used.
+Only GPUs with at least compute capability 6.x are supported because link:https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#arithmetic-functions[atomics with double precision] have been used.
 ====
 
 If the project is built with cmake, binary source file are available in `build/src` directory. Binary test files are available in `build/test` directory. All tests can be run by typing `ctest` in the `build/test` directory.
@@ -72,7 +72,7 @@ with optimization flags enabled (`-O3`) and Debug uses both debug symbols (`-g`)
 
 All dataset-related code is under the `dataset` subdirectory. Only link:https://math.nist.gov/MatrixMarket/formats.html[Matrix-market] coordinate-formatted graph format is supported.
 
-A program for generating random graphs is given, `dataset/graph_gen`. Instructions for compiling the script are given in the file.
+A program for generating random graphs is given, `dataset/graph_gen`. Instructions for compiling it are given in the file.
 
 To download them just type `make` in the `dataset` subdirectory. To only download one specific dataset step into its subdirectory and type `make` there.
 
@@ -84,15 +84,16 @@ There are three libraries included in the project:
 
 - the link:https://github.com/onqtam/doctest[doctest] header file for writing unit tests of {cpp} code;
 
-- link:https://github.com/wonder-mice/zf_log[zf_Log] C library for logging.
+- link:https://github.com/wonder-mice/zf_log[zf_log] C library for logging.
 
 == Usage
 
 [example]
 ----
- ./sna_bc   [-i|--input file] [-r|--nrun] [-b|--dump-scores file]
-            [-s|--dump-stats file] [-v|--verbose] [-c|--check]
-            [-wsl|--wself-loops] [-d|--device] [-u|--usage] ][-h|--help]
+ ./sna_bc [-i|--input file] [-t|--technique] [-b|--dump-scores file] 
+          [-s|--dump-stats file] [-v|--verbose] [-c|--check]
+          [-wsl|--wself-loops] [-d|--device] [-q|--quiet]
+          [-u|--usage] ][-h|--help]
 ----
 
 Some examples:
@@ -104,14 +105,14 @@ Some examples:
  ./sna_bc -i ../../dataset/ca-GrQc/ca-GrQc.mtx -t 1
 ----
 
-- Compute centrality metrics of a random Small World graph using the Edge Parallel technique for computing the BC, allowing self-loops and dumping the computed scores in a .csv file called `scores`.
+- Compute centrality metrics of a random Small World graph using the Edge Parallel technique for computing the BC, allowing self-loops and dumping the computed scores in a .csv file called `scores`. Then run a serial CPU algorithm and check if the result of the CPU and GPU algorithms are the same.
 
 [example]
 ----
- ./sna_bc -i ../../dataset/synthetic/rnd-sw.mtx -t 2 -p -b "scores"
+ ./sna_bc -i ../../dataset/synthetic/rnd-sw.mtx -t 2 -p -b "scores" -c
 ----
 
-- Compute centrality metrics of the power grid of the USA using the Work Efficient technique, appending statistics like runtime and MTEPS to a .csv file called `stats`. In addition, show output from the logger and use a (Nvidia) GPU with device id equal to 1.
+- Compute centrality metrics of a graph representing the power grid of the USA using the Work Efficient technique, appending statistics like runtime and MTEPS to a .csv file called `stats`. In addition, show output from the logger and use a (Nvidia) GPU with device id equal to 1.
 
 [example]
 ----
