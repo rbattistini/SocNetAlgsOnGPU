@@ -53,7 +53,7 @@ mkdir build-release && cd build-release
 cmake .. -DCMAKE_BUILD_TYPE=Release
 ----
 
-Optionally the symbol ` -DCMAKE_CUDA_ARCHITECTURES=x` can be specified to compile for a specific architectures.
+Optionally the symbol `-DCMAKE_CUDA_ARCHITECTURES=x` can be specified to compile for a specific architecture.
 
 [WARNING]
 ====
@@ -90,9 +90,10 @@ There are three libraries included in the project:
 
 [example]
 ----
- ./sna_bc   [-i|--input file] [-r|--nrun] [-b|--dump-scores file]
-            [-s|--dump-stats file] [-v|--verbose] [-c|--check]
-            [-wsl|--wself-loops] [-d|--device] [-u|--usage] ][-h|--help]
+ ./sna_bc [-i|--input file] [-t|--technique] [-b|--dump-scores file] 
+          [-s|--dump-stats file] [-v|--verbose] [-c|--check]
+          [-wsl|--wself-loops] [-d|--device] [-q|--quiet]
+          [-u|--usage] ][-h|--help]
 ----
 
 Some examples:
@@ -111,7 +112,7 @@ Some examples:
  ./sna_bc -i ../../dataset/synthetic/rnd-sw.mtx -t 2 -p -b "scores"
 ----
 
-- Compute centrality metrics of the power grid of the USA using the Work Efficient technique, appending statistics like runtime and MTEPS to a .csv file called `stats`. In addition, show output from the logger and use a (Nvidia) GPU with device id equal to 1.
+- Compute centrality metrics of a graph representing the power grid of the USA using the Work Efficient technique, appending statistics like runtime and MTEPS to a .csv file called `stats`. In addition, show output from the logger and use a (Nvidia) GPU with device id equal to 1.
 
 [example]
 ----
