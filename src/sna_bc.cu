@@ -32,10 +32,11 @@
  ****************************************************************************/
 
 #include "bc.h"
+#include "bc_ep_kernel.cuh"
 #include "bc_statistics.h"
-#include "bc_vp_kernels.cuh"
-#include "bc_we_kernels.cuh"
-#include "bc_we_kernels_pitched.cuh"
+#include "bc_vp_kernel.cuh"
+#include "bc_we_kernel.cuh"
+#include "bc_we_kernel_nopitch.cuh"
 #include "cl.h"
 #include "cl_kernels.cuh"
 #include "degree.h"
@@ -70,8 +71,9 @@ int main(int argc, char *argv[]) {
     }
 
     if (get_compute_capability_major() < 6) {
-        ZF_LOGW("This program has been tested only with devices "
-                "with compute capability at least 6.x");
+        ZF_LOGF("Atomic operations for doubles are available only for compute"
+                "capability at least 6.x");
+        return EXIT_FAILURE;
     }
 
     matrix_pcsr_t m_csr;
@@ -138,6 +140,8 @@ int main(int argc, char *argv[]) {
                 tend_sub_ex - tstart_sub_ex);
         ZF_LOGI("Degree computation executed in: %g s",
                 tend - tstart);
+    } else {
+        printf("File: %s, Technique: %d\n", params.input_file, params.technique);
     }
 
     /*
@@ -145,13 +149,13 @@ int main(int argc, char *argv[]) {
      */
     int *dist;
     unsigned long long *sigma;
-    float *bc_gpu, *delta, *cl_gpu;
+    double *bc_gpu, *delta, *cl_gpu;
 
     sigma = (unsigned long long *) malloc(g.nrows * sizeof(*sigma));
     dist = (int *) malloc(g.nrows * sizeof(*dist));
-    bc_gpu = (float *) malloc(g.nrows * sizeof(*bc_gpu));
-    cl_gpu = (float *) malloc(g.nrows * sizeof(*cl_gpu));
-    delta = (float *) malloc(g.nrows * sizeof(*delta));
+    bc_gpu = (double *) malloc(g.nrows * sizeof(*bc_gpu));
+    cl_gpu = (double *) malloc(g.nrows * sizeof(*cl_gpu));
+    delta = (double *) malloc(g.nrows * sizeof(*delta));
 
     if (sigma == 0 || dist == 0 || bc_gpu == 0 || delta == 0) {
         ZF_LOGF("Could not allocate memory");
@@ -166,34 +170,33 @@ int main(int argc, char *argv[]) {
     stats.nedges_traversed = g.nrows * g.row_offsets[g.nrows];
 
     /*
+     * Closeness centrality computation on the GPU.
+     */
+    compute_cl_gpu_p(&g, cl_gpu, &stats);
+
+    /*
      * BC computation on the GPU.
      */
     ParStrategy technique = params.technique;
-
     switch (technique) {
         case work_efficient:
             compute_bc_gpu_wep(&g, bc_gpu, &stats);
             break;
         case vertex_parallel:
-            compute_bc_gpu_vpp(&g, bc_gpu);
+            compute_bc_gpu_vpp(&g, bc_gpu, &stats);
             break;
         case edge_parallel:
-//            compute_bc_gpu_epp(&g, bc_gpu);
+            compute_bc_gpu_epp(&g, bc_gpu, &stats);
             break;
         default:
             ZF_LOGE("Invalid technique Id, cannot compute betweenness");
     }
 
     /*
-     * Closeness centrality computation on the GPU.
-     */
-    compute_cl_gpu_p(&g, cl_gpu, &stats);
-
-    /*
      * BC and Closeness centrality computation on the CPU.
      */
     if (params.run_check) {
-        auto bc_cpu = (float *) malloc(g.nrows * sizeof(float));
+        auto bc_cpu = (double *) malloc(g.nrows * sizeof(double));
         if (bc_cpu == 0) {
             ZF_LOGF("Could not allocate memory");
             return EXIT_FAILURE;
@@ -206,7 +209,7 @@ int main(int argc, char *argv[]) {
 
         double bc_error = check_score(g.nrows, bc_cpu, bc_gpu);
 
-        auto cl_cpu = (float *) malloc(g.nrows * sizeof(float));
+        auto cl_cpu = (double *) malloc(g.nrows * sizeof(double));
         if (cl_cpu == 0) {
             ZF_LOGF("Could not allocate memory");
             return EXIT_FAILURE;
@@ -236,7 +239,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (params.dump_stats != 0) {
-        append_stats(&stats, params.dump_stats);
+        append_stats(&stats, params.dump_stats, params.technique);
     } else if(!params.quiet){
         print_stats(&stats);
     }
