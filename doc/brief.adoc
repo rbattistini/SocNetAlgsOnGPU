@@ -1,0 +1,369 @@
+= Implementazione di algoritmi paralleli su GPU per il calcolo d'indici di centralità nell'ambito dell'Analisi delle Reti Sociali
+8 Aprile 2021
+:toc-title: Tavola dei contenuti
+:figure-caption: Figura
+:listing-caption: Algoritmo
+:section-refsig: Sezione
+:table-caption: Tabella
+:version-label: ""
+:stem: latexmath
+:mathematical-format: svg
+:xrefstyle: short
+:source-highlighter: rouge
+:rouge-style: bw
+:source-linenums-option:
+:source-indent: 2
+:toc: macro
+:sectnums:
+:bibtex-file: bibliography.bib
+:bibtex-order: alphabetical
+:bibtex-style: ieee
+:bibtex-locale: it-IT
+:srcdir: ../script
+:imagesdir: .
+
+:compiler_nvidia: nvcc 11.2.142
+:compiler_local: GCC 10.2.1
+:hardware_local: Intel Core i7-10700
+:hardware_nvidia: Quadro P620
+:BC: Betweenness Centrality
+
+Università di Bologna · Campus di Cesena
+
+Corso di Laurea Triennale in Ingegneria e Scienze Informatiche
+
+'''
+
+|=======
+|[.normalize]#Tirocinante# |[.normalize]#Riccardo Battistini, 0000873514#
+|[.normalize]#Tutor didattico# |[.normalize]#Moreno Marzolla#
+|[.normalize]#Laboratorio# |[.normalize]#High-Performance Computing#
+|[.normalize]#Periodo di svolgimento del tirocinio# |[.normalize]#01/04/21 - 31/05/21#
+|=======
+
+<<<
+
+== Introduzione
+
+Il tirocinio è stato realizzato nell'ambito del laboratorio di High-Performance Computing per approfondire la programmazione di GPU e acquisire confidenza con il reperimento, la selezione e comprensione di testi di carattere scientifico, oltre che con alcuni concetti e algoritmi fondamentali nel campo dell'Analisi delle Reti Sociali e della Teoria dei Grafi.
+
+== Tecnologie
+
+Durante il tirocinio è stata sviluppata un'applicazione a linea di
+comando accelerata dalla GPU per il calcolo di alcune delle principali metriche impiegate nel campo dell'Analisi delle Reti Sociali.
+
+Per implementare l'applicativo sono stati impiegati i linguaggi C, {cpp} e CUDA C.
+In particolare il software realizzato impiega il Compute Unified Device Architecture (CUDA) Toolkit 11.2 cite:[cuda] e gli standard C99 e {cpp}11.
+
+Inoltre durante lo sviluppo dell'applicazione sono stati impiegati The GNU Project Debugger (GDB) e Valgrind. Come sistema per l'automazione dello sviluppo e per effettuare test è stato scelto CMake. Git è stato utilizzato per il controllo di versione.
+
+Per la scrittura della documentazione del progetto sono stati impiegati
+il linguaggio di markup Asciidoc e Bibtex per la gestione della bibliografia.
+
+Come formati per la memorizzazione dei dati sono stati impiegati Matrix Market,
+standard per la rappresentazione di matrici sparse cite:[matrix-market],
+e CSV per memorizzare i risultati della valutazione delle prestazioni e della scalabilità.
+
+L'applicazione è stata sviluppata e testata solo sul sistema operativo
+Ubuntu (18.04).
+
+== Attività
+
+Inizialmente sono stati consultati gli studi in cui sono state introdotte le metriche che si è scelto d'implementare. In <<Misure di Centralità>> sono brevemente riepilogate.
+
+Successivamente si è sviluppato un programma che fosse in grado di calcolare la {BC} prima in modo seriale e in seguito accelerando il calcolo con una GPU. Sono state implementate diverse alternative in base alle diverse strategie che possono essere adottate per suddividere il lavoro fra i thread della GPU. Le diverse strategie sono descritte in <<Tecniche di parallelizzazione su GPU>> e gli algoritmi paralleli sono illustrati in <<Algoritmo parallelo su GPU>>.
+
+Prima di procedere è stato necessario riflettere sulla struttura dati principale da impiegare per la rappresentazione della rete e sulla scelta del formato di memorizzazione su disco. In <<Rappresentazione di un grafo>> si mostra l'approccio scelto.
+
+Infine è stato effettuato uno studio delle prestazioni e della scalabilità dell'algoritmo implementato su insiemi di dati sintetici e reali. In particolare l'algoritmo su GPU è stato confrontato con l'algoritmo parallelo della libreria _SNAP_ cite:[bader_snap_2008]. I risultati sono analizzati in <<Studio di scalabilità e throughput>>.
+
+Come introduzione preliminare e a supporto degli argomenti trattati nel tirocinio sono state consultate diverse fonti cite:[cormen2009introduction, gkoulalas-divanis_large-scale_2014, Magnani2017].
+
+=== Misure di Centralità
+
+Le misure di centralità misurano l'importanza di un nodo secondo diverse definizioni. Di seguito si assume che un grafo sia descritto come _G = (V, E)_, dove _V_ è l'insieme dei vertici ed _E_ l'insieme degli archi. Si impiegano _n_ ed _m_ rispettivamente per indicare il numero di vertici e di archi. Infine si considerano solo grafi non diretti e non pesati.
+
+Degree Centrality::
+--
+Il grado cite:[freeman_centrality_1978] di un nodo rappresenta il numero di collegamenti che ha con gli altri nodi.
+--
+
+Closeness Centrality::
+--
+La Closeness cite:[freeman_centrality_1978] di un nodo è definita come l'inverso della distanza media tra _u_ e tutti gli altri nodi, ovvero:
+
+[latexmath, id="eq-cl"]
+++++
+C(u) = \frac{n - 1}{\sum_{v \in V \!, \! v \neq u} d(u, v)}
+++++
+
+Intuitivamente indica quanto rapidamente ci si aspetta che l'informazione prodotta da un nodo _u_ raggiunga il resto della rete cite:[sabidussi_centrality_1966].
+--
+
+Betweenness Centrality::
+--
+La Betweenness è una delle più note e diffuse misure di centralità. Si tratta di una misura della proporzione dei cammini minimi di una rete che attraversano uno specifico nodo cite:[freeman_set_1977]. Formalmente la _vertex betweenness_ è definita nel seguente modo:
+
+[latexmath, id="eq-bc"]
+++++
+B(u) = \sum_{v \neq w \neq u \in V} \frac{\sigma_{vw}(u)}{\sigma_{vw}},
+++++
+
+dove  _σ~vw~(u)_ indica il numero di cammini minimi che passano da _v_ a _w_ e _σ~vw~_ indica il numero di cammini minimi che passano attraverso _u_.
+
+La Betweenness si può calcolare risolvendo il problema dell'_all-pairs_ _shortest paths_ impiegando una versione modificata dell'algoritmo di Floyd-Warshall che segue in tempo stem:[\theta(n^3)]. Brandes cite:[brandes_faster_2001] ha proposto un algoritmo migliore che esegue in tempo stem:[\theta(nm)]. In <<Tecniche di parallelizzazione su GPU>> saranno discusse diverse possibili implementazioni parallele su GPU basate su quest'ultimo algoritmo.
+
+La Betweenness si presta a diverse interpretazioni. Può esprimere la capacità di un nodo di controllare, distorcere, inibire o bloccare il flusso d'informazioni in una rete oppure può indicare quanto un nodo possa unire due o più gruppi di nodi e favorire lo scambio d'informazioni. Questa metrica è di particolare interesse anche perché è alla base di algoritmi più complessi come la _Community Detection_ e il suo calcolo efficace in parallelo non è facile da realizzare.
+--
+
+=== Rappresentazione di un grafo
+
+Un grafo generalmente è rappresentato in due modi: come collezione di liste di adiacenza o come una matrice di adiacenza citenp:[Magnani2017(20)].
+
+Dato che per il calcolo delle misure di centralità d'interesse si impiegano degli algoritmi che non richiedono l'inserimento o la rimozione di vertici dai grafi in analisi e che sono necessarie frequenti operazioni di ricerca per determinare se c'è un arco che collega due vertici, si preferisce non impiegare le liste di adiacenza.
+
+In particolare la scelta della matrice di adiacenza permette di definire uno schema di accesso ai dati più efficiente per la cache. Ciò permette di parallelizzare efficacemente e in modo più intuitivo gli algoritmi su grafi.
+
+Dato che i grafi che si incontrano nell'ambito dell'Analisi delle Reti Sociali sono sparsi {wj}citenp:[barabasi2016network(13)], ovvero stem:[|E| \ll |V|^2], e di grandi dimensioni (da centinaia di migliaia a milioni di vertici e in crescita) il costo stem:[\theta(n^2)] in termini di occupazione di memoria di una matrice di adiacenza non è sostenibile. Perciò si sfruttano le caratteristiche strutturali di questi grafi rappresentandoli come matrici sparse, ovvero come matrici in cui gli elementi nulli sono omessi. In questo modo è possibile ottenere un notevole risparmio in termini di occupazione di memoria in funzione del grado di sparsità del grafo.
+
+Alcuni dei formati di memorizzazione di matrici sparse più noti sono _COOrdinate Format_ (COO) e _Compressed Sparse Row_ (CSR). Il formato COO è impiegato dallo standard Matrix Market scelto per la memorizzazione su disco. Per memorizzare la matrice in memoria principale si è scelto d'impiegare CSR. Il vantaggio del formato CSR sta nell'essere molto simile alla rappresentazione di un grafo tramite liste di adiacenza ma nel non avere i costi aggiuntivi legati all'uso dei puntatori e nell'essere più efficiente nell'uso della cache. Un esempio di rappresentazione di un grafo in formato CSR si ha in <<csr>>.
+
+[#csr]
+.Esempio di rappresentazione di un grafo tramite il formato CSR
+image::drawing-1.svg[csr, pdfwidth=80%, align=center]
+
+=== Tecniche di parallelizzazione su GPU
+
+Sia gli algoritmi per il calcolo della Closeness Centrality che della {BC} richiedono il computo dei cammini minimi tra due vertici del grafo. Nel caso di grafi non diretti e non pesati si impiega una visita in ampiezza. Questa prima fase è detta anche di propagazione in avanti. Inoltre per la {BC} è necessaria una seconda fase, detta anche di propagazione all'indietro, in cui si effettua l'accumulazione delle dipendenze sfruttando l'equazione ricorsiva proposta da Brandes cite:[brandes_faster_2001]:
+
+[latexmath, id="eq-rec"]
+++++
+\delta_{s \! *}(v) = \sum_{w \in S(v)} \frac{\sigma_{sv}}{\sigma_{sw}} \cdot \left(1 + \delta_{s \! *}(w) \right)
+++++
+
+dove _δ~s^*^~(v)_ indica la dipendenza di _v_ rispetto al nodo sorgente _s_ e _S(v)_ rappresenta i successori _w_ di _v_.
+
+Sia le visite in ampiezza che l'accumulazione delle dipendenze possono essere eseguite in parallelo. Su una GPU Nvidia ciò si ottiene distribuendo un gruppo di vertici a ogni _Streaming Multiprocessor_ citenp:[cuda(107)]. In questo modo si realizza un parallelismo a grana grossa.
+
+Inoltre, in ciascuno Streaming Multiprocessor, si può strutturare l'attraversamento del grafo per livelli di profondità in modo che sia sincrono. In altri termini a ogni iterazione si ha una frontiera di vertici o archi attivi che devono essere processati. Quando è stata completata l'elaborazione dei vertici o degli archi di una frontiera allora si può avanzare al livello successivo di profondità. In questo modo tutti i thread appartenenti alla frontiera corrente lavorano concorrentemente nell'esecuzione di un'unica visita in ampiezza o nell'accumulazione delle dipendenze sincronizzata realizzando un parallelismo a grana fine.
+
+Esistono diverse strategie per distribuire l'elaborazione dei vertici o degli archi di una frontiera fra i thread. Jia et al. cite:[jia_chapter_2012] hanno confrontato due delle strategie che si possono impiegare, ovvero gli approcci _vertex parallel_ ed _edge parallel_.
+
+Nel primo caso si assegna un thread a ogni vertice del grafo e ciascun thread attraversa tutti gli archi del vertice. Ciò significa che, come si osserva nell' <<alg-vtxp>>, ciascun thread ha un carico di lavoro che dipende dal numero di vicini del vertice a cui è assegnato. Perciò in uno stesso _warp_ citenp:[cuda(107)], ci saranno thread corrispondenti a vertici di grado basso che devono attendere thread assegnati a vertici di grado elevato, in entrambe le fasi dell'algoritmo. Perciò l'approccio vertex parallel non permette di effettuare una parallelizzazione efficiente dato che è soggetto a sbilanciamento del carico. In particolare non è adatto all'applicazione nelle reti Scale-free, dove la varianza del grado dei vertici è alta e segue una legge di potenza.
+
+In alternativa si può assegnare un thread a ogni arco del grafo. Come si può vedere nell' <<alg-edgp>>, i thread attivi sono solo quelli assegnati ad archi incidenti sulla frontiera. Con questo approccio si può bilanciare il carico di lavoro in quanto per ogni arco o si effettua un aggiornamento o non si eseguono operazioni. Il principale limite sta nel notevole consumo di memoria dovuto al numero di letture richiesto per identificare i vertici della frontiera e al numero di archi molto superiore al numero di vertici.
+
+Per l'analisi di grafi di tipo Scale-free o Small World Jia et al. cite:[jia_chapter_2012] hanno dimostrato che l'approccio edge parallel è più efficace di vertex parallel in quanto si ha un migliore bilanciamento del carico. In particolare rispetto all'approccio vertex parallel si ha un throughput maggiore e una più bassa divergenza dei thread. Ciò può essere osservato anche in <<Studio di scalabilità e throughput>>.
+
+[source, pseudocode, id="alg-vtxp"]
+.Pseudocodice della visita in ampiezza applicando la tecnica vertex parallel
+----
+for v in G.V on wavefront in parallel do
+    for w in G.adjacentVertices(v) do
+        if w.d = -1 then
+            label w.d as w.d + 1
+        end
+        if w.d = d + 1 then
+            fetch_and_add(w.σ, v.σ)
+        end
+    end
+end
+----
+
+[source, pseudocode, id="alg-edgp"]
+.Pseudocodice della visita in ampiezza applicando la tecnica edge parallel
+----
+for e in G.E incident to wavefront in parallel do
+    if w.d = -1 then
+        label w.d as w.d + 1
+    end
+    if w.d = d + 1 then
+        fetch_and_add(w.σ, v.σ)
+    end
+end
+----
+
+McLaughlin e Bader cite:[mclaughlin_scalable_2014] introducono una terza strategia, un approccio _work efficient_, che permette di evitare di assegnare inutilmente thread a vertici o archi che non fanno parte della frontiera a un dato livello di profondità. In questo approccio si assegnano i thread ai vertici che sono adiacenti ai vertici della frontiera. Come mostrato nell'<<alg-wkef>>, ciò si realizza impiegando due code per l'attraversamento del grafo, una per i vertici della frontiera corrente e una per i vertici della frontiera successiva, e uno stack. Inoltre si impiega un vettore di supporto, `ends`, per annotare il livello di profondità in cui si trova ciascun vertice. In questo modo è possibile determinare immediatamente quali sono i vertici della frontiera corrente e assegnare solo i thread necessari durante la fase di accumulazione. Per maggiori informazioni riguardo l'implementazione si faccia riferimento allo studio di McLaughlin e Bader cite:[mclaughlin_scalable_2014].
+
+L'approccio work efficient è particolarmente efficace in grafi con un diametro elevato perché in genere hanno una distribuzione del grado più uniforme. In grafi Scale-free o Small World lo sbilanciamento del carico implica che le prestazioni di questo approccio sono migliori di vertex parallel ma non di edge parallel. Ciò si osserva anche in <<Studio di scalabilità e throughput>>.
+
+[source, pseudocode, id="alg-wkef"]
+.Pseudocodice della visita in ampiezza applicando la tecnica work efficient
+----
+while True do
+    for v in Q_curr do in parallel
+        for w in G.adjacentVertices(v) do
+            if compare_and_swap(d[w], -1, d[v] + 1) == -1 then
+                label t as fetch_and_add(Q_next_len, 1)
+                label w as Q_next[t]
+            end
+            if d[w] = d[v] + 1 then
+                fetch_and_add(σ[w] , σ[v])
+            end
+        end
+    end
+    barrier()
+    if Q_next_len = 0 then
+        label depth as d[S[S_len - 1]] - 1
+        break;
+    else
+        for tid in 0 ... Q_next_len - 1 do in parallel
+            label Q_curr[tid] as Q_next[tid]
+            label S[tid + S_len] as Q_next[tid]
+        end
+        barrier()
+        label ends[ends_len] as ends[ends_len - 1] + Q_next_len
+        label ends_len as ends_len + 1
+        label Q_curr_len as Q_next_len
+        label S_len as S_len + Q_next_len
+        label Q_next_len as 0
+        barrier()
+    end
+end
+----
+
+=== Algoritmo parallelo su GPU
+
+Sono state implementate tre varianti dell'algoritmo per il calcolo della {BC}. Ciascuna impiega una dalle strategie viste in <<Tecniche di parallelizzazione su GPU>>. In particolare ciascuna strategia impiega per la prima fase dell'algoritmo lo pseudocodice illustrato in <<alg-vtxp>>, <<alg-edgp>> e <<alg-wkef>>.
+
+In <<alg-wkef-depacc>> si realizza l'accumulazione delle dipendenze impiegando lo stesso metodo di Madduri et al. cite:[madduri_faster_2009] esposto da McLaughlin e Bader cite:[mclaughlin_scalable_2014]. Questo approccio consiste nell'effettuare l'accumulazione controllando i successori e non i predecessori di ciascun vertice e permette di eliminare la concorrenza nell'aggiornamento delle dipendenze di ciascun vertice. In <<alg-vtpr-depacc>> e <<alg-edpr-depacc>> sono mostrati rispettivamente l'accumulazione delle dipendenze per la tecnica vertex parallel ed edge parallel. Si osserva che nella tecnica vertex parallel questa fase può essere svolta senza impiegare operazioni atomiche  mentre in edge parallel è necessario in quanto potrebbero esserci più thread che processano ciascuno un arco con un estremo in comune concorrentemente.
+
+Inoltre è stato implementato un algoritmo per il calcolo della Closeness Centrality che impiega l'approccio edge parallel.
+
+[source, pseudocode, id="alg-wkef-depacc"]
+.Pseudocodice dell'accumulazione delle dipendenze applicando la tecnica work efficient
+----
+while depth > 0 do
+    for tid in ends[depth] ... ends[depth + 1] do in parallel
+        label w as S[tid]
+        label dsw as 0
+        label sw as σ[w]
+        for v in G.adjacentVertices(w)
+            if d[v] = d[w] + 1 then
+                label dsw as dsw + (sw * (1 + δ[v])) / σ[v]
+            end
+        end
+        label δ[w] as dsw
+    end
+    barrier()
+    label depth as depth + 1
+end
+----
+
+[source, pseudocode, id="alg-vtpr-depacc"]
+.Pseudocodice dell'accumulazione delle dipendenze applicando la tecnica vertex parallel
+----
+for v in G.V on wavefront in parallel do
+    for w in G.adjacentVertices(v) do
+        if w.d = v.d + 1 then
+            if w.σ != 0 then
+                label v.δ as (1 + v.δ) * (v.σ / w.σ)
+            end
+        end
+    end
+end
+----
+
+[source, pseudocode, id="alg-edpr-depacc"]
+.Pseudocodice dell'accumulazione delle dipendenze applicando la tecnica edge parallel
+----
+for e in G.E incident to wavefront in parallel do
+    if w.d = d + 1 then
+        if w.σ != 0 then
+            fetch_and_add(v.δ, (1 + v.δ) * (v.σ / w.σ))
+        end
+    end
+end
+----
+
+=== Studio di scalabilità e throughput
+
+Lo studio di scalabilità e throughput è stato effettuato impiegando una CPU {hardware_local} con frequenza di funzionamento pari a 2.9 Ghz, una cache di 16 Mb e 16 Gb di DRAM, con Hyper-Threading abilitato. La GPU è una {hardware_nvidia} con quattro Streaming Multiprocessor e clock di base di 2505 Mhz. La memoria GDDR5 a disposizione è pari a due Gb e la _compute capability_ è 6.1 (architettura Pascal). I compilatori impiegati sono {compiler_nvidia} e {compiler_local}.
+
+<<<
+
+[#dataset]
+[stripes=even, cols="5,^3,^3,^5,^3,9"]
+.Proprietà generali dei dataset considerando la più grande componente connessa ed escludendo i cicli
+|===
+|Grafo       | Vertici  | Archi  | Grado massimo | Diametro | Descrizione
+
+| rnd-sf       | 977    | 1 227   | 818  | 6  | Grafo di tipo Scale-free
+| rnd-sw       | 3 000  | 2 082   | 8    | 22 | Grafo di tipo Small World
+| rnd-er       | 3 000  | 900 000 | 357  | 2  | Grafo casuale Erdös-Rényi
+| ca-GrQc      | 4 158  | 26 844  | 81   | 17 | Rete di collaborazioni
+| USpowerGrid  | 4 941  | 13 188  | 19   | 46 | Rete elettrica degli USA
+| Erdos02      | 5 534  | 16 944  | 507  | 4  | Rete di collaborazioni
+| ca-HepTh     | 8 638  | 49 612  | 65   | 17 | Rete di collaborazioni
+| ca-HepPh     | 11 204 | 235 238 | 491  | 13 | Rete di collaborazioni
+| delaunay_n14 | 16 384 | 98 244  | 16   | 65 | Triangolazione casuale
+| ca-AstroPh   | 17 903 | 393 944 | 504  | 14 | Rete di collaborazioni
+| as-22july06  | 22 963 | 96 872  | 2390 | 11 | Topologia d'Internet
+|===
+
+I dataset per effettuare i test sono reperibili nella _Sparse Matrix Collection_ dell'Università della Florida cite:[davis_university_2011]. In <<dataset>> sono mostrate alcune delle principali proprietà delle reti in analisi.
+
+Per la generazione casuale di grafi secondo i modelli di Erdös-Rényi, Watts-Strogatz e Barabási-Albert citenp:[gkoulalas-divanis_large-scale_2014(7)] sono state impiegate le funzioni rese disponibili dalla _Boost Graph Library_ cite:[siek_boost_2002].
+
+Per il calcolo dei tempi di esecuzione della versione seriale e della versione parallela su CPU a memoria condivisa è stato impiegato l'algoritmo messo a disposizione da SNAP.
+
+Per poter gestire anche grafi non connessi si è scelto di considerare la componente connessa più grande di ciascun grafo in analisi. Per l'estrazione del relativo sottografo sono state utilizzate le funzioni SpGEMM a partire dall'algoritmo di Gustavson cite:[gustavson_two_1978] e SpRef cite:[buluc_parallel_2012].
+
+Il throughput è misurato impiegando una metrica detta _Traversed Edges Per Second_, o _TEPS_. I TEPS sono stati calcolati nel seguente modo:
+
+[latexmath, id="eq-teps", reftext={counter:refnum}]
+++++
+\mathrm{TEPS} = \frac{2 \cdot n \cdot m}{T_{gpu}}
+++++
+
+Il calcolo è stato effettuato considerando che durante l'esecuzione della fase di propagazione in avanti degli algoritmi su GPU si effettua una visita in ampiezza a partire da ciascun vertice del grafo. Ciò implica l'attraversamento di tutti gli archi del grafo a partire da ciascun vertice. Nella seconda fase si esegue una propagazione all'indietro che comporta l'attraversamento dello stesso numero di archi della prima fase.
+
+L'algoritmo su GPU è stato lanciato con quattro blocchi, uno per ogni Streaming Multiprocessor, da 1024 thread ciascuno. Per misurare il tempo di esecuzione, sia su CPU che GPU, non si include il tempo impiegato per la lettura del grafo da disco né si tiene conto dell'estrazione della più grande componente connessa. Nel caso dell'algoritmo su GPU è incluso il tempo richiesto per le comunicazioni tra host e device e per la gestione della memoria sul device.
+
+[#speedup]
+.Confronto in termini di speedup dell'algoritmo parallelo su CPU della libreria SNAP lanciato con 16 thread e delle strategie vertex parallel, edge parallel e work efficient per la distribuzione del lavoro fra i thread su GPU
+[format="csv", stripes=even, options="header"]
+|===
+include::{srcdir}/speedup.csv[]
+|===
+
+In <<speedup>> si osserva che lo speedup dei diversi algoritmi varia significativamente a seconda del tipo di grafo considerato. A partire dai dati ottenuti si effettuano le seguenti considerazioni:
+
+- nei grafi in cui il grado massimo è maggiore, come in `rnd-sf`, in `Erdos02` e `as-22july06`, la distribuzione del grado è più ampia e la tecnica vertex parallel ha le prestazioni peggiori. Ciò accade perché questo approccio soffre di uno sbilanciamento del carico che è tanto più pronunciato quanto più può variare il numero di vicini di un vertice.
+
+- Nei grafi in cui in cui il diametro è maggiore e il grado massimo è minore, come in `delaunay_n14`, le prestazioni dell'approccio vertex parallel migliorano al punto da superare l'approccio edge parallel grazie alla distribuzione del grado più uniforme.
+
+- Nei grafi di dimensioni minori i costi in termini di allocazione di risorse per eseguire gli algoritmi su GPU rendono l'algoritmo parallelo su CPU in ogni caso più efficace. Ciò si nota in particolare in `rnd-er`, `rnd-sw`, `ca-GrQc` e `USpowerGrid`. Quest'osservazione è valida nella maggior parte dei casi anche rispetto all'algoritmo seriale su CPU.
+
+- Nei grafi di dimensioni maggiori le prestazioni dell'algoritmo parallelo su CPU calano significativamente. Su GPU si hanno due dei più grandi speedup per i grafi di dimensioni maggiori, `delaunay_n14` e `as-22july06`.
+
+- L'approccio work efficient non è mai più efficace di edge parallel nel caso di grafi che rappresentano reti sociali. Nel migliore dei casi ha prestazioni comparabili a edge parallel, come in `ca-HepPh` e `ca-AstroPh`. Tuttavia in grafi con diametro e dimensioni maggiori la tecnica work efficient determina uno speedup che non si osserva negli altri approcci.
+
+- L'approccio edge parallel è il più adatto se applicato a reti sociali e in generale a reti con diametro relativamente ridotto, di tipo Scale-free o Small World. In caso contrario si hanno prestazioni anche peggiori della versione seriale su CPU.
+
+Queste osservazioni possono essere verificate anche osservando il tempo di esecuzione e il throughput in termini di Milioni di TEPS mostrati in <<runtime>> e <<mteps>>.
+
+[#runtime]
+.Tempo di esecuzione degli algoritmi per il calcolo della {BC} su CPU con singolo thread, su CPU con 16 thread e su GPU con le tecniche vertex parallel, edge parallel e work efficient, in Millisecondi
+[format="csv", stripes=even, options="header"]
+|===
+include::{srcdir}/runtime_ms.csv[]
+|===
+
+[#mteps]
+.Confronto in termini di throughput delle strategie vertex parallel, edge parallel e work efficient per la distribuzione del lavoro fra i thread su GPU, in Milioni di TEPS
+[format="csv", stripes=even, options="header"]
+|===
+include::{srcdir}/mteps.csv[]
+|===
+
+<<<
+
+== Conclusioni
+
+Nel corso del tirocinio ho avuto la possibilità di apprendere alcuni concetti di base sia nel campo dell'Analisi delle Reti Sociali che della Teoria dei Grafi. Inoltre ho impiegato il parallelismo massivo offerto dalle GPU sperimentando diversi approcci alternativi per il calcolo della {BC}. In particolare è stato possibile accelerare algoritmi su grafi con successo impiegando una GPU nonostante difficoltà come l'irregolarità della struttura di un grafo e il fatto che il calcolo sia guidato dai dati citenp:[gkoulalas-divanis_large-scale_2014(13)]. In conclusione ho acquisito maggiore esperienza nella programmazione in C/{cpp} e nell'utilizzo di diversi strumenti come CMake, GNU Make, Git e GDB per automatizzare la compilazione del codice, per effettuare test, per il controllo di versione e la verifica della correttezza del programma.
+
+Il software sviluppato durante il tirocinio è liberamente disponibile in un link:https://github.com/Da3dalu2/SocNetAlgsOnGPU[repository].
+
+== Bibliografia
+bibliography::[]
